@@ -206,11 +206,6 @@
       </tags>
   </entry>
   <entry>
-    <title>next</title>
-    <url>/config/</url>
-    <content><![CDATA[]]></content>
-  </entry>
-  <entry>
     <title>datalab</title>
     <url>/datalab/</url>
     <content><![CDATA[<p>计算机中的数以二进制的形式存储和运算，每个比特不是0就是1。计算机通过对比特进行不同方式的编码和描述，从而执行纷繁复杂的各种任务。我们有诸多基于底层的接口，所以一般不会直接接触到比特的运算。datalab直接与编码数字序列的0和1打交道，通过对整数和浮点数的位操作来实现一系列的操作。</p>

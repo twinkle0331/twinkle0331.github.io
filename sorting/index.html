@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="此前我们涉及了诸多排序算法，针对向量和列表的起泡排序、归并排序以及选择排序等算法，基于散列的桶排序算法，借助堆的性质的就地堆排序算法。在此外，排序算法还有快速排序算法，希尔排序算法，其构思和技巧各具特色，在不同应用中的效率也各有千秋。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="排序算法">
+<meta property="og:url" content="http://example.com/sorting/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="此前我们涉及了诸多排序算法，针对向量和列表的起泡排序、归并排序以及选择排序等算法，基于散列的桶排序算法，借助堆的性质的就地堆排序算法。在此外，排序算法还有快速排序算法，希尔排序算法，其构思和技巧各具特色，在不同应用中的效率也各有千秋。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2019/09/12/WmFryYfD16gpUuk.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/12/aGZR7xAysMHPbm9.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/12/alQEFLN8biB7W6p.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/12/TyKi1xRD3hftNuv.png">
+<meta property="article:published_time" content="2019-09-11T12:55:02.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="Data structure">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2019/09/12/WmFryYfD16gpUuk.png">
+
+
+<link rel="canonical" href="http://example.com/sorting/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>排序算法 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/sorting/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          排序算法
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-09-11 20:55:02" itemprop="dateCreated datePublished" datetime="2019-09-11T20:55:02+08:00">2019-09-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>此前我们涉及了诸多排序算法，针对向量和列表的起泡排序、归并排序以及选择排序等算法，基于散列的桶排序算法，借助堆的性质的就地堆排序算法。在此外，排序算法还有快速排序算法，希尔排序算法，其构思和技巧各具特色，在不同应用中的效率也各有千秋。</p>
+<a id="more"></a>
+
+<h1 id="快速排序"><a href="#快速排序" class="headerlink" title="快速排序"></a>快速排序</h1><p>与归并排序一样，快速排序也是分治策略的典型应用，但二者有本质的区别，归并排序的计算量主要消耗于有序向量的归并操作，而子向量的划分却几乎不费时间。快速排序相反，可以在$O(1)$时间内由子问题的解得到原问题的解，但为了将原问题划分为两个子问题却需要$O(n)$时间。</p>
+<h2 id="轴点"><a href="#轴点" class="headerlink" title="轴点"></a>轴点</h2><p>考查任一向量区间$S[lo,hi)$。对于任何$lo \leq mi&lt;hi$,以元素S[mi]为界限，都可分割出前、后两个子向量$S[lo,mi)$和$S(mi,hi)$。若$S[lo,mi)$中的元素均不大于$S[mi]$,且$S(mi,hi)$中的元素均不小于$S[mi]$，则元素$S[mi]$称作向量$S$的一个轴点。</p>
+<p>以轴点$S[mi]$为界，前后向量的排序各自可独立进行，一旦前后向量各自完成排序，则可立即在常数时间内得到整个向量的排序结果。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//向量快速排序</span></span><br><span class="line"><span class="keyword">void</span> Vector&lt;T&gt;::quickSort ( Rank lo, Rank hi ) &#123; <span class="comment">//0 &lt;= lo &lt; hi &lt;= size</span></span><br><span class="line">   <span class="keyword">if</span> ( hi - lo &lt; <span class="number">2</span> ) <span class="keyword">return</span>; <span class="comment">//单元素区间自然有序，否则...</span></span><br><span class="line">   Rank mi = partition ( lo, hi - <span class="number">1</span> ); <span class="comment">//在[lo, hi - 1]内构造轴点</span></span><br><span class="line">   quickSort ( lo, mi ); <span class="comment">//对前缀递归排序</span></span><br><span class="line">   quickSort ( mi + <span class="number">1</span>, hi ); <span class="comment">//对后缀递归排序</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在原始序列中轴点未必存在，任何一个元素作为轴点的必要条件是在初始向量和排序后向量中的秩应相等。只要所有元素都是错位的，则任何元素都不可能是轴点。但是可通过交换使任一元素转换为轴点。</p>
+<p><img src="https://i.loli.net/2019/09/12/WmFryYfD16gpUuk.png"></p>
+<p>任取一候选者，前缀$L$小于等于候选者，初始时为空，后缀$G$大于等于候选者，初始为空，中间区域待确定，初始为全集。交替向内移动$lo$和$hi$，逐个检查当前元素，若更小/大，则转移归入$L/G$。当$lo=hi$时，只需将候选者嵌入$L$、$G$之间，即为轴点。整个过程中，每个元素最多移动一次(候选者两次)，累计$O(n)$时间，$O(1)$辅助空间。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//轴点构造算法：通过调整元素位置构造区间[lo, hi]的轴点，并返回其秩</span></span><br><span class="line">Rank Vector&lt;T&gt;::partition ( Rank lo, Rank hi ) &#123; <span class="comment">//版本B：可优化处理多个关键码雷同的退化情况</span></span><br><span class="line">   swap ( _elem[lo], _elem[lo + rand() % ( hi - lo + <span class="number">1</span> ) ] ); <span class="comment">//任选一个元素与首元素交换</span></span><br><span class="line">   T pivot = _elem[lo]; <span class="comment">//以首元素为候选轴点——经以上交换，等效于随机选取</span></span><br><span class="line">   <span class="keyword">while</span> ( lo &lt; hi ) &#123; <span class="comment">//从向量的两端交替地向中间扫描</span></span><br><span class="line">      <span class="keyword">while</span> ( lo &lt; hi )</span><br><span class="line">         <span class="keyword">if</span> ( pivot &lt; _elem[hi] ) <span class="comment">//在大于pivot的前提下</span></span><br><span class="line">            hi--; <span class="comment">//向左拓展右端子向量</span></span><br><span class="line">         <span class="keyword">else</span> <span class="comment">//直至遇到不大于pivot者</span></span><br><span class="line">            &#123; _elem[lo++] = _elem[hi]; <span class="keyword">break</span>; &#125; <span class="comment">//将其归入左端子向量</span></span><br><span class="line">      <span class="keyword">while</span> ( lo &lt; hi )</span><br><span class="line">         <span class="keyword">if</span> ( _elem[lo] &lt; pivot ) <span class="comment">//在小于pivot的前提下</span></span><br><span class="line">            lo++; <span class="comment">//向右拓展左端子向量</span></span><br><span class="line">         <span class="keyword">else</span> <span class="comment">//直至遇到不小于pivot者</span></span><br><span class="line">            &#123; _elem[hi--] = _elem[lo]; <span class="keyword">break</span>; &#125; <span class="comment">//将其归入右端子向量</span></span><br><span class="line">   &#125; <span class="comment">//assert: lo == hi</span></span><br><span class="line">   _elem[lo] = pivot; <span class="comment">//将备份的轴点记录置于前、后子向量之间</span></span><br><span class="line">   <span class="keyword">return</span> lo; <span class="comment">//返回轴点的秩</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h2><p>为不稳定算法，$lo/hi$的移动方向相反，左/右侧的大/小重复元素可能前后颠倒。同时为就地算法，只需$O(1)$附加空间。递归实例在最坏情况下需要$\Omega(n)$空间。</p>
+<p><code>partition</code>算法可在线性时间内将原向量分解为两个相互独立、总体规模保持线性的子向量排序问题，根据轴点的性质，由排序后的向量可在常数时间内得到整个有序向量。分治策略高效实现的两个必要条件满足，即子问题划分的高效性和子问题相互之间的独立性，但是子任务规模相近在此处却无法保证。<br><code>partition</code>算法划分所得子序列长度与划分的具体过程无关，完全取决于入口处所选的轴点。若在最终有序向量中该候选元素的秩为$r$，则子向量的规模必然为$r$和$n-r-1$。</p>
+<p>最好情况：每次划分都接近平均，轴点总是接近中央。</p>
+<p>$\displaystyle T(n)=2T(\frac{n-1}{2})+O(n)=O(nlogn)$</p>
+<p>最坏情况：每次划分都极不均衡</p>
+<p>$T(n)=T(n-1)+T(0)+O(n)=O(n^2)$</p>
+<p>可以通过随即选取一个候选轴点，或者从待排序向量中任取三个元素，将其数值居中者作为候选者，来降低最坏情况出现的概率，但是无法杜绝最坏情况的概率。</p>
+<p>以下分析平均效率</p>
+<p>准居中：<code>pivot</code>的秩落在宽度为$\lambda n$的居中区间，每以递归路径上，至多出现$log_{\frac{2}{1+\lambda} n}$ 个准居中的轴点。</p>
+<p>每递归一层，都有$\lambda|(1-\lambda)$的概率准居中|准侧偏</p>
+<p>深入$\displaystyle \frac{1}{\lambda}log_{\frac{2}{1+\lambda} n}$ 层后，即可期望出现$\displaystyle log_{\frac{2}{1+\lambda}} n$次居中，且有极高的概率出现，因此有极高的概率递归深度不超过$\displaystyle \frac{1}{\lambda}log_{\frac{2}{1+\lambda} n}=3log_{3/2} n$</p>
+<p>假设待排序的元素都符合独立均匀分布，<code>partition</code>算法经过$n-1$次比较和$n+1$次移动之后，对规模为$n$的向量划分结果无非两种可能，划分所分左侧子序列的长度分别是$0,1,..,n-1$次，分别决定于所取元素在候选节点在最终有序序列中的秩。</p>
+<p>$\displaystyle T(n)=(n+1)+\frac{1}{n} \sum_{k=0}^{n-1}[T(k)+T(n-k-1)]$</p>
+<p>$\displaystyle =(n+1)+\frac{2}{n} \sum_{k=0}^{n-1}T(k)$</p>
+<p>等式两侧同时乘以$n$，则有：</p>
+<p>$nT(n)=n(n+1)+2\sum_{k=0}^{n-1}T(k)$</p>
+<p>$(n-1)T(n-1)=(n-1)+2\sum_{k=0}^{n-2}T(k)$</p>
+<p>两式相减，得$nT(n)-(n-1)T(n-1)=2n+2T(n-1)$</p>
+<p>$nT(n)=2n+(n+1)T(n-1)$</p>
+<p>两边同时除以$n(n+1)$,得</p>
+<p>$T(n)/(n+1)=2/(n+1)+T(n-1)/n$</p>
+<p>$=2/(n+1)+2/n+T(n-2)/(n-1)$</p>
+<p>$=2/(n+1)+2/n+2/(n-1)+…2/2+T(0)/1$</p>
+<p>$&lt;2lnn$</p>
+<p>$T(n) \approx 2nlnn=(2ln2)nlogn  \approx 1.386logn=O(nlogn)$</p>
+<h2 id="退化情况"><a href="#退化情况" class="headerlink" title="退化情况"></a>退化情况</h2><p>考查所有元素均退化的情况，主循环内部前一子循环的条件<code>pivot&lt;=_elem[hi]</code> 形同虚设，此时，划分的结果必然是以最左端为轴点，原向量划分为极不对称的两个子向量，这一最坏情况还可能持续发生，从而使整个算法过程等效地退化为线性递归，递归深度为$O(n)$，导致总体运行时间高达$O(n^2)$。</p>
+<p>可以再每次深入递归时统一核验，若确为退化情况，则无需递归而直接返回，但在重复元素不多时，如此会增加额外的计算量，总体权衡后得不偿失。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//轴点构造算法：通过调整元素位置构造区间[lo, hi]的轴点，并返回其秩</span></span><br><span class="line">Rank Vector&lt;T&gt;::partition ( Rank lo, Rank hi ) &#123; <span class="comment">//版本B1：版本B的等价形式，可直接转至与版本A等价的版本A1</span></span><br><span class="line">   swap ( _elem[lo], _elem[lo + rand() % ( hi-lo+<span class="number">1</span> ) ] ); <span class="comment">//任选一个元素与首元素交换</span></span><br><span class="line">   T pivot = _elem[lo]; <span class="comment">//以首元素为候选轴点——经以上交换，等效于随机选取</span></span><br><span class="line">   <span class="keyword">while</span> ( lo &lt; hi ) &#123; <span class="comment">//从向量的两端交替地向中间扫描</span></span><br><span class="line">      <span class="keyword">while</span> ( ( lo &lt; hi ) &amp;&amp; ( pivot &lt; _elem[hi] ) ) <span class="comment">//在大于pivot的前提下</span></span><br><span class="line">         hi--; <span class="comment">//向左拓展右端子向量</span></span><br><span class="line">      <span class="keyword">if</span> ( lo &lt; hi ) _elem[lo++] = _elem[hi]; <span class="comment">//不大xia于pivot者归入左端子向量</span></span><br><span class="line">      <span class="keyword">while</span> ( ( lo &lt; hi ) &amp;&amp; ( _elem[lo] &lt; pivot ) ) <span class="comment">//在小于pivot的前提下</span></span><br><span class="line">         lo++; <span class="comment">//向右拓展左端子向量</span></span><br><span class="line">      <span class="keyword">if</span> ( lo &lt; hi ) _elem[hi--] = _elem[lo]; <span class="comment">//不小于pivot者归入右端子向量</span></span><br><span class="line">   &#125; <span class="comment">//assert: lo == hi</span></span><br><span class="line">   _elem[lo] = pivot; <span class="comment">//将备份的轴点记录置于前、后子向量之间</span></span><br><span class="line">   <span class="keyword">return</span> lo; <span class="comment">//返回轴点的秩</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>与版本A比较，版本B主要是调整了两个内循环的终止条件。将原条件<code>pivot&lt;=elem[hi]</code>更改<code>pivot&lt;elem[hi]</code>,一旦遇到重复元素，右端子向量随即终止拓展，并将右端重复元素移至左端，lo和hi会交替移动，二者移动距离大致相当。但是以上改进需做更多的交换操作，倾向于交换重复元素，所以重复元素在原输入向量中的相对次序更难保持。</p>
+<p>构造轴点的另一快捷思路：</p>
+<p>始终将整个向量划分为四个区间，$v[lo],L=v(lo,mi],G=v(mi,k],u=v[k,hi]$</p>
+<p>其中$v[lo]$为候选轴点，$L/G$中的元素均不大/不小于$v[lo]$，$U$中元素大小未知。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//轴点构造算法：通过调整元素位置构造区间[lo, hi]的轴点，并返回其秩</span></span><br><span class="line">Rank Vector&lt;T&gt;::partition ( Rank lo, Rank hi ) &#123; <span class="comment">//版本C</span></span><br><span class="line">   swap ( _elem[lo], _elem[lo + rand() % ( hi - lo + <span class="number">1</span> ) ] ); <span class="comment">//任选一个元素与首元素交换</span></span><br><span class="line">   T pivot = _elem[lo]; <span class="comment">//以首元素为候选轴点——经以上交换，等效于随机选取</span></span><br><span class="line">   <span class="keyword">int</span> mi = lo;</span><br><span class="line">   <span class="comment">//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</span></span><br><span class="line">   <span class="comment">//   [ ---- &lt; [lo] ----- ] [ ----- [lo] &lt;= --- ] [ ----- unknown ----- ]</span></span><br><span class="line">   <span class="comment">// X x . . . . . . . . . x . . . . . . . . . . . x . . . . . . . . . . x</span></span><br><span class="line">   <span class="comment">// |                     |                       |                     |</span></span><br><span class="line">   <span class="comment">// lo (pivot)            mi                      k                     hi</span></span><br><span class="line">   <span class="comment">//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> k = lo + <span class="number">1</span>; k &lt;= hi; k++ ) <span class="comment">//自左向右扫描</span></span><br><span class="line">      <span class="keyword">if</span> ( _elem[k] &lt; pivot ) <span class="comment">//若当前元素_elem[k]小于pivot，则</span></span><br><span class="line">         swap ( _elem[++mi], _elem[k] ); <span class="comment">//将_elem[k]交换至原mi之后，使L子序列向右扩展</span></span><br><span class="line">   <span class="comment">//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</span></span><br><span class="line">   <span class="comment">//   [ --------- &lt; [lo] ---------- ] [ ----------- [lo] &lt;= ----------- ]</span></span><br><span class="line">   <span class="comment">// X x . . . . . . . . . . . . . . x . . . . . . . . . . . . . . . . . x</span></span><br><span class="line">   <span class="comment">// |                               |                                   |</span></span><br><span class="line">   <span class="comment">// lo                              mi                                  hi</span></span><br><span class="line">   <span class="comment">//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++</span></span><br><span class="line">   swap ( _elem[lo], _elem[mi] ); <span class="comment">//候选轴点归位</span></span><br><span class="line">   <span class="keyword">return</span> mi; <span class="comment">//返回轴点的秩</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>初始时取$k-1=mi=lo$,$L$和$G$均为空，此后随着$k$不断递增，逐一检查元素$v[k]$，并根据$v[k]$相对于候选轴点的大小，相应地扩展区间$L$或区间$G$，同时压缩区间$U$。最终，当$k-1=hi$时，$U$中不含任何元素，于是只需将候选轴点放至$V[mi]$，即成为真正的轴点。</p>
+<p>基于以上实现的快速排序算法不稳定，子向量L和R都是向右侧延伸，新元素都是插至向量的末尾。除此以外，子向量$L$不会有任何修改，故其中所有元素之间的相对次序必然与原向量一致。然而，在子向量$L$的每次生长之前，子向量$R$都需要相应地向前滚动一个单元，故可能造成雷同元素之间相同次序的紊乱。在元素大量甚至完全重复的情况下该算法虽不致出错，但划分所得的子向量的规模相差悬殊，几乎退化成起泡排序算法，整体运行时间将增加到$O(n^2)$。</p>
+<h1 id="选取与中位数"><a href="#选取与中位数" class="headerlink" title="选取与中位数"></a>选取与中位数</h1><p><strong>k选取</strong></p>
+<p>在任意一组可比较大小的元素中，如何从小到大找出其中次序为$k$者？亦即在这组元素的非降排序序列$S$中找出$S[k]$。</p>
+<p><strong>中位数</strong></p>
+<p>长度为$n$的有序序列中，元素$S[n/2]$称作中位数(数值上可能有重复)。在任意一组可比较大小的元素中，如何找到中位数？</p>
+<p>中位数是$k$选取问题的一个特例，也是其中难度最大者。由于中位数可将原数据集划分为大小明确、规模相仿且彼此独立的两个子集，故能否高效地确定中位数将直接关系到分治策略可否高效实现。</p>
+<h2 id="蛮力算法"><a href="#蛮力算法" class="headerlink" title="蛮力算法"></a>蛮力算法</h2><p>由中位数的定义，可直接得到查找中位数的算法如下：对所有元素排序，将其转化为有序序列S，则$S[n/2]$即为所要找的中位数。对无序向量的排序在最坏情况下需要$\Omega(nlogn)$时间，故基于该算法的任何分治算法，时间复杂度都不会低于$T(n)=nlogn+2T(n/2)=O(nlog^2n)$</p>
+<blockquote>
+<p>不妨考虑中位数问题的一个简化版，在任一无序向量A中，若有一半元素的数值同为$m$,则将$m$称为A的众数。那么，任给无序向量，如何快速判断其中是否存在众数，并在存在时将其找出？</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="function"><span class="keyword">bool</span> <span class="title">majority</span> <span class="params">( Vector&lt;T&gt; A, T&amp; maj )</span> </span>&#123; <span class="comment">//众数查找算法：T可比较可判等</span></span><br><span class="line">   maj = majEleCandidate ( A ); <span class="comment">//必要性：选出候选者maj</span></span><br><span class="line">   <span class="keyword">return</span> majEleCheck ( A, maj ); <span class="comment">//充分性：验证maj是否的确当选</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过调用<code>majEleCandidate()</code> ,从向量A中找到中位数maj，并将其作为众数唯一候选者。再调用<code>majEleCheck()</code></p>
+<p>在线性时间内扫描一遍向量，从而最终判断向量A的众数是否的确存在。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="function"><span class="keyword">bool</span> <span class="title">majEleCheck</span> <span class="params">( Vector&lt;T&gt; A, T maj )</span> </span>&#123; <span class="comment">//验证候选者是否确为众数</span></span><br><span class="line">   <span class="keyword">int</span> occurrence = <span class="number">0</span>; <span class="comment">//maj在A[]中出现的次数</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> i = <span class="number">0</span>; i &lt; A.size(); i++ ) <span class="comment">//逐一遍历A[]的各个元素</span></span><br><span class="line">      <span class="keyword">if</span> ( A[i] == maj ) occurrence++; <span class="comment">//每遇到一次maj，均更新计数器</span></span><br><span class="line">   <span class="keyword">return</span> <span class="number">2</span> * occurrence &gt; A.size(); <span class="comment">//根据最终的计数值，即可判断是否的确当选</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>设$P$为向量A中长度为$2m$的前缀，若元素$x$在P中恰好出现$m$次，则$A$有众数当且仅当后缀$A-P$有众数，同时$A-P$的众数就是$A$的众数。</p>
+<p>若$A$的众数就是$x$,则在剪除前缀$P$之后，$x$与非众数均减少相同的数目，二者数目的差距在后缀$A-P$中保持不变。反过来，若$A-P$的众数不为$x$，则二者数目的差距在后缀$A-P$中也不会缩小。</p>
+<p>按照以上减而治之策略，可唯一确定众数的候选者。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="function">T <span class="title">majEleCandidate</span> <span class="params">( Vector&lt;T&gt; A )</span> </span>&#123; <span class="comment">//选出具备必要条件的众数候选者</span></span><br><span class="line">   T maj; <span class="comment">//众数候选者</span></span><br><span class="line"><span class="comment">// 线性扫描：借助计数器c，记录maj与其它元素的数量差额</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> c = <span class="number">0</span>, i = <span class="number">0</span>; i &lt; A.size(); i++ )</span><br><span class="line">      <span class="keyword">if</span> ( <span class="number">0</span> == c ) &#123; <span class="comment">//每当c归零，都意味着此时的前缀P可以剪除</span></span><br><span class="line">         maj = A[i]; c = <span class="number">1</span>; <span class="comment">//众数候选者改为新的当前元素</span></span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="comment">//否则</span></span><br><span class="line">         maj == A[i] ? c++ : c--; <span class="comment">//相应地更新差额计数器</span></span><br><span class="line">   <span class="keyword">return</span> maj; <span class="comment">//至此，原向量的众数若存在，则只能是maj —— 尽管反之不然</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中，变量<code>maj</code>始终为当前前缀中出现次数不少于一半的某个元素，c始终记录该元素与其他元素的数目之差。一旦c归零，则意味着在当前向量找到了一个可以减除的前缀$P$。在剪除该前缀后，问题范围将响应地缩小至$A-P$。此后，只需将<code>maj</code>重新初始化为$A-P$的首元素，并令<code>c=1</code>,即可继续重复上述迭代过程。</p>
+<p>对于向量的每个秩，该算法迭代且仅迭代一步。故其运行时间，应线性正比于向量规模。</p>
+<p>该候选者未必是众数，但也未必是原向量中出现最频繁者。该算法采取简而治之的策略，原向量等效地切分为若干区段，各区段首元素至少在其中占一半的比例。因此，最后返回的<code>maj</code>，实际上只是最后一个区段的准众数，未必就是整个向量的准众数。</p>
+<p>若众数的定义修改为众数应严格地不少于其他元素，则需要对之前算法进行一定改进。</p>
+<p>当向量规模为奇数时，准众数必然就是众数，当n为偶数时，针对准众数的查找的一种简明的调整方法是：首先任选一个元素(比如末元素)，并在$O(n)$时间内甄别其是否为准众数。不妨设该元素不是准众数，于是只需将其忽略(原向量的有效长度降低至$n-1$，为奇数)，即可将在原向量中查找众数的问题转化为在$n-1$的向量中查找众数的问题。</p>
+<blockquote>
+<p>讨论中位数问题的另一简化版本，任给有序向量$S_1$和$S_2$，如何找出归并后有序向量的中位数</p>
+</blockquote>
+<p><strong>蛮力版</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 中位数算法蛮力版：效率低，仅适用于max(n1, n2)较小的情况</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//子向量S1[lo1, lo1 + n1)和S2[lo2, lo2 + n2)分别有序，数据项可能重复</span></span><br><span class="line"><span class="function">T <span class="title">trivialMedian</span> <span class="params">( Vector&lt;T&gt;&amp; S1, <span class="keyword">int</span> lo1, <span class="keyword">int</span> n1, Vector&lt;T&gt;&amp; S2, <span class="keyword">int</span> lo2, <span class="keyword">int</span> n2 )</span> </span>&#123;</span><br><span class="line">   <span class="keyword">int</span> hi1 = lo1 + n1, hi2 = lo2 + n2;</span><br><span class="line">   Vector&lt;T&gt; S; <span class="comment">//将两个有序子向量归并为一个有序向量</span></span><br><span class="line">   <span class="keyword">while</span> ( ( lo1 &lt; hi1 ) &amp;&amp; ( lo2 &lt; hi2 ) ) &#123;</span><br><span class="line">      <span class="keyword">while</span> ( ( lo1 &lt; hi1 ) &amp;&amp; S1[lo1] &lt;= S2[lo2] ) S.insert ( S1[lo1 ++] );</span><br><span class="line">      <span class="keyword">while</span> ( ( lo2 &lt; hi2 ) &amp;&amp; S2[lo2] &lt;= S1[lo1] ) S.insert ( S2[lo2 ++] );</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">while</span> ( lo1 &lt; hi1 ) S.insert ( S1[lo1 ++] );</span><br><span class="line">   <span class="keyword">while</span> ( lo2 &lt; hi2 ) S.insert ( S1[lo2 ++] ); <span class="comment">/*DSA*/</span>print ( S );</span><br><span class="line">   <span class="keyword">return</span> S[ ( n1 + n2 ) / <span class="number">2</span>]; <span class="comment">//直接返回归并向量的中位数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>若调用蛮力算法将二者归并，则需花费$O(n_1+n_2)$时间。</p>
+<p>实际上，上述算法只需$O((n_1+n_2)/2)$步即可终止。计算的目标是归并之后向量的中位数，并不意味着一定要显式地完成合并。实际上就此计算任务而言，只需设置一个计数器，而不必真地引入并维护一个向量结构。具体地，依然可以沿用原算法的主体流程，向量$S$只是假想式地存在。无需真正地将子向量中地元素转移至S中，只需动态地记录这一向量地规模：每当有一个元素假想式地归入其中，则计数器相应地递增。一旦计数器抵达$\lfloor (n_1+n_2)/2$,即可忽略后续元素并立即假想地归入其中，则计数器相应地递增。</p>
+<p><strong>减而治之</strong></p>
+<p>假设两子向量等长，长度均为$n$</p>
+<p><img src="https://i.loli.net/2019/09/12/aGZR7xAysMHPbm9.png"></p>
+<p>简而治之的原理为，两子向量归并后所得的向量$S$长度为$2n$，则中位数对应的秩为$\lfloor 2n/2 \rfloor=n$，即存在$n$个元素不大于中位数，$n-1$个元素不小于中位数。若$m_1&lt;m_2$,则在$S_2$中存在$\lceil n/2 \rceil$个数大于$m_2$，假设其中一数为$m$，可能不小于$m$的数的个数最大为$\lfloor n/2 \rfloor+\lceil n/2 \rceil -1=n-1$ ,即$m$的后继个数和在$S_2$中可能大于$m$的数的个数。因为$m$在$m_2$右侧,所以后继个数必然小于$\lfloor n/2 \rfloor$ 个，所以必然不是$S$的中位数，或者与$m_1$或$m_2$同为$S$的中位数。</p>
+<p>同时，在$S_1$和$ S_2$减去的不小于中位数的数和不大于中位数的个数相等，所以在减去前后两个子向量所对应的中位数不变。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//序列S1[lo1, lo1 + n)和S2[lo2, lo2 + n)分别有序，n &gt; 0，数据项可能重复</span></span><br><span class="line"><span class="function">T <span class="title">median</span> <span class="params">( Vector&lt;T&gt;&amp; S1, <span class="keyword">int</span> lo1, Vector&lt;T&gt;&amp; S2, <span class="keyword">int</span> lo2, <span class="keyword">int</span> n )</span> </span>&#123; <span class="comment">//中位数算法（高效版）</span></span><br><span class="line">   <span class="keyword">if</span> ( n &lt; <span class="number">3</span> ) <span class="keyword">return</span> trivialMedian ( S1, lo1, n, S2, lo2, n ); <span class="comment">//递归基</span></span><br><span class="line">   <span class="keyword">int</span> mi1 = lo1 + n / <span class="number">2</span>, mi2 = lo2 + ( n - <span class="number">1</span> ) / <span class="number">2</span>; <span class="comment">//长度（接近）减半</span></span><br><span class="line">   <span class="keyword">if</span> ( S1[mi1] &lt; S2[mi2] )</span><br><span class="line">      <span class="keyword">return</span> median ( S1, mi1, S2, lo2, n + lo1 - mi1 ); <span class="comment">//取S1右半、S2左半</span></span><br><span class="line">   <span class="keyword">else</span> <span class="keyword">if</span> ( S1[mi1] &gt; S2[mi2] )</span><br><span class="line">      <span class="keyword">return</span> median ( S1, lo1, S2, mi2, n + lo2 - mi2 ); <span class="comment">//取S1左半、S2右半</span></span><br><span class="line">   <span class="keyword">else</span></span><br><span class="line">      <span class="keyword">return</span> S1[mi1];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>推广至一般情况，则</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//向量S1[lo1, lo1 + n1)和S2[lo2, lo2 + n2)分别有序，数据项可能重复</span></span><br><span class="line"><span class="function">T <span class="title">median</span> <span class="params">( Vector&lt;T&gt;&amp; S1, <span class="keyword">int</span> lo1, <span class="keyword">int</span> n1, Vector&lt;T&gt;&amp; S2, <span class="keyword">int</span> lo2, <span class="keyword">int</span> n2 )</span> </span>&#123; <span class="comment">//中位数算法</span></span><br><span class="line">   <span class="keyword">if</span> ( n1 &gt; n2 ) <span class="keyword">return</span> median ( S2, lo2, n2, S1, lo1, n1 ); <span class="comment">//确保n1 &lt;= n2</span></span><br><span class="line">   <span class="keyword">if</span> ( n2 &lt; <span class="number">6</span> ) <span class="comment">//递归基：1 &lt;= n1 &lt;= n2 &lt;= 5</span></span><br><span class="line">      <span class="keyword">return</span> trivialMedian ( S1, lo1, n1, S2, lo2, n2 );</span><br><span class="line">   <span class="comment">///////////////////////////////////////////////////////////////////////</span></span><br><span class="line">   <span class="comment">//                lo1            lo1 + n1/2      lo1 + n1 - 1</span></span><br><span class="line">   <span class="comment">//                 |                 |                 |</span></span><br><span class="line">   <span class="comment">//                 X &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; X &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; X</span></span><br><span class="line">   <span class="comment">// Y .. trimmed .. Y &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Y &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Y .. trimmed .. Y</span></span><br><span class="line">   <span class="comment">// |               |                 |                 |               |</span></span><br><span class="line">   <span class="comment">// lo2     lo2 + (n2-n1)/2       lo2 + n2/2     lo2 + (n2+n1)/2    lo2 + n2 -1</span></span><br><span class="line">   <span class="comment">///////////////////////////////////////////////////////////////////////</span></span><br><span class="line">   <span class="keyword">if</span> ( <span class="number">2</span> * n1 &lt; n2 ) <span class="comment">//若两个向量的长度相差悬殊，则长者（S2）的两翼可直接截除</span></span><br><span class="line">      <span class="keyword">return</span> median ( S1, lo1, n1, S2, lo2 + ( n2 - n1 - <span class="number">1</span> ) / <span class="number">2</span>, n1 + <span class="number">2</span> - ( n2 - n1 ) % <span class="number">2</span> );</span><br><span class="line">   <span class="comment">///////////////////////////////////////////////////////////////////////</span></span><br><span class="line">   <span class="comment">//    lo1                  lo1 + n1/2              lo1 + n1 - 1</span></span><br><span class="line">   <span class="comment">//     |                       |                       |</span></span><br><span class="line">   <span class="comment">//     X &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; X &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; X</span></span><br><span class="line">   <span class="comment">//                             |</span></span><br><span class="line">   <span class="comment">//                            m1</span></span><br><span class="line">   <span class="comment">///////////////////////////////////////////////////////////////////////</span></span><br><span class="line">   <span class="comment">//                            mi2b</span></span><br><span class="line">   <span class="comment">//                             |</span></span><br><span class="line">   <span class="comment">// lo2 + n2 - 1         lo2 + n2 - 1 - n1/2</span></span><br><span class="line">   <span class="comment">//     |                       |</span></span><br><span class="line">   <span class="comment">//     Y &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; Y ...</span></span><br><span class="line">   <span class="comment">//                                .</span></span><br><span class="line">   <span class="comment">//                               .</span></span><br><span class="line">   <span class="comment">//                              .</span></span><br><span class="line">   <span class="comment">//                             .</span></span><br><span class="line">   <span class="comment">//                            .</span></span><br><span class="line">   <span class="comment">//                           .</span></span><br><span class="line">   <span class="comment">//                          .</span></span><br><span class="line">   <span class="comment">//                         ... Y &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; Y</span></span><br><span class="line">   <span class="comment">//                             |                       |</span></span><br><span class="line">   <span class="comment">//                       lo2 + (n1-1)/2               lo2</span></span><br><span class="line">   <span class="comment">//                             |</span></span><br><span class="line">   <span class="comment">//                            mi2a</span></span><br><span class="line">   <span class="comment">///////////////////////////////////////////////////////////////////////</span></span><br><span class="line">   <span class="keyword">int</span> mi1  = lo1 + n1 / <span class="number">2</span>;</span><br><span class="line">   <span class="keyword">int</span> mi2a = lo2 + ( n1 - <span class="number">1</span> ) / <span class="number">2</span>;</span><br><span class="line">   <span class="keyword">int</span> mi2b = lo2 + n2 - <span class="number">1</span> - n1 / <span class="number">2</span>;</span><br><span class="line">   <span class="keyword">if</span> ( S1[mi1] &gt; S2[mi2b] ) <span class="comment">//取S1左半、S2右半</span></span><br><span class="line">      <span class="keyword">return</span> median ( S1, lo1, n1 / <span class="number">2</span> + <span class="number">1</span>, S2, mi2a, n2 - ( n1 - <span class="number">1</span> ) / <span class="number">2</span> );</span><br><span class="line">   <span class="keyword">else</span> <span class="keyword">if</span> ( S1[mi1] &lt; S2[mi2a] ) <span class="comment">//取S1右半、S2左半</span></span><br><span class="line">      <span class="keyword">return</span> median ( S1, mi1, ( n1 + <span class="number">1</span> ) / <span class="number">2</span>, S2, lo2, n2 - n1 / <span class="number">2</span> );</span><br><span class="line">   <span class="keyword">else</span> <span class="comment">//S1保留，S2左右同时缩短</span></span><br><span class="line">      <span class="keyword">return</span> median ( S1, lo1, n1, S2, mi2a, n2 - ( n1 - <span class="number">1</span> ) / <span class="number">2</span> * <span class="number">2</span> );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该算法首先比较$n_1$和$n_2$的大小，并在必要时交换两个子向量，从而保证有$n_1&lt;n_2$。</p>
+<p>若两个向量相差悬殊，则可对称地适当截短长者的两翼，以保证有：</p>
+<p>$n_1\leq n_2 \leq 2n_1$</p>
+<p>因为$S_2$两翼截除的长度相等，所以此后$S_1 \cup S_2$的中位数，依然是$S_1\cup S_2$的中位数。</p>
+<p>这里采用了简而治之的策略，可使问题规模按照几何级数递减，故总体复杂度应为$O(log(min(n_1,n_2)))$ 。无论是交换两个向量，还是截短$S_2$,都只需常数时间。因此实质的计算，只是针对长度均同阶于$min(n_1,n_2)$的一对向量计算中位数。此后每做一次比较，即可将问题的规模缩减至原来的一半。因此，问题的规模将以1/2为比例按几何级数的速度递减，直至平凡的递归基。整个算法的递归深度不超过$log_2{min(n_1,n_2)}$,总体时间复杂度为$O(log(min(n_1,n_2)))$。</p>
+<p>若输入的有序序列$S_1$和$S_2$以列表的形式实现而不是向量，则在读取每个元素之前都要沿着列表进行计数查找。为保证$|S_1|&lt;|S_2|$而交换两个序列，依然只需$ O(1)$时间，然而序列$S_2$两翼的截短则大致需要$O(n_2-n_1)$时间。而更重要的是，在此后的递归过程中，每一次为将问题规模缩减一半，都必须花费线性的时间，总体需要$O(n_1+n_2)$时间，这一效率减低到和蛮力算法相同。</p>
+<blockquote>
+<p>为median()算法添加整型输入参数$k$，实现在$S_1\cup S_2$选取第$k$个元素的功能</p>
+</blockquote>
+<p>记$n_1=|S_1|$和$n_2=|S_2|$,不失一般性的，设$n_1\leq  n_2$</p>
+<p>不妨设$2k \leq n_1+n_2$,否则，可以颠倒比较器的方向，原问题转化为在$S_1 \cup S_2$中选取第$n_1+n_2-k$个元素，与以下方法同理。</p>
+<p>若$k\leq n_1=min(n_1,n_2)$,则只需令：</p>
+<p>$S_1’=S_1[0,k)$</p>
+<p>$S_2’=S_2[0,k)$</p>
+<p>于是原问题即转化为计算$S_1’\cup S_2’$的中位数。</p>
+<p>否则，若$n_1&lt;k&lt;n_2$,则可令</p>
+<p>$S_1’=S_1[0,k)$</p>
+<p>$S_2’=S_2[0,k)$</p>
+<p>于是原问题即转化为计算$S_1’\cup S_2’$的中位数。</p>
+<p>可见，无论如何，针对$S_1 \cup S_2$的$k$选取问题总是可在常数时间内转化为中位数问题，并调用相关的算法。</p>
+<p>一般性的选取问题中，蛮力算法效率之所以低下是因为一组元素中第$k$大元素包含的信息量远远小于经过全排序后所得到的整个有序序列。花费足以得到全排序的计算成本，却仅得到了少量的局部信息。</p>
+<h2 id="堆选取"><a href="#堆选取" class="headerlink" title="堆选取"></a>堆选取</h2><p>基于堆结构的选取算法大致有以下几种：</p>
+<p>首先花费$O(n)$时间将全体元素组织为一个小顶堆，然后经过$k$次delMin()操作，则得到位序为k的元素，这一算法的时间为：</p>
+<p>$O(n)+kO(logn)=O(n+klogn)$</p>
+<p>另一算法为，任取k个元素，并在$O(k)$时间内组织为一个大顶堆，然后将剩余n-k个元素插入其中，每插入一个，随即删除堆顶，以使堆的规模恢复为k,待所有元素处理完毕后，堆顶即为目标元素。该算法的运行时间为：</p>
+<p>$O(k)+2(n-k)O(logk)=O(k+2(n-k)logk)$</p>
+<p>最后一种方法为，分别构建一个规模为$n-k$ 的小顶堆G和$k$的大顶堆H。接下来，反复比较它们的堆顶g和h，只要g小于h，则将二者交换，并重新调整为两个堆。如此，G的堆顶G将持续增大，H的堆顶将持续减小。当$g\geq h$时，h即为所要找的元素。这一算法的运行时间为：</p>
+<p>$O(n-k)+O(k)+min(k,n-k)2log((O(log k+log(n-k))))$</p>
+<p>在目标元素的秩很小或很大的时候($|n/2-k| \approx n/2$)，以上算法的性能都还不错。比如$k=0$时，上述两算法均只需线性时间，当$k \approx n/2$，以上算法的复杂度均退化为蛮力算法的$O(nlogn)$。</p>
+<h2 id="快速划分"><a href="#快速划分" class="headerlink" title="快速划分"></a>快速划分</h2><p>选取问题所查找的位序$k$,就是其在对应的有序序列中的秩，就这一性质而言，与轴点颇为相似。可反复应用这一点，逐步逼近目标$k$。</p>
+<p>首先，调用<code>partition()</code>构造向量$A[i]=x$，若$i=k$，则该轴点恰好就是待选取的目标元素，即可直接返回。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="function"><span class="keyword">void</span> <span class="title">quickSelect</span> <span class="params">( Vector&lt;T&gt; &amp; A, Rank k )</span> </span>&#123; <span class="comment">//基于快速划分的k选取算法</span></span><br><span class="line">   <span class="keyword">for</span> ( Rank lo = <span class="number">0</span>, hi = A.size() - <span class="number">1</span>; lo &lt; hi; ) &#123;</span><br><span class="line">      Rank i = lo, j = hi; T pivot = A[lo];</span><br><span class="line">      <span class="keyword">while</span> ( i &lt; j ) &#123; <span class="comment">//O(hi - lo + 1) = O(n)</span></span><br><span class="line">         <span class="keyword">while</span> ( ( i &lt; j ) &amp;&amp; ( pivot &lt;= A[j] ) ) j--; A[i] = A[j];</span><br><span class="line">         <span class="keyword">while</span> ( ( i &lt; j ) &amp;&amp; ( A[i] &lt;= pivot ) ) i++; A[j] = A[i];</span><br><span class="line">      &#125; <span class="comment">//assert: i == j</span></span><br><span class="line">      A[i] = pivot;</span><br><span class="line">      <span class="keyword">if</span> ( k &lt;= i ) hi = i - <span class="number">1</span>;</span><br><span class="line">      <span class="keyword">if</span> ( i &lt;= k ) lo = i + <span class="number">1</span>;</span><br><span class="line">   &#125; <span class="comment">//A[k] is now a pivot</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>若$i$不等于$k$，则无非两种情况。</p>
+<ul>
+<li>$k&lt;i$,则选取的目标元素不可能来自处于$x$右侧、不小于$x$的子向量，此时不妨将该子向量剪除，然后递归地在剩余区间做k选取</li>
+<li>若$i&gt;k$,则选取的目标元素不可能来自处于$x$左侧、不大于$x$的子向量中，同样可以将子向量剪除，然后递归地在剩余区间做$k-i$选取。</li>
+</ul>
+<p>该算法流程与轴点构造算法类似，每经过一步主迭代，都会构造出一个轴点$A[i]$，然后$lo$和$hi$将彼此靠拢，查找范围将收缩至$A[i]$的某一侧。当轴点的秩$k$恰好为$k$时，算法随即终止。尽管内循环仅需$O(hi-lo+1)$时间，但是在最坏情况下需执行$\Omega(n)$次，总体运行时间为$O(n^2)$。平均时间复杂度为$O(n)$。</p>
+<p>$T(n)=(n+1)+\frac{1}{n} \sum_{k=0}^{n} T(max(k,n-k)) =O(n)$</p>
+<h2 id="k选取算法"><a href="#k选取算法" class="headerlink" title="k选取算法"></a>k选取算法</h2><p>$k$选取算法的主要流程如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">select(A,k)</span><br><span class="line">输入：规模为n的无序序列A,秩k&gt;&#x3D;0</span><br><span class="line">输出：A所对应的有序序列中秩为k的元素</span><br><span class="line">&#123;</span><br><span class="line">      0)if(n&#x3D;|A|&lt;Q) return trivialSelect(A,k);</span><br><span class="line">      1)将A均匀地划分为n&#x2F;Q个子序列，各含Q个元素</span><br><span class="line">      2)各子序列分别排序，计算中位数，并将这些中位数组成一个序列</span><br><span class="line">      3)通过递归调用select()，计算中位数序列的中位数，记作M</span><br><span class="line">      4)根据其相对于M的大小，将A中元素分为三个子集：L(小于)M(等于)和G(大于)</span><br><span class="line">      5)if(|L|&gt;k) return select(L,k);</span><br><span class="line">      else if (|L|+|E|&gt;&#x3D;K) return M;</span><br><span class="line">      else return select(G,k-|L|-|E|);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>将以上算法运行时间记作$T(n)$，则</p>
+<ul>
+<li>第0步：$O(1)=O(QlogQ)$</li>
+<li>第1步：$O(n)$ 子序列划分</li>
+<li>第2步：$O(n)=Q^2n/Q$ 子序列各自排序，并找到中位数</li>
+<li>第3步：$T(n/Q)$ 从$n/Q$个中位数中递归地找到全局中位数</li>
+<li>第4步：$O(n)$,划分子集L/E/G，并分别计数</li>
+<li>第5步：$T(3n/4)$</li>
+</ul>
+<p><strong>复杂度</strong></p>
+<p><img src="https://i.loli.net/2019/09/12/alQEFLN8biB7W6p.png"></p>
+<p>$T(n)=O(n)+T(n/Q)+T(3n/4)$</p>
+<p>为了使解为线性函数，只需保证：</p>
+<p>$n/Q+3n/4&lt;n$</p>
+<p>若取$Q=5$,则存在常数$c$，使得</p>
+<p>$T(n)=cn+T(n/5)+T(3n/4)$</p>
+<p>$T(n)=O(20cn)=O(n)$</p>
+<h1 id="希尔排序"><a href="#希尔排序" class="headerlink" title="希尔排序"></a>希尔排序</h1><p>希尔排序将整个序列视为一个矩阵，逐列各自排序。</p>
+<p><strong>递减增量</strong></p>
+<p>由粗到细：重新排列矩阵，使其更窄，再次逐列排序</p>
+<p>逐步求精：如此往复，直至矩阵为一列</p>
+<p>若原一维向量宽度为$A[0,n)$，则对于任一固定的矩阵宽度$w$,$A$和$B$中元素总有一一对应关系：$B[i] [j]=A[iw+j]$,从秩的角度来看，矩阵$B$的各列依次对应于关于宽度$w$的一个同余类。不妨假设$w$整除$n$，则矩阵宽度$w$自上而下对应于$A$中以$w$为间隔的$n/w$个元素，因此，矩阵的宽度$w$亦称作增量。</p>
+<p>希尔排序的流程如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Shellsort(A,n)</span><br><span class="line">输入：规模为n的无序向量A</span><br><span class="line">输出：A对应的有序向量</span><br><span class="line">&#123;</span><br><span class="line">   取一个递增的增量序列：H&#x3D;&#123;W1&#x3D;1,W2,23,..,2K,..&#125;</span><br><span class="line">   设置k&#x3D;max&#123;i|Wi&lt;n&#125;,即Wk为增量中小于n的最后一项</span><br><span class="line">   for(t&#x3D;k;t&gt;0;t--)&#123;</span><br><span class="line">       将向量A视为Wt为宽度的矩阵Bt</span><br><span class="line">       对Bt的每一列分别排序，Bt[i]，i&#x3D;0,1,..,Wt-1</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p> 其中各列内部排序如何实现？</p>
+<p>必须采用输入敏感的算法，以保证有序性持续改善，且总体成本足够低廉。比如，插入排序，更多地取决于输入序列所含逆序对的总数。</p>
+<p>希尔排序的总体效率取决于具体使用何种步长序列</p>
+<p>主要考查和评测</p>
+<ul>
+<li>比较操作、移动操作的次数</li>
+<li>收敛的速度，或者反过来，迭代的轮数</li>
+</ul>
+<h2 id="希尔序列"><a href="#希尔序列" class="headerlink" title="希尔序列"></a>希尔序列</h2><p><img src="https://i.loli.net/2019/09/12/TyKi1xRD3hftNuv.png"></p>
+<h2 id="邮资问题"><a href="#邮资问题" class="headerlink" title="邮资问题"></a>邮资问题</h2><p>考查以下问题：</p>
+<p>假设在某个国家，邮局仅发行面值为4分和13分的两种邮票，那么</p>
+<ol>
+<li>可否用这两种邮票组合出对应的50分邮资</li>
+<li>可否用这两种邮票组合出对应的35分邮资</li>
+</ol>
+<p><strong>线性组合</strong></p>
+<p>用数论的语言，以上问题可描述为：$4m+13n=35$是否存在自然数解？</p>
+<p>对于任意自然数$g$和$h$,只要$m$和$n$也是自然数，则$f=mg+nh$都称作$g$和$h$的一个线性组合，我们称不可由$g$和$h$组合出来的最大自然数记作$x(g,h)$</p>
+<p>如果$g$和$h$互素，则必有：</p>
+<p>$x(g,h)=(g-1)(h-1)-1=gh-g-h$</p>
+<p>$g=4$和$h=13$互素，故有$x(4,13)=35$，$35$恰好为无法由$4$和$13$组成的最大自然数。</p>
+<p><strong>h有序和h排序</strong></p>
+<p>在向量$S[0,n)$中，若$S[i]&lt;=S[i+h]$对于任何$0\leq i&lt;n-h$成立，则称该向量$h$有序，也就是说，其中相距$h$个单元的每队元素之间均有序。</p>
+<p>考查希尔排序中对应于任一增量$h$的迭代，等同于在原向量之间以$h$间隔排序，故这一过程称为$h$排序，经$h$排序之后的向量必然$h$有序。</p>
+<p>已经$g$有序的向量，再经过$h$排序后，依然保持$g$有序。考查$(g,h)$有序的任一向量，借助有序性的传递律可知，相距$g+h$的任何一对元素必然有序，故$S$必然$g+h$有序。推而广之，对于任何非负整数$m$和$n$,相距$mg+nh$的任何一对元素都必有序，故$S$必然$mg+nh$有序。</p>
+<p><strong>有序性的保持和加强</strong></p>
+<p>在分别做过$g$排序和$h$排序之后，该向量必定$g+h$有序。对于$g$和$h$的任一线性组合，该向量也应$mg+nh$有序，因此反过来，逆序对之间的间距绝不可能是$g$和$h$的组合。只要$g$和$h$互素，逆序对的间距就绝不可能大于$(g-1)(h-1)$。</p>
+<p>希尔排序过程中向量的有序性之所以会不断改善，其原因为向量中每个元素所能参与构成的逆序对持续减少。于此同时，底层所采用的插入排序算法的实际执行时间将不断减少。</p>
+<p>若某向量S已属于$(g,h)$有序，假设$g$和$h$的数量级均处于$O(d)$数量级。以下考查对该向量做$d$排序所需的时间。</p>
+<p>根据定义，$d$排序将$S$等间距地划分为长度各为$O(n/d)$的$d$个子向量，并分别排序，在$(g,h)$有序的向量中，逆序对的间距不超过$(g-1)(h-1)/d=O(d)$ 。</p>
+<p>于是，再次根据插入排序的结论，插入排序可在$O(d)O(n/d)=O(n)$时间内完成每一子向量的排序，所有子向量的排序应该不超过$O(dn)$。</p>
+<h2 id="PS序列"><a href="#PS序列" class="headerlink" title="PS序列"></a>PS序列</h2><p>$H_{PS}=H_{shell}-1={2^k-1|k \in N}={1,3,15,31,63,127,255}$</p>
+<p>其中相邻两项的确互素，采用这一序列，希尔排序的算法可达到$O(n^{3/2})$ ，其中$n$为待排序向量的规模。</p>
+<p>在PS序列中，设$W_t$为其中$n^{1/2}$ 最接近者，亦即是$W_t=\Theta(n^{1/2})$ 。以下将希尔排序过程中所有的迭代分为两类，分别估计其运行时间。</p>
+<p>首先，考查在$W_t$之前执行的各步迭代。</p>
+<p>此类迭代所对应的增量均满足$W_k&gt;W_t$。在每一次这类迭代中，矩阵共有$W_k$列，各列包含$O(n/W_k)$个元素。因此，若采用插入排序算法，各列耗时$O((n/W_k)^2)$ ,所有列共计$O(n^2/W_k)$。于是，此类迭代各自所需的时间$O(n^2/(W_k))$构成一个以大致以2为比例的等比级数，其总和应线性正比于其中最大的一项，亦即不超过$O(2n^2/W_t)=O(n^{3/2})$。</p>
+<p>对称地，再来考查$W_t$之后的各步迭代，</p>
+<p>这类迭代所对应的增量均满足$W_k&lt;W_t$ ,考虑到此前刚完成$W_{k+1}$排序和$W_{k+2}$排序，来自PS序列的$W_{k+1}$和$W_{k+2}$互素，且与$W_{k}$同处一个数量级，根据之前的结论，每一次这样的迭代至多需要$O(nW_{k})$时间。同样地，这类迭代所需的时间$O(nW_{k})$同样构成一个大致以2为比例的等比级数，其总和也应线性正比于其中最大的一项，亦即不超过$O(2nW_{t})=O(n^{3/2})$。</p>
+<h2 id="Pratt序列"><a href="#Pratt序列" class="headerlink" title="Pratt序列"></a>Pratt序列</h2><p>$H_{pratt}={2^p3^q|p,q\in N}={1,2,3,4,8,9,12,36,…}$</p>
+<p>采取pratt序列，希尔序列算法至多运行$O(nlog^2n)$时间</p>
+<p>在$(2,3)$有序的序列中，逆序元素之间的间距不超过$(2-1)(3-1)-1=1$。</p>
+<p>整个向量的逆序对不超过$O(n)$个，对该向量的$1$排序仅需$ O(n)$时间。</p>
+<p>对于pratt序列，若S已是$(2h_k,3h_k)$有序，故若按照相对于$h_k$的模余值，可以划分为$h_k$个同余类；相应地，原整个向量可拆分为$h_k$个等长的子向量。其中每个元素都是$(2,3)$有序的，根据以上结论，可在线性时间内转化为$1$有序的，总体效果而言，等同于在$O(n)$时间内转化为全局的$h_k$有序。</p>
+<p>pratt序列中大于$n$的项数至多不超过$log_2nlog_3n=o(log^2n)$。</p>
+<h2 id="Sedgewick序列"><a href="#Sedgewick序列" class="headerlink" title="Sedgewick序列"></a>Sedgewick序列</h2><p>Pratt序列效率比较高，但因其中各项的间距太小，会导致迭代趟数过多，为此，Sedgewick提出了以下增量序列：</p>
+<p>${1,5,19,41,109,209,505,929,2161,3905,8929,…}$</p>
+<p>其中各项均为$9<em>4^k-9</em>2^k+1$的形式，如此改进之后，希尔排序算法在最坏情况下的复杂度为$n^{4/3}$,平均复杂度为$O(n^{7/6})$。更重要的是，在通常应用环境中，这一增量序列的综合效率最佳。</p>
+<table>
+<thead>
+<tr>
+<th>排序方法</th>
+<th>最坏时间复杂度</th>
+<th>最好时间复杂度</th>
+<th>空间复杂度</th>
+<th>稳定性</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>冒泡排序</td>
+<td>$O( n^2)$</td>
+<td>$ O(n)$</td>
+<td>$ O(1)$</td>
+<td>输入敏感，稳定</td>
+</tr>
+<tr>
+<td>插入排序</td>
+<td>$O( n^2)$</td>
+<td>$ O(n^2)$</td>
+<td>$ O(1) $</td>
+<td>输入敏感，稳定</td>
+</tr>
+<tr>
+<td>选择排序</td>
+<td>$o(n^2)$</td>
+<td>$ O(n^2) $</td>
+<td>$ O(1) $</td>
+<td>输入不敏感，稳定</td>
+</tr>
+<tr>
+<td>归并排序</td>
+<td>$O( nlogn)$</td>
+<td>$O( nlogn)$</td>
+<td>$ O(1)$</td>
+<td>输入不敏感，稳定</td>
+</tr>
+<tr>
+<td>快速排序</td>
+<td>$O( n^2)$</td>
+<td>$O (nlogn) $</td>
+<td>$ O(1)$</td>
+<td>输入不敏感，不稳定</td>
+</tr>
+<tr>
+<td>桶排序</td>
+<td>$ O(n+M)$</td>
+<td>$ O(n+M)$</td>
+<td>$ O(n+M)$</td>
+<td>输入不敏感，稳定</td>
+</tr>
+<tr>
+<td>基数排序</td>
+<td>$O(t(n+M))$</td>
+<td>$ O(t(n+M))$</td>
+<td>$O(M)$</td>
+<td>输入不敏感，稳定</td>
+</tr>
+<tr>
+<td>计数排序</td>
+<td>$ O(n) $</td>
+<td>$ O(M) $</td>
+<td>$ O(M)$</td>
+<td>输入不敏感，稳定</td>
+</tr>
+<tr>
+<td>锦标赛排序</td>
+<td>$O( nlogn )$</td>
+<td>$O( nlogn )$</td>
+<td>$ O(n) $</td>
+<td>输入不敏感，稳定</td>
+</tr>
+<tr>
+<td>就地堆排序</td>
+<td>$O( nlogn )$</td>
+<td>$O( nlogn )$</td>
+<td>$ O(1)$</td>
+<td>输入不敏感，不稳定</td>
+</tr>
+<tr>
+<td>shell排序</td>
+<td>不详</td>
+<td>不详</td>
+<td>$ O( 1) $</td>
+<td>底层排序算法为输入敏感算法</td>
+</tr>
+</tbody></table>
+<p>以上不稳定的算法均可通过合成数的方法转换为稳定的算法，转换需要$ O(n) $时间，以上复杂度不低于$O(n)$的算法复杂度仍与之前一致。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/sorting/" title="排序算法">http://example.com/sorting/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Data-structure/" rel="tag"><i class="fa fa-tag"></i> Data structure</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/string/" rel="prev" title="串">
+                  <i class="fa fa-chevron-left"></i> 串
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/bbst/" rel="next" title="平衡二叉搜索树">
+                  平衡二叉搜索树 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  <script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'none'
+      },
+      options: {
+        renderActions: {
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              const target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.typesetClear();
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+
+
+</body>
+</html>

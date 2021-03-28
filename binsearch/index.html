@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="二分查找版本众多，其中初始值的选择，判断条件，边界修改方式都有所不同。取整方式有向上取整和向下取整两种，区间开闭有左闭右开，左闭右闭，左开右闭，左闭右闭四种，再根据实际问题分为上界和下界两种，其中涉及细节繁多。在学习数据结构的时候讨论了不同版本平均查找长度和不同版本的正确性问题，但是仅限于三种版本，本文将讨论不同条件下二分查找的写法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="二分查找">
+<meta property="og:url" content="http://example.com/binsearch/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="二分查找版本众多，其中初始值的选择，判断条件，边界修改方式都有所不同。取整方式有向上取整和向下取整两种，区间开闭有左闭右开，左闭右闭，左开右闭，左闭右闭四种，再根据实际问题分为上界和下界两种，其中涉及细节繁多。在学习数据结构的时候讨论了不同版本平均查找长度和不同版本的正确性问题，但是仅限于三种版本，本文将讨论不同条件下二分查找的写法。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-03-26T07:16:05.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="Data structure">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/binsearch/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>二分查找 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/binsearch/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          二分查找
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-03-26 15:16:05" itemprop="dateCreated datePublished" datetime="2020-03-26T15:16:05+08:00">2020-03-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>二分查找版本众多，其中初始值的选择，判断条件，边界修改方式都有所不同。取整方式有向上取整和向下取整两种，区间开闭有左闭右开，左闭右闭，左开右闭，左闭右闭四种，再根据实际问题分为上界和下界两种，其中涉及细节繁多。在学习数据结构的时候讨论了不同版本平均查找长度和不同版本的正确性问题，但是仅限于三种版本，本文将讨论不同条件下二分查找的写法。</p>
+<a id="more"></a>
+
+<h1 id="求下界"><a href="#求下界" class="headerlink" title="求下界"></a>求下界</h1><blockquote>
+<p>给定长度为$n$的单调不下降子序列$a_0,a_1,…,a_{n-1}$和一个数$k$,求满足$a_i\geq k$条件的最小的$i$</p>
+</blockquote>
+<p>挑战程序设计竞赛中给出的二分查找算法如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> a[maxn];</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">binsearch</span><span class="params">(<span class="keyword">int</span> k)</span></span>&#123;</span><br><span class="line">    <span class="comment">//初始化解存在的范围</span></span><br><span class="line">    <span class="keyword">int</span> lb=<span class="number">-1</span>,ub=n;</span><br><span class="line">    <span class="keyword">while</span>(ub-lb&gt;<span class="number">1</span>)&#123;</span><br><span class="line">        <span class="keyword">int</span> mid=(lb+ub)/<span class="number">2</span>;</span><br><span class="line">        <span class="keyword">if</span>(a[mid]&gt;=k)&#123;</span><br><span class="line">            ub=mid;</span><br><span class="line">            <span class="comment">//解的范围变为(lb,mid]</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            lb=mid;</span><br><span class="line">            <span class="comment">//解的范围变为(mid,ub]</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ub;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>binsearch(int k)</code>在存在满足条件的$a_i$时返回对应数组下标的值，在不存在的时候返回$n$。</p>
+<p>初始化解中$ub=n$，$n$不在数组下标索引范围内，用于在查找失败时候返回$n$。若序列$a_0,a_1,…,a_{n-1}$中不存在满足$a_i\geq k$的$i$，即$a_i&lt;k$对$i=0,1,..,n-1$均满足，每次迭代选择$lb=mid$分支，直到搜索区间缩减为$(n-1,n]$。</p>
+<p>接下来讨论每次迭代时边界的修改，根据$a[mid]$与$k$的相对大小</p>
+<ul>
+<li><p>$a[mid]\geq k$,$mid$点满足$a[mid]\geq k$,所求为满足条件的最小下标，故大于$mid$的部分均可以舍去。在该情况下右边界可以取到，所以取$ub=mid$,此时解的范围为$(lb,mid]$</p>
+</li>
+<li><p>$a[mid]&lt;k$,$mid$不可能为解，左边界不可以取到，所以取$lb=mid$,此时解的范围为$(mid,ub]$</p>
+<p>每次迭代的时候满足$a_i \geq k$的最小下标必然还存在于区间内</p>
+</li>
+</ul>
+<p>循环在满足$ub-lb&gt;1$的时候执行，即在$ub-lb\leq1$的时候停止执行，$(lb，ub]$此时仅有$a[ub]$一个元素。若序列$a_0,a_1,…,a_{n-1}$存在满足$a_i\leq k$的$i$,则必然为$ub$,否则为$n$。</p>
+<p>c++标准库中<algorithm>中<code>lower_bound()</code>等价于以下形式：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">lower_bound</span><span class="params">(<span class="keyword">int</span> k)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> first=<span class="number">0</span>,last=n;</span><br><span class="line">    <span class="comment">//区间为[0,n)</span></span><br><span class="line">    <span class="keyword">while</span>(first&lt;last)&#123;</span><br><span class="line">        <span class="keyword">int</span> mid=first+(last-first)/<span class="number">2</span>;</span><br><span class="line">        <span class="keyword">if</span>(a[mid]&gt;=k)&#123;</span><br><span class="line">            last=mid;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            first=mid+<span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> first;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>lower_bound()</code>在序列$a_0,a_1,…,a_{n-1}$存在满足$a_i\leq k$的$i$时返回$n$。</p>
+<p>这里的mid写法和挑战程序设计竞赛上不一样，防止了在相加时的溢出问题。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mid&#x3D;(first+last)&#x2F;2&#x3D;(2*first+last-first)&#x2F;2&#x3D;first+length&#x2F;2</span><br></pre></td></tr></table></figure>
+<p>二者在算术意义上是等价的。</p>
+<p>将问题中的$\geq$更改为$&gt;$，得到以下问题：</p>
+<blockquote>
+<p>给定长度为$n$的单调不下降子序列$a_0,a_1,…,a_{n-1}$和一个数$k$,求满足$a_i&gt; k$条件的最小的$i$</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">upper_bound</span><span class="params">(<span class="keyword">int</span> first,<span class="keyword">int</span> last,<span class="keyword">int</span> value)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> first=<span class="number">0</span>,last=n;</span><br><span class="line">    <span class="comment">//区间为[0,n)</span></span><br><span class="line">    <span class="keyword">while</span>(first&lt;last)&#123;</span><br><span class="line">        <span class="keyword">int</span> mid=first+(last-first)/<span class="number">2</span>;</span><br><span class="line">        <span class="keyword">if</span>(a[mid]&gt;k)&#123;</span><br><span class="line">            last=mid;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            first=mid+<span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> first;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>与<code>lower_bound()</code>类似，<code>upper_bound()</code>在序列$a_0,a_1,…,a_{n-1}$不存在满足$a_i &lt;k$的$i$时返回$n$。</p>
+<p>实际算法题往往是求满足条件的最小值，一般用以下形式：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">int search(int low, int high) &#123;</span><br><span class="line">  int ans &#x3D; -1;</span><br><span class="line">  while (low &lt;&#x3D; high) &#123;</span><br><span class="line">    int mid &#x3D; low + (high - low) &#x2F; 2;</span><br><span class="line">    if (judge(mid)) &#123;</span><br><span class="line">      ans &#x3D; mid;</span><br><span class="line">      high &#x3D; mid - 1;</span><br><span class="line">    &#125; else low &#x3D; mid + 1;</span><br><span class="line">  &#125;</span><br><span class="line">  return ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中<code>judge()</code>判断取值为mid的时候是否满足条件，用临时变量ans记录备选结果，随着区间的不断减小，满足条件的备选方案也会不断调整，最后ans表示想要找的结果。</p>
+<p><a target="_blank" rel="noopener" href="http://poj.org/problem?id=3273">POJ 3273</a></p>
+<p>最小化最大值，也就是求下界问题。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn=<span class="number">1e5</span>+<span class="number">5</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> Inf=<span class="number">0x3f3f3f3f</span>;</span><br><span class="line"><span class="keyword">int</span> a[maxn];</span><br><span class="line"><span class="keyword">int</span> n,m;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">check</span><span class="params">(<span class="keyword">int</span> d)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> sum=<span class="number">0</span>,len=<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;i++)&#123;</span><br><span class="line">        <span class="keyword">if</span>(sum+a[i]&lt;=d)&#123;</span><br><span class="line">            sum+=a[i];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            sum=a[i];</span><br><span class="line">            len++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(len&gt;m) <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">while</span>(<span class="built_in">scanf</span>(<span class="string">&quot;%d%d&quot;</span>,&amp;n,&amp;m)==<span class="number">2</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">int</span> low=<span class="number">0</span>,high=Inf;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;i++)&#123;</span><br><span class="line">            <span class="built_in">scanf</span>(<span class="string">&quot;%d&quot;</span>,&amp;a[i]);</span><br><span class="line">            low=max(low,a[i]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> ans;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span>(low&lt;high)&#123;</span><br><span class="line">            <span class="keyword">int</span> mid=low+(high-low)/<span class="number">2</span>;</span><br><span class="line">            <span class="keyword">if</span>(check(mid))&#123;</span><br><span class="line">                high=mid;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span>&#123;</span><br><span class="line">                low=mid+<span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>,high);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn=<span class="number">1e5</span>+<span class="number">5</span>;</span><br><span class="line"><span class="keyword">int</span> a[maxn];</span><br><span class="line"><span class="keyword">int</span> n,m;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">check</span><span class="params">(<span class="keyword">int</span> d)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> sum=<span class="number">0</span>,len=<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;i++)&#123;</span><br><span class="line">        <span class="keyword">if</span>(sum+a[i]&lt;=d)&#123;</span><br><span class="line">            sum+=a[i];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            sum=a[i];</span><br><span class="line">            len++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(len&gt;m) <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">while</span>(<span class="built_in">scanf</span>(<span class="string">&quot;%d%d&quot;</span>,&amp;n,&amp;m)==<span class="number">2</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">int</span> low=<span class="number">0</span>,high=<span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;i++)&#123;</span><br><span class="line">            <span class="built_in">scanf</span>(<span class="string">&quot;%d&quot;</span>,&amp;a[i]);</span><br><span class="line">            high+=a[i];</span><br><span class="line">            low=max(low,a[i]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> ans;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span>(high&gt;=low)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">int</span> mid=(low+high)/<span class="number">2</span>;</span><br><span class="line">            <span class="keyword">if</span>(check(mid))&#123;</span><br><span class="line">                high=mid<span class="number">-1</span>;</span><br><span class="line">                ans=mid;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">                low=mid+<span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>,ans);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="求上界"><a href="#求上界" class="headerlink" title="求上界"></a>求上界</h1><blockquote>
+<p>给定长度为$n$的单调不下降子序列$a_0,a_1,…,a_{n-1}$和一个数$k$,求满足$a_i \leq k$条件的最大的$i$</p>
+</blockquote>
+<p>该问题可以转化为求下界问题，满足$a_i&gt;k$条件最小的$i$再减去1即是满足$a_i \leq k$条件的最大的$i$。</p>
+<p>也可以写作以下形式：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">lower_bound</span><span class="params">(<span class="keyword">int</span> k)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> first=<span class="number">0</span>,last=n;</span><br><span class="line">    <span class="comment">//区间为[first,last)</span></span><br><span class="line">    <span class="keyword">while</span>(last-first&gt;<span class="number">1</span>)&#123;</span><br><span class="line">        <span class="keyword">int</span> mid=last+(last-first)/<span class="number">2</span>;</span><br><span class="line">        <span class="keyword">if</span>(a[mid]&lt;=k)&#123;</span><br><span class="line">            first=mid;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            last=mid;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> first;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">lower_bound</span><span class="params">(<span class="keyword">int</span> k)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> first=<span class="number">0</span>,last=n;</span><br><span class="line">    <span class="comment">//区间为[first,last)</span></span><br><span class="line">    <span class="keyword">while</span>(first&lt;last)&#123;</span><br><span class="line">        <span class="keyword">int</span> mid=last+(last-first)/<span class="number">2</span>;</span><br><span class="line">        <span class="keyword">if</span>(a[mid]&lt;=k)&#123;</span><br><span class="line">            first=mid<span class="number">-1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            last=mid+<span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> first;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>考虑迭代过程，根据$a[mid]$与$k$的相对大小</p>
+<ul>
+<li><p>$a[mid]\leq k$,$mid$点满足$a[mid]\geq k$,所求为满足条件的最大下标，故小于$mid$的部分均可以舍去。左端点可以取到，故取$first=mid$，此解的范围为$[mid,last)$</p>
+</li>
+<li><p>$a[mid]&gt;k$,$mid$不可能为解，右边界不可以取到，所以取$last=mid$,此时解的范围为$[first,last)$</p>
+<p>每次迭代的时候满足$a_i\leq k$的最大下标必然还存在于区间内</p>
+</li>
+</ul>
+<p>循环在满足$first-last \geq1$的时候执行，即在$first==last$的时候停止执行，$(first，last]$此时为空。</p>
+<blockquote>
+<p>给定长度为$n$的单调不下降子序列$a_0,a_1,…,a_{n-1}$和一个数$k$,求满足$a_i &lt; k$条件的最大的$i$</p>
+</blockquote>
+<p>该问题同样可以转化为求下界问题，满足$ a_i \leq k$条件最小的$i$再减去1即是满足$ a_i &lt; k$条件的最大的$i$。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">lower_bound</span><span class="params">(<span class="keyword">int</span> k)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> first=<span class="number">0</span>,last=n;</span><br><span class="line">    <span class="comment">//区间为[first,last)</span></span><br><span class="line">    <span class="keyword">while</span>(first-last&gt;<span class="number">1</span>)&#123;</span><br><span class="line">        <span class="keyword">int</span> mid=last-(last-first)/<span class="number">2</span>;</span><br><span class="line">        <span class="keyword">if</span>(a[mid]&lt;k)&#123;</span><br><span class="line">            first=mid;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            last=mid;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> first;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">lower_bound</span><span class="params">(<span class="keyword">int</span> k)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> first=<span class="number">0</span>,last=n;</span><br><span class="line">    <span class="keyword">int</span> ans=<span class="number">-1</span>;</span><br><span class="line">    <span class="comment">////区间为[first,last)</span></span><br><span class="line">    <span class="keyword">while</span>(first&lt;=last)&#123;</span><br><span class="line">        <span class="keyword">int</span> mid=first+(last-first)/<span class="number">2</span>;</span><br><span class="line">        <span class="keyword">if</span>(a[mid]&lt;=k)&#123;</span><br><span class="line">            first=mid<span class="number">-1</span>;</span><br><span class="line">            ans=mid;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            last=mid+<span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在求满足条件的最大值往往用以下形式：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">search</span><span class="params">(<span class="keyword">int</span> low, <span class="keyword">int</span> high)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> ans = <span class="number">-1</span>;</span><br><span class="line">  <span class="keyword">while</span> (low &lt;= high) &#123;</span><br><span class="line">    <span class="keyword">int</span> mid = low + (high - low) / <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">if</span> (judge(mid)) &#123;</span><br><span class="line">      ans = mid;</span><br><span class="line">      low = mid - <span class="number">1</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> high = mid + <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上形式便于在找不到符合条件的解时返回-1</p>
+<p><a target="_blank" rel="noopener" href="http://poj.org/problem?id=2456">POJ 2456</a></p>
+<p>最大化最小值，也就是求上界问题</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn=<span class="number">1e5</span>+<span class="number">5</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> Inf=<span class="number">1e9</span>+<span class="number">5</span>;</span><br><span class="line"><span class="keyword">int</span> n,c;</span><br><span class="line"><span class="keyword">int</span> x[maxn];</span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">check</span><span class="params">(<span class="keyword">int</span> d)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> last=<span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">1</span>;i&lt;c;i++)&#123;</span><br><span class="line">        <span class="keyword">int</span> crt=last+<span class="number">1</span>;</span><br><span class="line">        <span class="keyword">while</span>(crt&lt;n&amp;&amp;x[crt]-x[last]&lt;d)&#123;</span><br><span class="line">            crt++;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>(crt==n) <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        last=crt;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">&quot;%d%d&quot;</span>,&amp;n,&amp;c);</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;i++)&#123;</span><br><span class="line">        <span class="built_in">scanf</span>(<span class="string">&quot;%d&quot;</span>,&amp;x[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    sort(x,x+n);</span><br><span class="line">    <span class="keyword">int</span> lb=<span class="number">1</span>,ub=Inf;</span><br><span class="line">    <span class="keyword">while</span>(ub-lb&gt;<span class="number">1</span>)&#123;</span><br><span class="line">        <span class="keyword">int</span> mid=lb+(ub-lb)/<span class="number">2</span>;</span><br><span class="line">        <span class="keyword">if</span>(check(mid))&#123;</span><br><span class="line">            lb=mid;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            ub=mid;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>,lb);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn=<span class="number">1e5</span>+<span class="number">5</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> Inf=<span class="number">1e9</span>+<span class="number">5</span>;</span><br><span class="line"><span class="keyword">int</span> n,c;</span><br><span class="line"><span class="keyword">int</span> x[maxn];</span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">check</span><span class="params">(<span class="keyword">int</span> d)</span></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> last=<span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">1</span>;i&lt;c;i++)&#123;</span><br><span class="line">        <span class="keyword">int</span> crt=last+<span class="number">1</span>;</span><br><span class="line">        <span class="keyword">while</span>(crt&lt;n&amp;&amp;x[crt]-x[last]&lt;d)&#123;</span><br><span class="line">            crt++;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span>(crt==n) <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        last=crt;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">&quot;%d%d&quot;</span>,&amp;n,&amp;c);</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;i++)&#123;</span><br><span class="line">        <span class="built_in">scanf</span>(<span class="string">&quot;%d&quot;</span>,&amp;x[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    sort(x,x+n);</span><br><span class="line">    <span class="keyword">int</span> lb=<span class="number">1</span>,ub=Inf;</span><br><span class="line">    <span class="keyword">int</span> ans=<span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span>(lb&lt;=ub)&#123;</span><br><span class="line">        <span class="keyword">int</span> mid=lb+(ub-lb)/<span class="number">2</span>;</span><br><span class="line">        <span class="keyword">if</span>(check(mid))&#123;</span><br><span class="line">            ans=mid;</span><br><span class="line">            lb=mid+<span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>&#123;</span><br><span class="line">            ub=mid<span class="number">-1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>,ans);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="区间问题"><a href="#区间问题" class="headerlink" title="区间问题"></a>区间问题</h1><p>区间中点的选择并不唯一</p>
+<ol>
+<li>上位中位数：<code>uppermid=first+length/2</code></li>
+<li>下位中位数：<code>lowermid=first+(length-1)/2</code></li>
+</ol>
+<p>在<code>length</code>为偶数时二者取值才不同，分别为中间一对下标中的大者和小者。</p>
+<p>区间中点选择上位中位数还是下位中位数差异不大，其余部分不需要跟着调整。</p>
+<p>若区间取两端为闭区间时，循环条件应为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">while(lb&lt;&#x3D;ub)</span><br></pre></td></tr></table></figure>
+<p>若区间一端为开区间，一端为闭区间，循环条件应为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">while(lb&lt;ub)</span><br></pre></td></tr></table></figure>
+<p>若区间两端均为开区间，循环条件应为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">while(ub-lb&lt;1)</span><br></pre></td></tr></table></figure>
+<p>二分思想是利用区间值有序的特点，不断让区间长度减半，最后将区间长度缩小至0或1。</p>
+<p>确保二分的正确性，</p>
+<ol>
+<li>每次迭代解均在可行区间内</li>
+<li>每次判断后可行区间都会缩小</li>
+</ol>
+<p>在区间为1的时候，左右端点值处理不好就会存在死循环。</p>
+<h1 id="浮点数二分"><a href="#浮点数二分" class="headerlink" title="浮点数二分"></a>浮点数二分</h1><p>浮点数二分循环条件一般为要求达到的精度或者迭代次数。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> eps 1e-8</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">double</span> <span class="title">search</span><span class="params">(<span class="keyword">double</span> low, <span class="keyword">double</span> high)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">while</span> (high - low &gt; eps) &#123;</span><br><span class="line">    <span class="keyword">double</span> mid = (low + high) / <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">if</span> (judge(mid)) high = mid;</span><br><span class="line">    <span class="keyword">else</span> low = mid;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> (low + high) / <span class="number">2</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><a target="_blank" rel="noopener" href="http://poj.org/problem?id=1064">POJ 1064</a></p>
+<p>给$n$条绳子，长度分别为$l_i$,从中切分出$k$条长度相同的绳子，这$k$条绳子最长有多长？</p>
+<p>设条件$C(x)=$可以得到$k$条满足长度要求的绳子</p>
+<p>问题转变为了求满足$C(x)$条件的最大的$x$</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;cmath&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> maxn=<span class="number">10005</span>;</span><br><span class="line"><span class="keyword">const</span> <span class="keyword">double</span> Inf=<span class="number">100005.0</span>;</span><br><span class="line"><span class="keyword">double</span> l[maxn];</span><br><span class="line"><span class="keyword">int</span> n,k;</span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">check</span><span class="params">(<span class="keyword">double</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> sum=<span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;i++)&#123;</span><br><span class="line">        sum+=(<span class="keyword">int</span>)(l[i]/x);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(sum&gt;=k) <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="built_in">scanf</span>(<span class="string">&quot;%d%d&quot;</span>,&amp;n,&amp;k);</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;i++)&#123;</span><br><span class="line">        <span class="built_in">scanf</span>(<span class="string">&quot;%lf&quot;</span>,&amp;l[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">double</span> lb=<span class="number">0</span>,ub=Inf;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;<span class="number">100</span>;i++)&#123;</span><br><span class="line">        <span class="keyword">double</span> mid=(lb+ub)/<span class="number">2</span>;</span><br><span class="line">        <span class="keyword">if</span>(check(mid)) lb=mid;</span><br><span class="line">        <span class="keyword">else</span> ub=mid;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%.2f\n&quot;</span>,<span class="built_in">floor</span>(ub*<span class="number">100</span>)/<span class="number">100</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/binsearch/" title="二分查找">http://example.com/binsearch/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Data-structure/" rel="tag"><i class="fa fa-tag"></i> Data structure</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/fenwick-tree/" rel="prev" title="树状数组">
+                  <i class="fa fa-chevron-left"></i> 树状数组
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/segement-tree/" rel="next" title="线段树">
+                  线段树 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  <script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'none'
+      },
+      options: {
+        renderActions: {
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              const target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.typesetClear();
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+
+
+</body>
+</html>

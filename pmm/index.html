@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="计算机会经常有访问内存的操作，内存最小访问单位是字节，每个字节都有自己的物理地址，MMU将程序的逻辑地址转化为物理地址后访问对应的字节。为了处理在分配过程中分配大小和实际使用大小的差异，引入了内存分配算法。内存分配分为连续内存分配和不连续内存分配两种方式，这取决于分配的物理内存空间是否连续。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="连续内存分配算法">
+<meta property="og:url" content="http://example.com/pmm/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="计算机会经常有访问内存的操作，内存最小访问单位是字节，每个字节都有自己的物理地址，MMU将程序的逻辑地址转化为物理地址后访问对应的字节。为了处理在分配过程中分配大小和实际使用大小的差异，引入了内存分配算法。内存分配分为连续内存分配和不连续内存分配两种方式，这取决于分配的物理内存空间是否连续。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2019/07/26/5d3aea820b82267059.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/26/5d3aeb35d5fc861361.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/30/5d3f89ab45cf536872.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/26/5d3af4b82023762335.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/26/5d3af4de539a583350.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/26/5d3af4fe4d84d85800.png">
+<meta property="article:published_time" content="2019-06-22T02:17:15.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="Operating Systems">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2019/07/26/5d3aea820b82267059.png">
+
+
+<link rel="canonical" href="http://example.com/pmm/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>连续内存分配算法 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/pmm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          连续内存分配算法
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-06-22 10:17:15" itemprop="dateCreated datePublished" datetime="2019-06-22T10:17:15+08:00">2019-06-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Systems/" itemprop="url" rel="index"><span itemprop="name">Systems</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>计算机会经常有访问内存的操作，内存最小访问单位是字节，每个字节都有自己的物理地址，MMU将程序的逻辑地址转化为物理地址后访问对应的字节。为了处理在分配过程中分配大小和实际使用大小的差异，引入了内存分配算法。内存分配分为连续内存分配和不连续内存分配两种方式，这取决于分配的物理内存空间是否连续。</p>
+<a id="more"></a>
+
+<h1 id="计算机体系结构"><a href="#计算机体系结构" class="headerlink" title="计算机体系结构"></a>计算机体系结构</h1><p>计算机体系结构由CPU、内存、I/O设备、总线组成。</p>
+<p>CPU中包括：</p>
+<ul>
+<li>ALU、控制逻辑</li>
+<li>寄存器</li>
+<li>高速缓存：加快读写速度</li>
+<li>存储管理单元（MMU）</li>
+</ul>
+<p>内存层次：<br><img src="https://i.loli.net/2019/07/26/5d3aea820b82267059.png">内存的特点：</p>
+<ul>
+<li>最小访问单位是字节（8bit）</li>
+<li>一次可以读/写4字节（32位），有地址对齐问题</li>
+</ul>
+<h1 id="操作系统的内存管理方式"><a href="#操作系统的内存管理方式" class="headerlink" title="操作系统的内存管理方式"></a>操作系统的内存管理方式</h1><p><img src="https://i.loli.net/2019/07/26/5d3aeb35d5fc861361.png"></p>
+<blockquote>
+<p>操作系统内存管理特点</p>
+</blockquote>
+<ul>
+<li>每个字节都有自己的物理地址</li>
+<li>分为内存和外存(硬盘)</li>
+<li>每个进程都有自己的内存空间，进程间的地址可以重叠</li>
+<li>MMU：将逻辑地址(虚拟地址)转换为物理地址</li>
+</ul>
+<blockquote>
+<p>内存管理方式</p>
+</blockquote>
+<ul>
+<li>重定位（relocation）：修改段寄存器地址</li>
+<li>分段（segmentation）：程序的逻辑结构不需要连成一片，而是分成代码、数据、堆栈3段；但每段的内容是连续的。</li>
+<li>分页（paging）：分配内存以页为最小基本单位</li>
+<li>虚拟存储（virtual memory）：目前多数系统（如Linux）采用的是按需页式虚拟存储</li>
+</ul>
+<p>内存管理方式的实现高度依赖硬件</p>
+<ul>
+<li>与计算机存储架构紧密耦合</li>
+<li>MMU(memory  management unit)  处理CPU存储访问的硬件</li>
+</ul>
+<h1 id="地址空间和地址生成"><a href="#地址空间和地址生成" class="headerlink" title="地址空间和地址生成"></a>地址空间和地址生成</h1><h2 id="地址重定位"><a href="#地址重定位" class="headerlink" title="地址重定位"></a>地址重定位</h2><blockquote>
+<p>静态地址重定位</p>
+</blockquote>
+<p>即在程序装入内存的过程中完成，是指在程序开始运行前，程序中的各个地址有关的项均已完成重定位，地址变换通常是在装入时一次完成的，以后不再改变，故成为静态重定位。<br>优点：无需硬件支持<br>缺点：1）程序重定位之后就不能在内存中搬动了；2）要求程序的存储空间是连续的，不能把程序放在若干个不连续的区域中。</p>
+<blockquote>
+<p>动态地址重定位</p>
+</blockquote>
+<p>在程序执行过程中进行地址重定位。更确切的说，是在每次访问内存单元前才进行地址变换。动态重定位可使装配模块不加任何修改而装入内存，但是它需要硬件(定位寄存器)的支持。<br>优点：1）目标模块装入内存时无需任何修改，因而装入之后再搬迁也不会影响其正确执行，这对于存储器紧缩、解决碎片问题是极其有利的；2）一个程序由若干个相对独立的目标模块组成时，每个目标模块各装入一个存储区域，这些存储区域可以不是顺序相邻的，只要各个模块有自己对应的定位寄存器就行。<br>缺点：需要硬件支持。</p>
+<p>与物理地址、线性地址、逻辑地址对应，地址空间也有以下3种：</p>
+<ul>
+<li>物理地址空间：硬件支持的地址空间<ul>
+<li>起始地址0</li>
+<li>到MAXsys</li>
+</ul>
+</li>
+<li>线性地址空间：CPU看到的地址<ul>
+<li>起始地址0</li>
+<li>大小取决于地址线的宽度</li>
+</ul>
+</li>
+<li>逻辑地址空间：在CPU中运行的进程看到的地址<ul>
+<li>起始地址0</li>
+<li>到MAXprog</li>
+<li>用户程序可见的地址</li>
+</ul>
+</li>
+</ul>
+<h2 id="地址生成过程"><a href="#地址生成过程" class="headerlink" title="地址生成过程"></a>地址生成过程</h2><p>逻辑地址的生成过程:</p>
+<p><img src="https://i.loli.net/2019/07/30/5d3f89ab45cf536872.png"></p>
+<p>生成地址一般有以下几种选择：</p>
+<ul>
+<li>编译时（优点：简单）<ul>
+<li>假设起始地址已知</li>
+<li>但如果起始地址改变，就必须重新编译</li>
+<li>功能手机一般会有这种情况</li>
+</ul>
+</li>
+<li>加载时<ul>
+<li>如果加载时起始位置未知，编译器需生成可重定位的代码（relocatable code）</li>
+<li>加载时，生成绝对地址</li>
+</ul>
+</li>
+<li>执行时（优点：灵活）<ul>
+<li>执行时代码可移动</li>
+<li>需地址转换（映射）硬件支持（一般是虚拟存储）</li>
+</ul>
+</li>
+</ul>
+<h1 id="连续内存分配"><a href="#连续内存分配" class="headerlink" title="连续内存分配"></a>连续内存分配</h1><p>连续内存分配即给进程分配一块不小于指定大小的连续物理内存区域。但是在分配过程中，分配大小和实际使用大小之前有差距，因此会有不能被利用的内存空间，即内存碎片。</p>
+<p>内存碎片分为</p>
+<ul>
+<li><strong>外部碎片</strong> 分配单元之间未被使用内存</li>
+<li><strong>内部碎片</strong> 分配单元内部未被使用的内存 由于取整导致</li>
+</ul>
+<p>连续内存分配的使用场景为动态分区分配，动态分区分配时需要满足以下要求：</p>
+<ul>
+<li><p> 当程序被加载执行时，分配一个进程指定大小可变的分区（块）</p>
+</li>
+<li><p>分区的地址是连续的</p>
+</li>
+</ul>
+<p>一般来说，操作系统需要维护至少2个数据结构，里面存储的内容是：</p>
+<ul>
+<li>所有进程的已分配分区</li>
+<li>空闲分区（Empty-blocks）</li>
+</ul>
+<h2 id="连续内存分配策略"><a href="#连续内存分配策略" class="headerlink" title="连续内存分配策略"></a>连续内存分配策略</h2><p>常见的几种连续内存分配策略包括：</p>
+<ul>
+<li>最先匹配（First-fit）</li>
+<li>最佳匹配（Best-fit）</li>
+<li>最差匹配（worst-fit）</li>
+</ul>
+<blockquote>
+<p>最先匹配（First Fit Allocation）策略</p>
+</blockquote>
+<p>思路：需要分配n个字节时，使用第一个可用的空间比n大的空闲块</p>
+<p>原理和实现：</p>
+<ul>
+<li>空闲分区列表按地址顺序排序</li>
+<li>分配时搜索第一个合适的分区</li>
+<li>释放分区时，检查是否可与邻近的空闲分区合并</li>
+</ul>
+<p>优点：</p>
+<ul>
+<li>简单</li>
+<li>在高地址空间有大块的空闲分区</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>容易产生外部碎片</li>
+<li>分配大块时较慢</li>
+</ul>
+<blockquote>
+<p>最佳匹配（Best Fit Allocation）策略</p>
+</blockquote>
+<p>思路：分配n字节内存时，查找并使用不小于n的最小空闲分区</p>
+<p>原理和实现：</p>
+<ul>
+<li>空闲分区列表按照大小排序</li>
+<li>分配时，查找一个合适的分区</li>
+<li>释放时，查找并合并邻近的空闲分区（如果找到）</li>
+</ul>
+<p>优点：</p>
+<ul>
+<li>大部分分配的尺寸较小时，效果很好<ul>
+<li>可避免大的空闲分区被拆分</li>
+<li>可减小外部碎片的大小</li>
+<li>相对简单</li>
+</ul>
+</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>外部碎片较多</li>
+<li>释放分区较慢</li>
+<li>容易产生很多无用的小碎片</li>
+</ul>
+<p><strong>最先匹配会越用越慢吗？</strong> </p>
+<p>最先匹配总是先找低地址空间的内存，到后期低地址空间都是大量小的不连续的内存空间，每次都要扫描低地址空间后到达高地质空间才能得到可用的内存。</p>
+<blockquote>
+<p>最差匹配（Worst Fit Allocation）策略</p>
+</blockquote>
+<p>思路：分配n字节时，使用尺寸不小于n的最大空闲分区</p>
+<p>原理和实现：</p>
+<ul>
+<li>空闲分区列表按由大到小排序</li>
+<li>分配时，选最大的分区</li>
+<li>释放时，检查是否可与邻近的空闲分区合并，进行可能的合并，并调整空闲分区列表顺序</li>
+</ul>
+<p>优点：</p>
+<ul>
+<li>中等大小的分配较多时，效果最好</li>
+<li>避免出现太多的小碎片</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>释放分区较慢</li>
+<li>外部碎片较多</li>
+<li>容易破坏大的空闲分区，因此难以分配大的分区</li>
+</ul>
+<p>以上连续分配算法均会产生外碎片，而不产生内碎片。</p>
+<p><strong>最差匹配的外碎片会比最优适配算法少吗？</strong></p>
+<p>应该会的。因为每次都找到最大的内存块进行分割，因此分割剩下的内存块也很大，往往还可以再装下一个程序。</p>
+<h2 id="碎片整理"><a href="#碎片整理" class="headerlink" title="碎片整理"></a>碎片整理</h2><p>通过调整进程占用的分区位置来减少或避免分区碎片</p>
+<blockquote>
+<p>碎片紧凑 (compaction)</p>
+</blockquote>
+<p>通过移动分配给进程的内存分区 以合并外部碎片</p>
+<ul>
+<li>进行碎片紧凑的条件：所有的应用程序可动态重定位</li>
+<li>需要在应用程序等待时进行移动</li>
+<li>需要考虑开销</li>
+</ul>
+<blockquote>
+<p>分区对换 (Swapping in/out)</p>
+</blockquote>
+<p>通过抢占并回收处于等待状态进程的分区 存到外存里去 以增大可用内存空间</p>
+<p><strong>对换和紧凑都是碎片整理技术，它们的主要区别是什么？为什么在早期的操作系统中采用对换技术？</strong></p>
+<p>区别是，紧凑是在内存中搬动进程占用的内存位置，以合并出大块的空闲块；对换是把内存中的进程搬到外存中，以空出更多的内存空闲块。采用对换的原因是，处理简单。不过代价也比较高，因为外存比较慢。</p>
+<h2 id="伙伴系统"><a href="#伙伴系统" class="headerlink" title="伙伴系统"></a>伙伴系统</h2><p>伙伴系统（Buddy System）是一种连续存储分配的办法，它解决了分配位置和碎片的问题。</p>
+<p><img src="https://i.loli.net/2019/07/26/5d3af4b82023762335.png"></p>
+<p><img src="https://i.loli.net/2019/07/26/5d3af4de539a583350.png"></p>
+<p><img src="https://i.loli.net/2019/07/26/5d3af4fe4d84d85800.png"></p>
+<blockquote>
+<p>伙伴系统的内存回收流程？</p>
+</blockquote>
+<p>当释放多页的块时，内核首先计算出该内存块的伙伴的地址。内核将满足以下条件的三个块称为伙伴：</p>
+<ol>
+<li>两个块具有相同的大小，记作$b$。</li>
+<li>它们的物理地址是连续的。</li>
+<li>第一块的第一个页的物理地址是$2*(2^b)$的倍数。</li>
+</ol>
+<p>如果找到了该内存块的伙伴，确保该伙伴的所有页都是空闲的，以便进行合并。内存继续检查合并后页块的“伙伴”并检查是否可以合并，依次类推。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/pmm/" title="连续内存分配算法">http://example.com/pmm/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Operating-Systems/" rel="tag"><i class="fa fa-tag"></i> Operating Systems</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/ucore-lab1/" rel="prev" title="ucore lab1">
+                  <i class="fa fa-chevron-left"></i> ucore lab1
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/dvmm/" rel="next" title="非连续内存分配算法">
+                  非连续内存分配算法 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  <script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'none'
+      },
+      options: {
+        renderActions: {
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              const target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.typesetClear();
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+
+
+</body>
+</html>

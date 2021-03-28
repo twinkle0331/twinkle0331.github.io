@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="之前的关系代数属于过程化语言，同时指定了具体计算过程。关系型语言仅仅指明用户需要什么数据，而不指定具体计算过程，由数据库管理系统负责底层的具体实现。 关系型语言一般由以下几个部分组成：  数据定义语言(data definition language) 数据操纵语言(data manipulation language) 数据控制语言(data control language)  其中结构化查询">
+<meta property="og:type" content="article">
+<meta property="og:title" content="结构化查询语言SQL">
+<meta property="og:url" content="http://example.com/database_system/sql/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="之前的关系代数属于过程化语言，同时指定了具体计算过程。关系型语言仅仅指明用户需要什么数据，而不指定具体计算过程，由数据库管理系统负责底层的具体实现。 关系型语言一般由以下几个部分组成：  数据定义语言(data definition language) 数据操纵语言(data manipulation language) 数据控制语言(data control language)  其中结构化查询">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-02-07T01:29:26.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="database systems">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/database_system/sql/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>结构化查询语言SQL | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database_system/sql/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          结构化查询语言SQL
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-02-07 09:29:26" itemprop="dateCreated datePublished" datetime="2020-02-07T09:29:26+08:00">2020-02-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Systems/" itemprop="url" rel="index"><span itemprop="name">Systems</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>之前的关系代数属于过程化语言，同时指定了具体计算过程。关系型语言仅仅指明用户需要什么数据，而不指定具体计算过程，由数据库管理系统负责底层的具体实现。</p>
+<p>关系型语言一般由以下几个部分组成：</p>
+<ul>
+<li>数据定义语言(data definition language)</li>
+<li>数据操纵语言(data manipulation language)</li>
+<li>数据控制语言(data control language)</li>
+</ul>
+<p>其中<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/SQL">结构化查询语言SQL</a>广泛使用。</p>
+<a id="more"></a>
+
+<p>另外，关系代数基于集合，即无序，无重复，而关系型查询语言基于多集，即无序，允许重复。</p>
+<p>以下为<a target="_blank" rel="noopener" href="https://15445.courses.cs.cmu.edu/fall2019/homework1/">homework1</a>的解析</p>
+<p>homework1中的数据集<a target="_blank" rel="noopener" href="https://www.imdb.com/interfaces/">IMDB</a>是一个关于电影、电视节目、电子游戏和电影制作小组的在线数据库。本次howework中的sql由<a target="_blank" rel="noopener" href="https://www.sqlite.org/">sqlite</a>实现。</p>
+<p>首先创建sql文件，每个sql文件对应于hw中的一个问题。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">$ mkdir placeholder</span><br><span class="line">$ cd placeholder</span><br><span class="line">$ touch q1_sample.sql \</span><br><span class="line">        q2_uncommon_type.sql \</span><br><span class="line">        q3_tv_vs_movie.sql \</span><br><span class="line">        q4_old_is_not_gold.sql \</span><br><span class="line">        q5_percentage.sql \</span><br><span class="line">        q6_dubbed_smash.sql \</span><br><span class="line">        q7_imdb_250.sql \</span><br><span class="line">        q8_number_of_actors.sql \</span><br><span class="line">        q9_movie_names.sql \</span><br><span class="line">        q10_genre_counts.sql</span><br></pre></td></tr></table></figure>
+<p>安装sqlite和libsqlite3-dev</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install sqlite3 libsqlite3-dev</span><br></pre></td></tr></table></figure>
+<p>下载imdb数据库压缩包</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ wget https:&#x2F;&#x2F;15445.courses.cs.cmu.edu&#x2F;fall2019&#x2F;files&#x2F;imdb-cmudb2019.db.gz</span><br></pre></td></tr></table></figure>
+<p>校验md5校验和</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ md5 imdb-cmudb2019.db.gz </span><br><span class="line">MD5 (imdb-cmudb2019.db.gz) &#x3D; 6443351d4b55eb3c881622bd60a8dc5b</span><br></pre></td></tr></table></figure>
+<p>解压数据库压缩包并用sqlite打开</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ gunzip imdb-cmudb2019.db.gz</span><br><span class="line">$ sqlite3 imdb-cmudb2019.db</span><br></pre></td></tr></table></figure>
+<p>查看数据库中的表</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sqlite&gt; .tables</span><br><span class="line">akas      crew      episodes  people    ratings   titles</span><br></pre></td></tr></table></figure>
+<p>为每个表创建索引</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">CREATE INDEX ix_people_name ON people (name);</span><br><span class="line">CREATE INDEX ix_titles_type ON titles (type);</span><br><span class="line">CREATE INDEX ix_titles_primary_title ON titles (primary_title);</span><br><span class="line">CREATE INDEX ix_titles_original_title ON titles (original_title);</span><br><span class="line">CREATE INDEX ix_akas_title_id ON akas (title_id);</span><br><span class="line">CREATE INDEX ix_akas_title ON akas (title);</span><br><span class="line">CREATE INDEX ix_crew_title_id ON crew (title_id);</span><br><span class="line">CREATE INDEX ix_crew_person_id ON crew (person_id);</span><br></pre></td></tr></table></figure>
+<p>检查数据库模式</p>
+<p>people表的属性有身份证号，名字，出生日期，死亡日期，索引为姓名。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">sqlite&gt; .schema people</span><br><span class="line">CREATE TABLE people (</span><br><span class="line">  person_id VARCHAR PRIMARY KEY,</span><br><span class="line">  name VARCHAR,</span><br><span class="line">  born INTEGER,</span><br><span class="line">  died INTEGER</span><br><span class="line">);</span><br><span class="line">CREATE INDEX ix_people_name ON people (name);</span><br></pre></td></tr></table></figure>
+<p>其中的一项为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nm0000003|Brigitte Bardot|1934|</span><br></pre></td></tr></table></figure>
+<p>title表为电影/电视剧/短视频/视频的具体信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">sqlite&gt; .schema titles</span><br><span class="line">CREATE TABLE titles (</span><br><span class="line">  title_id VARCHAR PRIMARY KEY,</span><br><span class="line">  type VARCHAR,</span><br><span class="line">  primary_title VARCHAR,</span><br><span class="line">  original_title VARCHAR,</span><br><span class="line">  is_adult INTEGER,</span><br><span class="line">  premiered INTEGER,</span><br><span class="line">  ended INTEGER,</span><br><span class="line">  runtime_minutes INTEGER,</span><br><span class="line">  genres VARCHAR</span><br><span class="line">);</span><br><span class="line">CREATE INDEX ix_titles_type ON titles (type);</span><br><span class="line">CREATE INDEX ix_titles_primary_title ON titles (primary_title);</span><br><span class="line">CREATE INDEX ix_titles_original_title ON titles (original_title);</span><br></pre></td></tr></table></figure>
+<p>akas表为标题的语言，地区等信息，上映电影在其余国家的信息，标题可能会翻译成上映国家的版本。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE akas (</span><br><span class="line">  title_id VARCHAR, -- REFERENCES titles (title_id),</span><br><span class="line">  title VARCHAR,</span><br><span class="line">  region VARCHAR,</span><br><span class="line">  language VARCHAR,</span><br><span class="line">  types VARCHAR,</span><br><span class="line">  attributes VARCHAR,</span><br><span class="line">  is_original_title INTEGER</span><br><span class="line">);</span><br><span class="line">CREATE INDEX ix_akas_title_id ON akas (title_id);</span><br><span class="line">CREATE INDEX ix_akas_title ON akas (title);</span><br></pre></td></tr></table></figure>
+<p>crew表为某剧对应的人物信息。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE crew (</span><br><span class="line">  title_id VARCHAR, -- REFERENCES titles (title_id),</span><br><span class="line">  person_id VARCHAR, -- REFERENCES people (person_id),</span><br><span class="line">  category VARCHAR,</span><br><span class="line">  job VARCHAR</span><br><span class="line">);</span><br><span class="line">CREATE INDEX ix_crew_title_id ON crew (title_id);</span><br><span class="line">CREATE INDEX ix_crew_person_id ON crew (person_id);</span><br></pre></td></tr></table></figure>
+<p>其中一行的信息为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tt0000003|nm5442194|producer|producer</span><br></pre></td></tr></table></figure>
+<p>rating表为对应的id和评分，参与人数</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE ratings (</span><br><span class="line">  title_id VARCHAR PRIMARY KEY, -- REFERENCES titles (title_id),</span><br><span class="line">  rating FLOAT,</span><br><span class="line">  votes INTEGER</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<p>其中一行的信息为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tt0000001|5.6|1529</span><br></pre></td></tr></table></figure>
+<h1 id="q1"><a href="#q1" class="headerlink" title="q1"></a>q1</h1><p>查询titles表中不同类型有哪些</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">sqlite&gt; select distinct(type) from titles order by type;</span><br><span class="line">    movie</span><br><span class="line">    short</span><br><span class="line">    tvEpisode</span><br><span class="line">    tvMiniSeries</span><br><span class="line">    tvMovie</span><br><span class="line">    tvSeries</span><br><span class="line">    tvShort</span><br><span class="line">    tvSpecial</span><br><span class="line">    video</span><br><span class="line">    videoGame</span><br></pre></td></tr></table></figure>
+<h1 id="q2"><a href="#q2" class="headerlink" title="q2"></a>q2</h1><p>查询每种类型中最长播放时间的title</p>
+<ul>
+<li>对于存在并列的情况，所有并列的条目均输出</li>
+<li>输出types,primary titles,runtime minutes,按照type升序，若type相同则按照primary titles升序</li>
+</ul>
+<p>简单地，查询每种类型中最长播放时间</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT type,max(runtime_minutes) FROM titles GROUP BY type;</span><br></pre></td></tr></table></figure>
+<p>得到</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">movie|51420</span><br><span class="line">short|461</span><br><span class="line">tvEpisode|1800</span><br><span class="line">tvMiniSeries|1755</span><br><span class="line">tvMovie|2112</span><br><span class="line">tvSeries|8400</span><br><span class="line">tvShort|60</span><br><span class="line">tvSpecial|5760</span><br><span class="line">video|5135</span><br><span class="line">videoGame|1500</span><br></pre></td></tr></table></figure>
+<p>查询目标为runtime_minutes等于最大值的title</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">WITH types(type, runtime_minutes) AS ( </span><br><span class="line">  SELECT type, MAX(runtime_minutes)</span><br><span class="line">    FROM titles</span><br><span class="line">    GROUP BY type</span><br><span class="line">)</span><br><span class="line">SELECT titles.type, titles.primary_title, titles.runtime_minutes</span><br><span class="line">  FROM titles</span><br><span class="line">  JOIN types</span><br><span class="line">  ON titles.runtime_minutes &#x3D;&#x3D; types.runtime_minutes AND titles.type &#x3D;&#x3D; types.type</span><br><span class="line">  ORDER BY titles.type, titles.primary_title</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
+<p>可通过with子句定义临时关系，再通过join运算限定title条目。</p>
+<p>查询结果如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">movie|Logistics|51420</span><br><span class="line">short|Kuriocity|461</span><br><span class="line">tvEpisode|Téléthon 2012|1800</span><br><span class="line">tvMiniSeries|Kôya no yôjinbô|1755</span><br><span class="line">tvMovie|ArtQuench Presents Spirit Art|2112</span><br><span class="line">tvSeries|The Sharing Circle|8400</span><br><span class="line">tvShort|Paul McCartney Backstage at Super Bowl XXXIX|60</span><br><span class="line">tvShort|The People Next Door|60</span><br><span class="line">tvSpecial|Katy Perry Live: Witness World Wide|5760</span><br><span class="line">video|Midnight Movie Madness: 50 Movie Mega Pack|5135</span><br><span class="line">videoGame|Flushy Fish VR: Just Squidding Around|1500</span><br></pre></td></tr></table></figure>
+<h1 id="q3"><a href="#q3" class="headerlink" title="q3"></a>q3</h1><p>列出所有类型的title，并给出相关条目的数量</p>
+<ul>
+<li>按照类型升序</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SELECT type, count(*) AS title_count FROM titles GROUP BY type ORDER BY title_count ASC;</span><br></pre></td></tr></table></figure>
+<p>查询结果如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">tvShort|4075</span><br><span class="line">videoGame|9044</span><br><span class="line">tvSpecial|9107</span><br><span class="line">tvMiniSeries|10291</span><br><span class="line">tvMovie|45431</span><br><span class="line">tvSeries|63631</span><br><span class="line">video|90069</span><br><span class="line">movie|197957</span><br><span class="line">short|262038</span><br><span class="line">tvEpisode|1603076</span><br></pre></td></tr></table></figure>
+<h1 id="q4"><a href="#q4" class="headerlink" title="q4"></a>q4</h1><p>按照每十年为间隔，统计首映的titles数目，例如<code>2010s|2789741</code></p>
+<ul>
+<li>年份按照类似2010s的格式输出，按照数目降序，<code>premiered</code>为<code>NULL</code>的条目不计入结果</li>
+</ul>
+<p>通过<code>group by</code>子句按照每十年分组,通过字符串运算在年份后添加s</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">SELECT </span><br><span class="line">  CAST(premiered&#x2F;10*10 AS TEXT) || &#39;s&#39; AS decade,</span><br><span class="line">  COUNT(*) AS num_movies</span><br><span class="line">  FROM titles</span><br><span class="line">  WHERE premiered is not null</span><br><span class="line">  GROUP BY decade</span><br><span class="line">  ORDER BY num_movies DESC</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
+<p>查询结果如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">2010s|1050732</span><br><span class="line">2000s|494639</span><br><span class="line">1990s|211453</span><br><span class="line">1980s|119258</span><br><span class="line">1970s|99707</span><br><span class="line">1960s|75237</span><br><span class="line">1950s|39554</span><br><span class="line">1910s|26596</span><br><span class="line">1920s|13153</span><br><span class="line">1930s|11492</span><br><span class="line">1940s|10011</span><br><span class="line">1900s|9586</span><br><span class="line">2020s|2492</span><br><span class="line">1890s|2286</span><br><span class="line">1880s|22</span><br><span class="line">1870s|1</span><br></pre></td></tr></table></figure>
+<h1 id="q5"><a href="#q5" class="headerlink" title="q5"></a>q5</h1><p>按照每十年为间隔，统计对应首映的titles数目百分比，例如 <code>2010s|45.7042</code></p>
+<ul>
+<li>百分比为对应的首映数目除以总titles数目，titles算入<code>premiered</code>为<code>NULL</code>的条目，结果舍入到小数点后四位</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">SELECT</span><br><span class="line">  CAST(premiered&#x2F;10*10 AS TEXT) || &#39;s&#39; AS decade,</span><br><span class="line">  ROUND(CAST(COUNT(*) AS REAL) &#x2F; (SELECT COUNT(*) FROM titles) * 100.0, 4) as percentage</span><br><span class="line">  FROM titles</span><br><span class="line">  WHERE premiered is not null</span><br><span class="line">  GROUP BY decade</span><br><span class="line">  ORDER BY percentage DESC, decade ASC</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
+<p>查询结果如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">2010s|45.7891</span><br><span class="line">2000s|21.5555</span><br><span class="line">1990s|9.2148</span><br><span class="line">1980s|5.1971</span><br><span class="line">1970s|4.3451</span><br><span class="line">1960s|3.2787</span><br><span class="line">1950s|1.7237</span><br><span class="line">1910s|1.159</span><br><span class="line">1920s|0.5732</span><br><span class="line">1930s|0.5008</span><br><span class="line">1940s|0.4363</span><br><span class="line">1900s|0.4177</span><br><span class="line">2020s|0.1086</span><br><span class="line">1890s|0.0996</span><br><span class="line">1880s|0.001</span><br><span class="line">1870s|0.0</span><br></pre></td></tr></table></figure>
+<h1 id="q6"><a href="#q6" class="headerlink" title="q6"></a>q6</h1><p>列出转播次数的titles前十</p>
+<ul>
+<li>输出primary title和对应的数目</li>
+</ul>
+<p>和q2类似，可通过with子句定义临时关系，<code>LIMIT 10</code>限定输出条目的数目再通过join运算限定title条目。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">WITH translations AS (</span><br><span class="line">  SELECT title_id, count(*) as num_translations </span><br><span class="line">    FROM akas </span><br><span class="line">    GROUP BY title_id </span><br><span class="line">    ORDER BY num_translations DESC, title_id </span><br><span class="line">    LIMIT 10</span><br><span class="line">)</span><br><span class="line">SELECT titles.primary_title, translations.num_translations</span><br><span class="line">  FROM translations</span><br><span class="line">  JOIN titles</span><br><span class="line">  ON titles.title_id &#x3D;&#x3D; translations.title_id</span><br><span class="line">  ORDER BY translations.num_translations DESC</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
+<p>查询结果如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Mutant Virus: Vol. 1|126</span><br><span class="line">The Good, the Bad and the Ugly|73</span><br><span class="line">Star Wars: Episode V - The Empire Strikes Back|71</span><br><span class="line">Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb|68</span><br><span class="line">Raiders of the Lost Ark|62</span><br><span class="line">Star Wars: Episode VII - The Force Awakens|62</span><br><span class="line">The Shawshank Redemption|61</span><br><span class="line">Once Upon a Time in the West|60</span><br><span class="line">Indiana Jones and the Kingdom of the Crystal Skull|60</span><br><span class="line">Airplane!|59</span><br></pre></td></tr></table></figure>
+<h1 id="q7"><a href="#q7" class="headerlink" title="q7"></a>q7</h1><p>列出IMDB中电影权重最高的250个</p>
+<p>权重的计算方式为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Weighted rating (WR) &#x3D; (v&#x2F;(v+m)) * R + (m&#x2F;(v+m)) * C</span><br></pre></td></tr></table></figure>
+<ul>
+<li>R为电影平均评分</li>
+<li>v为评分人数</li>
+<li>m为25000</li>
+<li>C为所有电影的平均权重</li>
+</ul>
+<p><code>weight</code>的计算放入<code>select</code>语句中。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">WITH</span><br><span class="line">  av(average_rating) AS (</span><br><span class="line">    SELECT SUM(rating * votes) &#x2F; SUM(votes)</span><br><span class="line">      FROM ratings</span><br><span class="line">      JOIN titles</span><br><span class="line">      ON titles.title_id &#x3D;&#x3D; ratings.title_id AND titles.type &#x3D;&#x3D; &quot;movie&quot; </span><br><span class="line">  ),</span><br><span class="line">  mn(min_rating) AS (SELECT 25000.0)</span><br><span class="line">SELECT</span><br><span class="line">  primary_title,</span><br><span class="line">  (votes &#x2F; (votes + min_rating)) * rating + (min_rating &#x2F; (votes + min_rating)) * average_rating as weighed_rating</span><br><span class="line">  FROM ratings, av, mn</span><br><span class="line">  JOIN titles</span><br><span class="line">  ON titles.title_id &#x3D;&#x3D; ratings.title_id and titles.type &#x3D;&#x3D; &quot;movie&quot;</span><br><span class="line">  ORDER BY weighed_rating DESC</span><br><span class="line">  LIMIT 250</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
+<p>榜单如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br></pre></td><td class="code"><pre><span class="line">The Shawshank Redemption|9.27408375213064</span><br><span class="line">Pulp Fiction|8.87296068706845</span><br><span class="line">The Lord of the Rings: The Return of the King|8.87023538818413</span><br><span class="line">Schindler&#39;s List|8.85944837786486</span><br><span class="line">12 Angry Men|8.8274654312365</span><br><span class="line">Forrest Gump|8.77394665505175</span><br><span class="line">The Good, the Bad and the Ugly|8.73410047935658</span><br><span class="line">The Matrix|8.67379043068514</span><br><span class="line">The Lord of the Rings: The Two Towers|8.67073273467584</span><br><span class="line">Star Wars: Episode V - The Empire Strikes Back|8.66258036565461</span><br><span class="line">Goodfellas|8.65679704067696</span><br><span class="line">One Flew Over the Cuckoo&#39;s Nest|8.65294416076491</span><br><span class="line">The Mountain II|8.61725087838868</span><br><span class="line">City of God|8.54342805417796</span><br><span class="line">Gladiator|8.47143742708625</span><br><span class="line">Back to the Future|8.46332853886572</span><br><span class="line">Léon: The Professional|8.46292056565729</span><br><span class="line">Avengers: Infinity War|8.4506845289751</span><br><span class="line">Psycho|8.4373696976068</span><br><span class="line">Rear Window|8.41674755149826</span><br><span class="line">Once Upon a Time in the West|8.38089735258473</span><br><span class="line">WALL·E|8.36472733136252</span><br><span class="line">Raiders of the Lost Ark|8.36071764723241</span><br><span class="line">The Shining|8.35937143360229</span><br><span class="line">Alien|8.35552530090484</span><br><span class="line">Cinema Paradiso|8.3444698366033</span><br><span class="line">Apocalypse Now|8.34271721766924</span><br><span class="line">Grave of the Fireflies|8.34191265540178</span><br><span class="line">Oldboy|8.33209348956415</span><br><span class="line">Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb|8.3250687044724</span><br><span class="line">Once Upon a Time in America|8.29149205920628</span><br><span class="line">Spider-Man: Into the Spider-Verse|8.27944770565499</span><br><span class="line">Inglourious Basterds|8.27361869242351</span><br><span class="line">American Beauty|8.26993451202779</span><br><span class="line">Reservoir Dogs|8.26439627161116</span><br><span class="line">Requiem for a Dream|8.25798876833464</span><br><span class="line">A Clockwork Orange|8.25742341547537</span><br><span class="line">Toy Story 3|8.25734107724815</span><br><span class="line">Scarface|8.25590438979589</span><br><span class="line">Full Metal Jacket|8.25210853826772</span><br><span class="line">Sunset Blvd.|8.23933898857354</span><br><span class="line">Amadeus|8.21589004599775</span><br><span class="line">Vertigo|8.21216347202948</span><br><span class="line">Like Stars on Earth|8.20481373841464</span><br><span class="line">Your Name.|8.19983566375586</span><br><span class="line">North by Northwest|8.1975172347387</span><br><span class="line">Batman Begins|8.17704665931913</span><br><span class="line">V for Vendetta|8.17129916924205</span><br><span class="line">Die Hard|8.16240649720068</span><br><span class="line">Lock, Stock and Two Smoking Barrels|8.14585507926427</span><br><span class="line">Casino|8.13629764272654</span><br><span class="line">Unforgiven|8.12365074764615</span><br><span class="line">The Apartment|8.12061011853697</span><br><span class="line">Chinatown|8.10376481333931</span><br><span class="line">My Neighbor Totoro|8.09442185609386</span><br><span class="line">Green Book|8.09074160238658</span><br><span class="line">Finding Nemo|8.07145216202776</span><br><span class="line">Catch Me If You Can|8.06592479759894</span><br><span class="line">The Grand Budapest Hotel|8.06129693202741</span><br><span class="line">Blade Runner|8.06098971608469</span><br><span class="line">Fargo|8.05647629910042</span><br><span class="line">Prisoners|8.05390469414222</span><br><span class="line">The Kid|8.05287532584739</span><br><span class="line">Rush|8.03898582269203</span><br><span class="line">Hacksaw Ridge|8.03551702468201</span><br><span class="line">The Seventh Seal|8.03407390030423</span><br><span class="line">The Princess Bride|8.03359206319394</span><br><span class="line">Platoon|8.03211473247254</span><br><span class="line">PK|8.02907703728921</span><br><span class="line">Monty Python&#39;s Life of Brian|8.02901738104703</span><br><span class="line">Gone with the Wind|8.01162552164356</span><br><span class="line">Before Sunrise|8.00325016258364</span><br><span class="line">Ben-Hur|7.98708858673506</span><br><span class="line">The Elephant Man|7.98656566725627</span><br><span class="line">The Treasure of the Sierra Madre|7.98183759819495</span><br><span class="line">Aynabaji|7.97740941967294</span><br><span class="line">Yojimbo|7.97326922828868</span><br><span class="line">Star Wars: Episode VII - The Force Awakens|7.97147281541043</span><br><span class="line">Slumdog Millionaire|7.97003387503103</span><br><span class="line">Monsters, Inc.|7.96993549888079</span><br><span class="line">Sin City|7.96864677307258</span><br><span class="line">X-Men: Days of Future Past|7.96426564397762</span><br><span class="line">Ratatouille|7.96198738026476</span><br><span class="line">Jaws|7.95693515580935</span><br><span class="line">Her|7.95337602084149</span><br><span class="line">Cool Hand Luke|7.95284437581594</span><br><span class="line">Akira|7.9466594640111</span><br><span class="line">In the Name of the Father|7.94653731881204</span><br><span class="line">Big Fish|7.94417520197508</span><br><span class="line">Zootopia|7.94391037425039</span><br><span class="line">Barry Lyndon|7.93804803727936</span><br><span class="line">La Haine|7.93713874007203</span><br><span class="line">Network|7.93673499353362</span><br><span class="line">Ikiru|7.93587006088359</span><br><span class="line">Harakiri|7.93442534185635</span><br><span class="line">On the Waterfront|7.93384958766431</span><br><span class="line">Drishyam|7.9316664137302</span><br><span class="line">The Chaos Class Failed the Class|7.92209636316521</span><br><span class="line">Magnolia|7.92151783450757</span><br><span class="line">Swades|7.91791802696218</span><br><span class="line">Children of Heaven|7.91488724265187</span><br><span class="line">Tosun Pasa|7.91175384887872</span><br><span class="line">Dog Day Afternoon|7.90497209143548</span><br><span class="line">Before Sunset|7.90135907545106</span><br><span class="line">Memories of Murder|7.89983909706083</span><br><span class="line">Ip Man|7.89530989242938</span><br><span class="line">Chak de! India|7.89380214739519</span><br><span class="line">Munna Bhai M.B.B.S.|7.88766873353758</span><br><span class="line">The 400 Blows|7.88236058087742</span><br><span class="line">Elite Squad|7.88128931930257</span><br><span class="line">Cinderella Man|7.87893854172733</span><br><span class="line">Judgment at Nuremberg|7.87703872647609</span><br><span class="line">Ayla: The Daughter of War|7.87111640888977</span><br><span class="line">Toy Story 4|7.86727079414856</span><br><span class="line">District 9|7.86716566170036</span><br><span class="line">Edge of Tomorrow|7.86401183134919</span><br><span class="line">Searching for Sugar Man|7.86361014282595</span><br><span class="line">Thor: Ragnarok|7.86067171002219</span><br><span class="line">Harry Potter and the Prisoner of Azkaban|7.86009831177006</span><br><span class="line">The Handmaiden|7.86005695016839</span><br><span class="line">Toy Story 2|7.85903363434152</span><br><span class="line">The Bourne Identity|7.85871357953152</span><br><span class="line">Three Colors: Red|7.8571771641382</span><br><span class="line">Edward Scissorhands|7.85308436175456</span><br><span class="line">Nightcrawler|7.85238182329928</span><br><span class="line">Castle in the Sky|7.8494569785608</span><br><span class="line">Paris, Texas|7.84540229570821</span><br><span class="line">The Breakfast Club|7.84009539226878</span><br><span class="line">Ghost in the Shell|7.8358170251987</span><br><span class="line">Mulholland Dr.|7.83476463500115</span><br><span class="line">Strangers on a Train|7.8340265331899</span><br><span class="line">Papillon|7.83230035374453</span><br><span class="line">The Raid 2|7.82177754544252</span><br><span class="line">The Artist|7.81451845636192</span><br><span class="line">The Man Who Shot Liberty Valance|7.8078751132418</span><br><span class="line">True Romance|7.80358074659557</span><br><span class="line">All the President&#39;s Men|7.80348137201329</span><br><span class="line">A Streetcar Named Desire|7.80156298305092</span><br><span class="line">My Name Is Khan|7.80054788180083</span><br><span class="line">Patton|7.79504441225479</span><br><span class="line">Tokyo Story|7.79422849952735</span><br><span class="line">The Blues Brothers|7.79298260954459</span><br><span class="line">The Man from Earth|7.78857212574483</span><br><span class="line">Capernaum|7.78563829871188</span><br><span class="line">Spider-Man: Far from Home|7.78561846386015</span><br><span class="line">Vikram Vedha|7.78373473224346</span><br><span class="line">Titanic|7.78157715805354</span><br><span class="line">The Hobbit: An Unexpected Journey|7.77554863836764</span><br><span class="line">The Passion of Joan of Arc|7.77408091487195</span><br><span class="line">High and Low|7.77213704112255</span><br><span class="line">Sing Street|7.76915812623775</span><br><span class="line">The Legend of 1900|7.76815835496063</span><br><span class="line">Elite Squad: The Enemy Within|7.76812044894699</span><br><span class="line">Fanny and Alexander|7.76800472456941</span><br><span class="line">Taken|7.76769012246336</span><br><span class="line">The Straight Story|7.76752395340217</span><br><span class="line">Kahaani|7.76720011579587</span><br><span class="line">Ocean&#39;s Eleven|7.76364685071376</span><br><span class="line">The Sea Inside|7.76289022497323</span><br><span class="line">O.J.: Made in America|7.76250676256312</span><br><span class="line">Before Midnight|7.76132220796731</span><br><span class="line">Home|7.76025351500213</span><br><span class="line">Back to the Future Part II|7.76009005121133</span><br><span class="line">Spring, Summer, Fall, Winter... and Spring|7.7592446422894</span><br><span class="line">Manhattan|7.7591232226754</span><br><span class="line">Crash|7.757187612945</span><br><span class="line">The Girl with the Dragon Tattoo|7.75600754037541</span><br><span class="line">Big Hero 6|7.7544767707715</span><br><span class="line">Predator|7.75096576853116</span><br><span class="line">Spartacus|7.75079774492003</span><br><span class="line">Isle of Dogs|7.7494869658895</span><br><span class="line">The Fighter|7.74677127042658</span><br><span class="line">The Game|7.7466716184388</span><br><span class="line">The Big Short|7.7461656518056</span><br><span class="line">Moonrise Kingdom|7.74269388072724</span><br><span class="line">Pather Panchali|7.74145616936336</span><br><span class="line">Doctor Zhivago|7.74112370242397</span><br><span class="line">Apocalypto|7.73848649857271</span><br><span class="line">About Time|7.7377698449424</span><br><span class="line">Gattaca|7.73647859452984</span><br><span class="line">What Ever Happened to Baby Jane?|7.73539364991903</span><br><span class="line">The Marathon Family|7.73428987458458</span><br><span class="line">Crouching Tiger, Hidden Dragon|7.73132118708057</span><br><span class="line">Sunrise|7.72522570382843</span><br><span class="line">Manchester by the Sea|7.72481321224648</span><br><span class="line">La Dolce Vita|7.72473610906825</span><br><span class="line">Halloween|7.72149520973176</span><br><span class="line">Sherlock Jr.|7.72122901074544</span><br><span class="line">What&#39;s Eating Gilbert Grape|7.71837046863796</span><br><span class="line">Diabolique|7.71738924368521</span><br><span class="line">Remember the Titans|7.7131373150204</span><br><span class="line">Amour|7.71206424086562</span><br><span class="line">Earthlings|7.71112168098164</span><br><span class="line">Hidden Figures|7.70836846509536</span><br><span class="line">The Boy in the Striped Pajamas|7.70750686722645</span><br><span class="line">Throne of Blood|7.70486190012118</span><br><span class="line">Nosferatu|7.70479615314119</span><br><span class="line">The Best Years of Our Lives|7.70404091573498</span><br><span class="line">La Strada|7.7035894202021</span><br><span class="line">Blue Velvet|7.70348849922288</span><br><span class="line">Ed Wood|7.70011913851453</span><br><span class="line">Carry On, Munna Bhai|7.6960703370653</span><br><span class="line">The Insider|7.69589363902872</span><br><span class="line">Rio Bravo|7.69547902962826</span><br><span class="line">Do the Right Thing|7.69470637286005</span><br><span class="line">G.O.R.A.|7.69143691201405</span><br><span class="line">John Wick: Chapter 3 - Parabellum|7.69042140474976</span><br><span class="line">The Big Sleep|7.69022732193082</span><br><span class="line">The Best of Youth|7.68939089676166</span><br><span class="line">The Wild Bunch|7.68732321899666</span><br><span class="line">Evil Dead II|7.68698809399903</span><br><span class="line">Airlift|7.68482585880285</span><br><span class="line">Who&#39;s Singin&#39; Over There?|7.68275319170322</span><br><span class="line">The King of the Street Cleaners|7.68007124396815</span><br><span class="line">Blue Is the Warmest Color|7.67888277323536</span><br><span class="line">300|7.67811080177943</span><br><span class="line">The Hangover|7.67745136243525</span><br><span class="line">The Chaos Class Is on Vacation|7.67701815540533</span><br><span class="line">Kramer vs. Kramer|7.6734998783239</span><br><span class="line">Special 26|7.67149062884843</span><br><span class="line">Harold and Maude|7.67125075421178</span><br><span class="line">Breathless|7.66994880180493</span><br><span class="line">3-Iron|7.66894856428393</span><br><span class="line">Glory|7.66830445780438</span><br><span class="line">Awakenings|7.66753775055519</span><br><span class="line">Star Trek Into Darkness|7.66655348768595</span><br><span class="line">To Be or Not to Be|7.66618772896992</span><br><span class="line">A Silent Voice|7.66616985054611</span><br><span class="line">Get Out|7.66418042868228</span><br><span class="line">The Fifth Element|7.66340814153364</span><br><span class="line">Zodiac|7.66276470401316</span><br><span class="line">Empire of the Sun|7.66123857830932</span><br><span class="line">Lost in Translation|7.66075124608843</span><br><span class="line">Man with a Movie Camera|7.66048361595785</span><br><span class="line">Tangled|7.66012044434097</span><br><span class="line">Once|7.65980150013791</span><br><span class="line">Midnight in Paris|7.65893069763627</span><br><span class="line">The King of Kong: A Fistful of Quarters|7.65818054427474</span><br><span class="line">Wreck-It Ralph|7.6578968805438</span><br><span class="line">The Salt of the Earth|7.6573311856226</span><br><span class="line">The Fault in Our Stars|7.65410038215701</span><br><span class="line">Time of the Gypsies|7.65354312829129</span><br><span class="line">Lucky Number Slevin|7.64972806598217</span><br><span class="line">Whisper of the Heart|7.64876091986559</span><br><span class="line">O Brother, Where Art Thou?|7.64584931637816</span><br><span class="line">Talvar|7.64560053612369</span><br><span class="line">Donnie Brasco|7.6439766475949</span><br><span class="line">As Good as It Gets|7.64393017265743</span><br><span class="line">The Motorcycle Diaries|7.64367118785382</span><br><span class="line">The Girl with the Red Scarf|7.64023075719264</span><br></pre></td></tr></table></figure>
+<p>榜单第一是肖申克的救赎,惊了！</p>
+<h1 id="q8"><a href="#q8" class="headerlink" title="q8"></a>q8</h1><p>列出和Mark Hamill合作过的男演员/女演员的数量</p>
+<ul>
+<li>仅输出数量</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">WITH hamill_titles AS (</span><br><span class="line">  SELECT DISTINCT(crew.title_id)</span><br><span class="line">    FROM people</span><br><span class="line">    JOIN crew</span><br><span class="line">    ON crew.person_id &#x3D;&#x3D; people.person_id AND people.name &#x3D;&#x3D; &quot;Mark Hamill&quot; AND people.born &#x3D;&#x3D; 1951</span><br><span class="line">)</span><br><span class="line">SELECT COUNT(DISTINCT(crew.person_id))</span><br><span class="line">  FROM crew</span><br><span class="line">  WHERE (crew.category &#x3D;&#x3D; &quot;actor&quot; OR crew.category &#x3D;&#x3D; &quot;actress&quot;) AND crew.title_id in hamill_titles</span><br><span class="line">;</span><br></pre></td></tr></table></figure>
+<p>查询结果为<code>206</code></p>
+<h1 id="q9"><a href="#q9" class="headerlink" title="q9"></a>q9</h1><p>按照字典序列出Mark Hamill(生于1951年)和George Lucas(生于1944年)共同参演的作品</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">WITH hamill_movies(title_id) AS (</span><br><span class="line">  SELECT crew.title_id</span><br><span class="line">    FROM crew</span><br><span class="line">    JOIN people</span><br><span class="line">    ON crew.person_id &#x3D;&#x3D; people.person_id AND people.name &#x3D;&#x3D; &quot;Mark Hamill&quot; AND people.born &#x3D;&#x3D; 1951</span><br><span class="line">)</span><br><span class="line">SELECT titles.primary_title</span><br><span class="line">  FROM crew</span><br><span class="line">  JOIN people</span><br><span class="line">  ON crew.person_id &#x3D;&#x3D; people.person_id AND people.name &#x3D;&#x3D; &quot;George Lucas&quot; AND people.born &#x3D;&#x3D; 1944 AND crew.title_id IN hamill_movies</span><br><span class="line">  JOIN titles</span><br><span class="line">  ON crew.title_id &#x3D;&#x3D; titles.title_id AND titles.type &#x3D;&#x3D; &quot;movie&quot;</span><br><span class="line">  ORDER BY titles.primary_title</span><br><span class="line">;</span><br></pre></td></tr></table></figure>
+<p>查询结果为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Star Wars: Episode V - The Empire Strikes Back</span><br></pre></td></tr></table></figure>
+<p>仅有一部电影</p>
+<h1 id="q10"><a href="#q10" class="headerlink" title="q10"></a>q10</h1><p>列出所有不同的标签和相关的<code>titles</code>数目</p>
+<p>不同标签之间以逗号间隔，所以需要从<code>genre</code>中提取出对应的标签信息。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">WITH RECURSIVE split(genre, rest) AS (</span><br><span class="line">  SELECT &#39;&#39;, genres || &#39;,&#39; FROM titles WHERE genres !&#x3D; &quot;\N&quot;</span><br><span class="line">   UNION ALL</span><br><span class="line">  SELECT substr(rest, 0, instr(rest, &#39;,&#39;)),</span><br><span class="line">         substr(rest, instr(rest, &#39;,&#39;)+1)</span><br><span class="line">    FROM split</span><br><span class="line">   WHERE rest !&#x3D; &#39;&#39;</span><br><span class="line">)</span><br><span class="line">SELECT genre, count(*) as genre_count</span><br><span class="line">  FROM split </span><br><span class="line"> WHERE genre !&#x3D; &#39;&#39;</span><br><span class="line"> GROUP BY genre</span><br><span class="line"> ORDER BY genre_count DESC;</span><br></pre></td></tr></table></figure>
+<p>查询结果为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">Drama|620063</span><br><span class="line">Comedy|486163</span><br><span class="line">Short|310619</span><br><span class="line">Documentary|222187</span><br><span class="line">Talk-Show|215144</span><br><span class="line">Romance|211462</span><br><span class="line">Family|159035</span><br><span class="line">News|148941</span><br><span class="line">Animation|115998</span><br><span class="line">Reality-TV|113180</span><br><span class="line">Music|105724</span><br><span class="line">Crime|99019</span><br><span class="line">Action|97544</span><br><span class="line">Adventure|81686</span><br><span class="line">Game-Show|75169</span><br><span class="line">Adult|65704</span><br><span class="line">Sport|48855</span><br><span class="line">Fantasy|48341</span><br><span class="line">Mystery|47155</span><br><span class="line">Horror|41552</span><br><span class="line">Thriller|40664</span><br><span class="line">History|31675</span><br><span class="line">Sci-Fi|31441</span><br><span class="line">Biography|27001</span><br><span class="line">Musical|17939</span><br><span class="line">Western|9811</span><br><span class="line">War|9309</span><br><span class="line">Film-Noir|322</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/database_system/sql/" title="结构化查询语言SQL">http://example.com/database_system/sql/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/database-systems/" rel="tag"><i class="fa fa-tag"></i> database systems</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/database_system/concurrency-control/" rel="prev" title="并发控制">
+                  <i class="fa fa-chevron-left"></i> 并发控制
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/fenwick-tree/" rel="next" title="树状数组">
+                  树状数组 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+</body>
+</html>

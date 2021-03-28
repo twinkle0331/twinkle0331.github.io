@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="任何词条之间可相互比较大小是有序向量得以定义，以及二分查找赖以成立的基本前提。通过对二分查找策略的抽象和推广，定义和实现二叉搜索树结构。二叉搜索树有诸多变种，各具特色，各有所长，也有各自适用范围。为有效控制树高，二叉树的性能主要取决于树高，故应在节点数目一定的情况下尽可能地减小树高，相应地，尽可能使兄弟子树地高度彼此接近，即全树尽可能地平衡。平衡二叉搜索树通过对树中每一局部增加某种性质来保证二叉树">
+<meta property="og:type" content="article">
+<meta property="og:title" content="二叉搜索树">
+<meta property="og:url" content="http://example.com/bst/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="任何词条之间可相互比较大小是有序向量得以定义，以及二分查找赖以成立的基本前提。通过对二分查找策略的抽象和推广，定义和实现二叉搜索树结构。二叉搜索树有诸多变种，各具特色，各有所长，也有各自适用范围。为有效控制树高，二叉树的性能主要取决于树高，故应在节点数目一定的情况下尽可能地减小树高，相应地，尽可能使兄弟子树地高度彼此接近，即全树尽可能地平衡。平衡二叉搜索树通过对树中每一局部增加某种性质来保证二叉树">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2019/09/05/frTd2gO7DXhIPZU.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/05/OgtlCb9r2SEGB3s.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/05/Er2TLX4YKDyC3hu.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/05/56Jglbcdf1XWQNI.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/05/o7CGOzSfMXla3Ji.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/05/iwsFpGeAUv6aLVx.png">
+<meta property="article:published_time" content="2019-09-05T01:38:10.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="Data structure">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2019/09/05/frTd2gO7DXhIPZU.png">
+
+
+<link rel="canonical" href="http://example.com/bst/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>二叉搜索树 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bst/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          二叉搜索树
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-09-05 09:38:10" itemprop="dateCreated datePublished" datetime="2019-09-05T09:38:10+08:00">2019-09-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>任何词条之间可相互比较大小是有序向量得以定义，以及二分查找赖以成立的基本前提。通过对二分查找策略的抽象和推广，定义和实现二叉搜索树结构。二叉搜索树有诸多变种，各具特色，各有所长，也有各自适用范围。为有效控制树高，二叉树的性能主要取决于树高，故应在节点数目一定的情况下尽可能地减小树高，相应地，尽可能使兄弟子树地高度彼此接近，即全树尽可能地平衡。平衡二叉搜索树通过对树中每一局部增加某种性质来保证二叉树的适度平衡性。</p>
+<a id="more"></a>
+
+<p>查找，即按照事先约定的规则，从数据集合中找出符合特定条件的对象，属于基本的静态操作。</p>
+<p>基本的数据结构(列表和向量)并不能高效地兼顾静态查找和动态修改操作。</p>
+<table>
+<thead>
+<tr>
+<th>基本结构</th>
+<th>查找</th>
+<th>插入/删除</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>无序向量</td>
+<td>$O( n )$</td>
+<td>$ O( n )$</td>
+</tr>
+<tr>
+<td>有序向量</td>
+<td>$O(logn)$</td>
+<td>$ O(n)$</td>
+</tr>
+<tr>
+<td>无序列表</td>
+<td>$O( n )$</td>
+<td>$O(1)$</td>
+</tr>
+<tr>
+<td>有序列表</td>
+<td>$O(n)$</td>
+<td>$O(n)$</td>
+</tr>
+</tbody></table>
+<h1 id="二叉搜索树"><a href="#二叉搜索树" class="headerlink" title="二叉搜索树"></a>二叉搜索树</h1><h2 id="顺序性"><a href="#顺序性" class="headerlink" title="顺序性"></a>顺序性</h2><p>在所谓的二叉搜索树中，处处都满足顺序性：</p>
+<p><strong>任一节点r的左(右)子树中，所有节点(若存在)，均不大于(不小于)r</strong></p>
+<p>为了回避边界情况，暂且假定所有节点互不相等，于是上述顺序性可简化表述为：</p>
+<p><strong>任一节点r的左(右)子树中，所有节点(若存在)，均小于(大于)r</strong></p>
+<p>当然，在实际应用中，对相等元素的禁止既不自然也不必要，可以对现有结构进行扩展，使二叉搜索树的接口支持相等词条的同时并存。</p>
+<h2 id="单调性"><a href="#单调性" class="headerlink" title="单调性"></a>单调性</h2><p>在微观上满足顺序性，在宏观上满足单调性，单调性：</p>
+<p><strong>BST的中序遍历序列，必然单调非降</strong></p>
+<p>考查二叉树中的任一节点$r$，按照中序遍历的约定，$r$左(右)子树中的节点(若存在)均应先于(后于)r接受访问。</p>
+<p>按照二叉搜索树的定义，$r$左(右)子树中的节点(若存在)均不大于(不小于)$r$，故中序遍历序列必然在r处单调非降，反之亦然。</p>
+<p>鉴于以上所取$r$的任意性，在二叉搜索树中处处成立。</p>
+<p>二叉搜索树的定义无法更改为<strong>任意节点的左(右)孩子均不大于(不小于)r</strong>，即将原来定义中的左(右)后代替换为左(右)孩子。满足这一定义的树未必中序遍历序列单调非降。</p>
+<h2 id="查找算法"><a href="#查找算法" class="headerlink" title="查找算法"></a>查找算法</h2><p>二叉搜索树的查找算法采取了减而治之的思路和策略，执行过程可描述为：</p>
+<p><strong>从树根出发，逐步地缩小查找范围，直到发现目标(成功)或缩小至空树(失败)</strong></p>
+<p>对照中序遍历来看，整个过程可视为仿效有序向量的二分查找。</p>
+<p><strong>递归版</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename T&gt; BinNodePosi(T) &amp; BST&lt;T&gt;::search ( const T&amp; e ) &#x2F;&#x2F;在BST中查找关键码e</span><br><span class="line">&#123; return searchIn ( _root, e, _hot &#x3D; NULL ); &#125; &#x2F;&#x2F;返回目标节点位置的引用，以便后续插入、删除操作</span><br><span class="line">template &lt;typename T&gt; &#x2F;&#x2F;在以v为根的（AVL、SPLAY、rbTree等）BST子树中查找关键码e</span><br><span class="line">static BinNodePosi(T) &amp; searchIn ( BinNodePosi(T) &amp; v, const T&amp; e, BinNodePosi(T) &amp; hot ) &#123;</span><br><span class="line">   if ( !v || ( e &#x3D;&#x3D; v-&gt;data ) ) return v; &#x2F;&#x2F;递归基：在节点v（或假想的通配节点）处命中</span><br><span class="line">   hot &#x3D; v; &#x2F;&#x2F;一般情况：先记下当前节点，然后再</span><br><span class="line">   return searchIn ( ( ( e &lt; v-&gt;data ) ? v-&gt;lc : v-&gt;rc ), e, hot ); &#x2F;&#x2F;深入一层，递归查找</span><br><span class="line">&#125; &#x2F;&#x2F;返回时，返回值指向命中节点（或假想的通配哨兵），hot指向其父亲（退化时为初始值NULL）</span><br></pre></td></tr></table></figure>
+<p><strong>迭代版</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; BinNodePosi(T) &amp; BST&lt;T&gt;::search ( <span class="keyword">const</span> T&amp; e ) <span class="comment">//在BST中查找关键码e</span></span><br><span class="line">&#123; <span class="keyword">return</span> searchIn ( _root, e, _hot = <span class="literal">NULL</span> ); &#125; <span class="comment">//返回目标节点位置的引用，以便后续插入、删除操作</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> EQUAL(e, v)  (!(v) || (e) == (v)-&gt;data) <span class="comment">//节点v（或假想的通配哨兵）的关键码等于e</span></span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//在以v为根的（AVL、SPLAY、rbTree等）BST子树中查找关键码e</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="title">BinNodePosi</span><span class="params">(T)</span> &amp; <span class="title">searchIn</span> <span class="params">( BinNodePosi(T) &amp; v, <span class="keyword">const</span> T&amp; e, BinNodePosi(T) &amp; hot )</span> </span>&#123;</span><br><span class="line">   <span class="keyword">if</span> ( EQUAL ( e, v ) ) <span class="keyword">return</span> v; hot = v; <span class="comment">//退化情况：在子树根节点v处命中</span></span><br><span class="line">   <span class="keyword">while</span> ( <span class="number">1</span> ) &#123; <span class="comment">//一般地，反复不断地</span></span><br><span class="line">      BinNodePosi(T) &amp; c = ( e &lt; hot-&gt;data ) ? hot-&gt;lc : hot-&gt;rc; <span class="comment">//确定深入方向</span></span><br><span class="line">      <span class="keyword">if</span> ( EQUAL ( e, c ) ) <span class="keyword">return</span> c; hot = c; <span class="comment">//命中返回，或者深入一层</span></span><br><span class="line">   &#125; <span class="comment">//hot始终指向最后一个失败节点</span></span><br><span class="line">&#125; <span class="comment">//返回时，返回值指向命中节点（或假想的通配哨兵），hot指向其父亲（退化时为初始值NULL）</span></span><br></pre></td></tr></table></figure>
+<p>运行时间正比于返回节点v的深度，不超过树高$O(h)$。最好情况下目标关键码刚好出现在树根节点处(或附近)，此时只需$O(1)$时间。最坏情况下，规模为$n$的二叉搜索树深度可能达到$\Omega(n)$,比如该树退化为一条单链时，此时的查找等效于顺序查找。</p>
+<p>节点的插入和删除操作都需要首先调用查找算法，并根据查找结果确定后续的处理方式，这里以引用的方式传递(子)树根节点。在成功时指向一个关键码为e且真实存在的节点，失败时，指向最后一次试图转向的空节点<code>null</code>。对于后一情况，可假想地将此节点转换为一个数值为e的哨兵节点，如此，无论命中与否，查找的返回值均等效地指向命中节点,而<code>hot</code>总是指向命中节点的父亲。</p>
+<blockquote>
+<p>无论树的具体形态如何，查找必然有n种成功情况和n+1种失败情况</p>
+</blockquote>
+<p>通过对树高数学归纳可以证明。</p>
+<p>假设原有二叉树度数为0、1、2的节点，各有$n_0$,$n_1$,$n_2$个。</p>
+<p>在原有二叉搜索树的基础上，引入$n_1+2n_0$个外部节点，可使原有节点度数统一为2，如此，即可将任一二叉搜索树T转化为一棵真二叉树T’。s设T’度数为0、1、2的节点，分别为$n’_0,n’_1,n’_2$。查找失败的情况必定对应于外部节点。</p>
+<p>由树的性质，有$e’=n’-1=n’_1+2n’_2$</p>
+<p>$n’=n’_0+n_1+n’_2=1+2n_1+n_2$</p>
+<p>此时所有节点均为二度节点，则$n’_1=0$</p>
+<p>$n’_0=n’_2+1$</p>
+<p>注意到此时的零度节点数量即等于引入的外部节点，即$n’_0=n_1+2n_0$</p>
+<p>二度节点即为原来的节点总数$n’_2=n_0+n_1+n_2=n$</p>
+<p>即$n’_0=n+1$,查找失败的情况总数即是外部节点的数目。</p>
+<p>查找成功的情况总数即是二叉搜索树的节点总数$n$,得证。</p>
+<h2 id="插入算法"><a href="#插入算法" class="headerlink" title="插入算法"></a>插入算法</h2><p>为了在二叉搜索树中插入一个顶点，首先需要利用查找算法<code>search()</code> 确定插入的位置和方式，然后才能将新节点作为叶子插入。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; BinNodePosi(T) BST&lt;T&gt;::insert ( <span class="keyword">const</span> T&amp; e ) &#123; <span class="comment">//将关键码e插入BST树中</span></span><br><span class="line">   BinNodePosi(T) &amp; x = search ( e ); <span class="keyword">if</span> ( x ) <span class="keyword">return</span> x; <span class="comment">//确认目标不存在（留意对_hot的设置）</span></span><br><span class="line">   x = <span class="keyword">new</span> BinNode&lt;T&gt; ( e, _hot ); <span class="comment">//创建新节点x：以e为关键码，以_hot为父</span></span><br><span class="line">   _size++; <span class="comment">//更新全树规模</span></span><br><span class="line">   updateHeightAbove ( x ); <span class="comment">//更新x及其历代祖先的高度</span></span><br><span class="line">   <span class="keyword">return</span> x; <span class="comment">//新插入的节点，必为叶子</span></span><br><span class="line">&#125; <span class="comment">//无论e是否存在于原树中，返回时总有x-&gt;data == e</span></span><br></pre></td></tr></table></figure>
+<p>这里需要注意，在创建新节点$x$的时候，只是指定了父亲为$hot$，并没有指定$hot$的左孩子还是右孩子为$x$。在前一步的<code>search</code>过程中，返回了命中节点的引用，通过对$x$的赋值来连接父子节点，同时也将$x$接入树中。</p>
+<p>插入操作必定在叶节点处，同样取决于节点的深度，在最坏情况下不超过全树的高度，即最深的叶子的深度。</p>
+<blockquote>
+<p>在二叉树树中插入节点v之后，除v的历代祖先外，其余节点的高度无需更新</p>
+</blockquote>
+<p>节点的高度仅取决于其后代，更确切地，是该节点与其最深后代之间的距离。因此在插入节点$v$之后，节点$a$的高度可能发生变化，当且仅当$v$是$a$的后代，或反过来等价地，a是v的祖先。</p>
+<blockquote>
+<p>祖先高度不会降低，但是至多加一</p>
+</blockquote>
+<p>插入节点$v$之后，所有节点的后代集不至缩小。高度取决于后代深度的最大值，故不至于下降。<br>另外一方面，假定节点$a$的高度由$h$增加至$h’$。若将$v$的父节点记作$p$,则$a$到$p$的距离不大于$a$在此之前的高度，于是必有：</p>
+<p>$h’ \leq |ap|+1 \leq h+1$</p>
+<blockquote>
+<p>一旦某个祖先高度不变，则更高的祖先高度也必然高度不变</p>
+</blockquote>
+<p>对于任意节点$p$，若将其左、右孩子分别记作$l$和$r$(可能为空)，则必有：</p>
+<p>$height(p)=1+max(height(l),height(r))$</p>
+<p>在插入节点$v$之后，在$l$和$r$之间，至多其一可能会(作为$v$的祖先)有所变化。一旦该节点的高度不变，$p$以及更高层祖先(如果存在的话)的高度亦保持不变。</p>
+<h2 id="删除算法"><a href="#删除算法" class="headerlink" title="删除算法"></a>删除算法</h2><p><strong>单分支情况</strong></p>
+<p>若节点x的某一子树为空，则可将其替换为另一棵子树(可能亦为空)，如此操作后，二叉搜索树的拓扑结构依然完整，顺序性同样满足。</p>
+<p><strong>双分支情况</strong></p>
+<p>l除了更新全树规模和释放被摘除节点外，此时也要更新一系列祖先高度，首个需要更新的祖先恰好为<code>hot</code>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">bool</span> BST&lt;T&gt;::remove ( <span class="keyword">const</span> T&amp; e ) &#123; <span class="comment">//从BST树中删除关键码e</span></span><br><span class="line">   BinNodePosi(T) &amp; x = search ( e ); <span class="keyword">if</span> ( !x ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//确认目标存在（留意_hot的设置）</span></span><br><span class="line">   removeAt ( x, _hot ); _size--; <span class="comment">//实施删除</span></span><br><span class="line">   updateHeightAbove ( _hot ); <span class="comment">//更新_hot及其历代祖先的高度</span></span><br><span class="line">   <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125; <span class="comment">//删除成功与否，由返回值指示</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="title">BinNodePosi</span><span class="params">(T)</span> <span class="title">removeAt</span> <span class="params">( BinNodePosi(T) &amp; x, BinNodePosi(T) &amp; hot )</span> </span>&#123;</span><br><span class="line">   BinNodePosi(T) w = x; <span class="comment">//实际被摘除的节点，初值同x</span></span><br><span class="line">   BinNodePosi(T) succ = <span class="literal">NULL</span>; <span class="comment">//实际被删除节点的接替者</span></span><br><span class="line">   <span class="keyword">if</span> ( !HasLChild ( *x ) ) <span class="comment">//若*x的左子树为空，则可</span></span><br><span class="line">      succ = x = x-&gt;rc; <span class="comment">//直接将*x替换为其右子树</span></span><br><span class="line">   <span class="keyword">else</span> <span class="keyword">if</span> ( !HasRChild ( *x ) ) <span class="comment">//若右子树为空，则可</span></span><br><span class="line">      succ = x = x-&gt;lc; <span class="comment">//对称地处理——注意：此时succ != NULL</span></span><br><span class="line">   <span class="keyword">else</span> &#123; <span class="comment">//若左右子树均存在，则选择x的直接后继作为实际被摘除节点，为此需要</span></span><br><span class="line">      w = w-&gt;succ(); <span class="comment">//（在右子树中）找到*x的直接后继*w</span></span><br><span class="line">      swap ( x-&gt;data, w-&gt;data ); <span class="comment">//交换*x和*w的数据元素</span></span><br><span class="line">      BinNodePosi(T) u = w-&gt;parent;</span><br><span class="line">      ( ( u == x ) ? u-&gt;rc : u-&gt;lc ) = succ = w-&gt;rc; <span class="comment">//隔离节点*w</span></span><br><span class="line">   &#125;</span><br><span class="line">   hot = w-&gt;parent; <span class="comment">//记录实际被删除节点的父亲</span></span><br><span class="line">   <span class="keyword">if</span> ( succ ) succ-&gt;parent = hot; <span class="comment">//并将被删除节点的接替者与hot相联</span></span><br><span class="line">   release ( w-&gt;data ); release ( w ); <span class="keyword">return</span> succ; <span class="comment">//释放被摘除节点，返回接替者</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>算法操作所需的时间主要消耗于对<code>search()</code>，<code>succ()</code>，<code>updateHeightAbove()</code>的调用。在树的任意高度，它们至多消耗$O(1)$时间，故总体的渐进时间复杂度亦不超过全树的高度。</p>
+<blockquote>
+<p>从二叉搜索树中删除节点，若实际被删除的节点为x,则此后除x的历代祖先外，其余节点的高度无需更新</p>
+</blockquote>
+<p>节点的高度仅取决于其后代，更确切地，是该节点与其最深后代之间的距离。因此在插入节点v之后，节点a的高度可能发生变化，当且仅当v是a的后代，或反过来等价地，a是v的祖先。</p>
+<blockquote>
+<p>祖先高度不会降低，但是至多减一</p>
+</blockquote>
+<p>假设在删除节点x之后，祖先节点a的高度由h变化至h’。假想将x重新插回树中，于是自然地，a的高度应该从h恢复至h，由插入的结论，必有：</p>
+<p>$h\leq h’+1$</p>
+<p>亦即$h’ \geq h-1$</p>
+<blockquote>
+<p>一旦某个祖先高度不变，更高的祖先也必然高度不变</p>
+</blockquote>
+<p>反正，假设在删除节点x之后，祖先节点高度会间隔地下降和不变。</p>
+<p>假想将x重新插入树中，所有节点的高度均应复原，而祖先节点的高度则必然间隔地上升和不变，这一结论与之前插入的结论不一致。</p>
+<p>在逐层上行更新祖先高度时，一旦某一祖先的高度不变，便可随即终止。</p>
+<h2 id="期望树高"><a href="#期望树高" class="headerlink" title="期望树高"></a>期望树高</h2><p>BST主要接口<code>search()</code>，<code>insert()</code>，<code>remove()</code>的运行时间在最坏情况下均线性正比于其高度$O(h)$。</p>
+<p>若无法有效控制树高，在最坏情况下，二叉搜索树可能彻底地退化为列表，查找效率降至$O(n)$,线性正比于树(列表)规模。</p>
+<p>以下按照两种常用的随机统计方法对BST的平均性能进行分析</p>
+<p><strong>随机生成</strong></p>
+<p>考察$n$个互异词条${e_1,e_2,..,e_n}$,对任一排列$P=(e_{i1},e_{i2},…,e_{in})$</p>
+<p>从空树开始，反复调用<code>insert()</code>接口将各词条依次插入，得到T</p>
+<p>与随机序列$P$对应的$T$，称由$P$随机生成。</p>
+<p>假定任一排列$P$作为输入的概率均等$1/n!$</p>
+<p>则由$n$个互异词条随机生成的二叉搜索树，平均高度为$\Theta(logn)$</p>
+<p><strong>随机组成</strong></p>
+<p>n个互异节点在遵守顺序性的情况下，可随机确定拓扑联接关系</p>
+<p>如此得到的BST，称由这组节点随机组成。</p>
+<p>由同一节点组成的二叉搜索树不尽相同，但是中序遍历序列必然相同，不妨记作</p>
+<p>$x_0$,$x_1$,$x_2$,…,$x_{k-1}$,$x_k$,$x_{k+1}$,$x_{k+2}$,…,$x_{n-1}$</p>
+<p>根据所选树根节点的不同，所有搜索树分为$n$类，对于其中以$x_{k}$为根者而言，左、右子树必然分别由{$x_0$,$x_1$,$x_2$,…,$x_{k-1}$}和{$x_{k+1}$,$x_{k+2}$,…,$x_{n-1}$}组成。</p>
+<p>如此，可得边界条件和递推式如下：</p>
+<p>$T(0)=T(1)=1$</p>
+<p>由$n$个互异节点组随机组成的BST，若共计$T(n)$棵，则有<br>$$<br>T(n)=\sum_{k=1}^{n-1} T(k-1)T(n-k)=catalan(n)=\frac{(2n)!}{n!(n+1)!}<br>$$<br>假定所有BST等概率出现，则其平均高度为$\Theta(\sqrt n)$</p>
+<p>在随机生成的统计方法中，越低的BST被统计多次，故过于乐观。理想随机在实际中并不常见，关键码往往按单调甚至线性的次序出现，极高的BST频繁出现不足为奇。</p>
+<blockquote>
+<p>在目标节点同时拥有左右子树的时候，总是固定选取直接后继与之交换，从二叉树的整个生命周期来看，左子树将越来越倾向于高于右子树，从而加剧整体的不平衡性</p>
+</blockquote>
+<p>一种简捷的策略为除直接后继外还考虑直接前驱，并在二者之间随机选取。</p>
+<h1 id="平衡二叉搜索树"><a href="#平衡二叉搜索树" class="headerlink" title="平衡二叉搜索树"></a>平衡二叉搜索树</h1><p>二叉搜索树的性能主要取决于树高，故在节点数目固定时应尽可能地降低高度。</p>
+<p>节点数目固定时，兄弟子树的高度越接近(平衡)，全树也倾向于更低。</p>
+<p>若高度为$h$的二叉树共含$n$个节点，则必有：</p>
+<p>$n\leq 2^{h+1}-1$<br>这里的等号成立，当且仅当是满树。于是有：</p>
+<p>$h \geq log_2(n+1)-1 $</p>
+<p>$h \geq \lceil log_2{n+1} \rceil-1=\lfloor log_2n \rfloor$</p>
+<p>恰好为$\lfloor log_2n \rfloor$时，称作理想平衡。大致相当于完全树甚至满树：叶节点只能出现在最底部的两层。完全二叉树的限制过于苛刻相对二叉树所有可能的形态，此类二叉树所占比例极低，而随着二叉树规模的增大，这一规模还将继续锐减。所以对标准适度放松，依照某种相对宽松的标准，重新定义二叉搜索树的平衡性。</p>
+<p>高度在渐进意义上不超过$O(logn)$，故可称作适度平衡。适度平衡的BST，称作平衡二叉搜索树。</p>
+<h2 id="等价变换"><a href="#等价变换" class="headerlink" title="等价变换"></a>等价变换</h2><p>若两棵二叉树的中序遍历序列相同，则称它们彼此等价。</p>
+<p><strong>上下可变</strong></p>
+<p>联接关系不同，承袭关系可能颠倒</p>
+<p><strong>左右不乱</strong></p>
+<p>中序遍历序列完全一致，全局单调非降</p>
+<p>各种平衡二叉搜索树(BBST)可视为BST的某一子集，相应地满足限制条件。除了适度平衡性，还具有如下局部性：</p>
+<ul>
+<li>单次动态修改操作后，至多$O(logn)$处局部不再满足限制条件</li>
+<li>可在$O(logn)$时间内，使这些局部(以至全树)重新满足</li>
+</ul>
+<p>刚刚失去平衡的二叉搜索树，必然可以迅速转换为一棵等价的平衡二叉搜索树。等价二叉搜索树之间的上述转换过程，也称作等价变换。</p>
+<h2 id="旋转调整"><a href="#旋转调整" class="headerlink" title="旋转调整"></a>旋转调整</h2><p>修复局部失衡的最基本手段，就是通过围绕特定节点的旋转，实现等价前提下的拓扑调整。</p>
+<p>设$c$和$Z$是$v$左孩子、右子树，$X$和$Y$是$c$的左、右子树。以$v$为轴的zig旋转，如图所示，重新调整这两个节点和三棵子树之间的关系，将$X$和$v$作为$c$的左子树、右孩子，$Y$和$Z$分别作为$v$的左、右子树。</p>
+<p>对称地，设$X$和$c$是$v$左子树、右孩子，$Y$和$Z$是$c$的左、右子树。以$v$为轴的zig旋转，如图所示，重新调整这两个节点和三棵子树之间的关系，将$X$和$Y$作为$v$的左子树、右子树，$v$和$Z$分别作为$c$的左孩子、右子树。</p>
+<p>zig和zag均属于局部操作，旋转以后中序遍历序列依然不变，故均为等价变换。旋转操作仅涉及常数顶点及其之间的联接关系，故均可在常数时间内完成。</p>
+<p><img src="https://i.loli.net/2019/09/05/frTd2gO7DXhIPZU.png"></p>
+<p>调整之后，$v/c$深度加/减1，子(全)树高度的变化幅度，上下不超过1。实际上，经过不超过$O(n)$次旋转，等价的BST均可相互转化。</p>
+<blockquote>
+<p>规模为n的任何二叉搜索树，经过不超过n-1次旋转调整，都可等价变换为仅含左分支的二叉搜索树，即最左侧通路</p>
+</blockquote>
+<p><strong>任一节点需要通过一次旋转归入最左侧通路，当且仅当它最初不在最左侧通路上。</strong></p>
+<p>故原最左侧通路的长度为$s$，则上述算法所做的旋转调整，恰好共计$n-s-1$次。</p>
+<p>特别地，$s=0$(根节点的左子树为空),当且仅当需做$n-1$次旋转。</p>
+<p>考查二叉搜索树的最左侧通路，从该通路的末端节点$L_d$开始，逐步迭代地延长该路径，直至不能延长。每次迭代，无非两种情况：</p>
+<ul>
+<li>若$L_k$的右子树为空，则可令$L_k$上移一层，转至其父节点</li>
+<li>若$L_k$的右孩子$R_k$存在，则可以以当前$L_k$为轴，做一次zag旋转调整，如此，$R_k$将作为$L_k$的父亲纳入最左侧通路中。</li>
+</ul>
+<p>整个迭代过程的不变性为：</p>
+<ul>
+<li>当前$L_k$来自最左侧通路</li>
+<li>$L_k$的左子树(由不大于$L_k$的所有节点组成)已不含任何右向分支</li>
+</ul>
+<p>另外，整个迭代过程也满足如下单调性：</p>
+<p><strong>最左侧通路的长度，严格单调增加</strong></p>
+<p>故该算法必然终止，且所得的二叉搜索树已不含任何右向分支。</p>
+<p>以上思路具体实现如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//通过zag旋转调整，将BST子树x拉伸成最左侧通路</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="function"><span class="keyword">void</span> <span class="title">stretchByZag</span> <span class="params">( BinNodePosi(T) &amp; x )</span> </span>&#123;</span><br><span class="line">   BinNodePosi(T) p = x; <span class="keyword">while</span> ( p-&gt;rc ) p = p-&gt;rc; <span class="comment">//最大节点，必是子树最终的根</span></span><br><span class="line">   <span class="keyword">while</span> ( x-&gt;lc ) x = x-&gt;lc; <span class="comment">//转至初始最左侧通路的末端</span></span><br><span class="line">   <span class="keyword">for</span> ( ; x != p; x = x-&gt;parent ) &#123; <span class="comment">//若x右子树已空，则上升一层</span></span><br><span class="line">       <span class="keyword">while</span> ( x-&gt;rc ) <span class="comment">//否则，反复地</span></span><br><span class="line">       x-&gt;zag(); <span class="comment">//以x为轴做zag旋转</span></span><br><span class="line">      &#125; <span class="comment">//直到抵达子树的根</span></span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<p>可见，每做一次zag旋转，总有一个节点归入最左侧通路中，后者的长度也同时加一。最坏情况下，除原根节点外，其余节点均各自对应于一次旋转，累计不过n-1次。</p>
+<p>由以上结论推广可知：</p>
+<p><strong>规模为n的任何两棵等价二叉搜索树，至多经过2n-2次旋转，即可彼此转换。</strong></p>
+<h1 id="AVL树"><a href="#AVL树" class="headerlink" title="AVL树"></a>AVL树</h1><p>通过合理设定适度平衡的标准，并借助以上等价变换，AVL树可实现近似理想的平衡。在渐进意义上，AVL树可始终将其高度控制在$O(logn)$以内，从而保证每次查找、插入或删除操作均可在$O(logn)$时间内完成。</p>
+<p>任一节点的平衡因子定义为其左、右子树的高度差，即</p>
+<p>$balFac(v)=height(lc(v))=height(rc(v))$</p>
+<p>空树高度取-1，单节点子树(叶节点)高度取0。</p>
+<p>AVL树，即平衡因子受限的二叉搜索树，其中各节点平衡因子的绝对值均不超过1。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#define Balanced(x) ( stature( (x).lc ) &#x3D;&#x3D; stature( (x).rc ) ) &#x2F;&#x2F;理想平衡条件</span><br><span class="line">#define BalFac(x) ( stature( (x).lc ) - stature( (x).rc ) ) &#x2F;&#x2F;平衡因子</span><br><span class="line">#define AvlBalanced(x) ( ( -2 &lt; BalFac(x) ) &amp;&amp; ( BalFac(x) &lt; 2 ) ) &#x2F;&#x2F;AVL平衡条件</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>高度为$h$的AVL树至少包含$S(h)=fib(n+3)-1$个节点。</p>
+</blockquote>
+<p>固定高度$h$，考查节点最少的AVL树</p>
+<p>将这一最小规模记作$S(h)$</p>
+<p>$S(h)=1+S(h-1)+S(h-2)$<br>$S(h)+1=[S(h-1)+1]+[S(h-2)+1]$</p>
+<p>当$h$等于0时，T中至少有1个节点，$S(0)+1=fib(3)$</p>
+<p>递推关系为$fib(h+3)=fib(n+2)+fib(n+2)$</p>
+<p>反过来，由$n$个节点构成的AVL树，高度至多为$O(logn)$。</p>
+<p>按照BST规则动态操作之后，AVL的平衡性可能破坏</p>
+<ul>
+<li>插入：从祖父开始，每个祖先都有可能失衡，且可能同时失衡</li>
+<li>删除：从父亲开始，每个祖先都有可能失衡，但至多一个</li>
+</ul>
+<p>通过旋转等价变换恢复平衡，累计操作不过$O(logn)$。</p>
+<h2 id="节点插入"><a href="#节点插入" class="headerlink" title="节点插入"></a>节点插入</h2><p>插入节点$x$之后，可能有多个失衡节点。插入操作必定位于叶节点处，叶节点的父亲必不失衡，故失衡节点中最低者$g$不低于$x$祖父。</p>
+<p>在$x$和$g(x)$的通路上，设$p$为$g(x)$的孩子，$v$为$p$的孩子。$g(x)$是由于$x$的引入而失衡，则$p$和$v$的高度均不会低于各自的兄弟。因此可通过以下宏定义由$g(x)$找到$p$和$v$。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">#define tallerChild(x) ( \</span><br><span class="line">   stature( (x)-&gt;lc ) &gt; stature( (x)-&gt;rc ) ? (x)-&gt;lc : ( &#x2F;*左高*&#x2F; \</span><br><span class="line">   stature( (x)-&gt;lc ) &lt; stature( (x)-&gt;rc ) ? (x)-&gt;rc : ( &#x2F;*右高*&#x2F; \</span><br><span class="line">   IsLChild( * (x) ) ? (x)-&gt;lc : (x)-&gt;rc &#x2F;*等高：与父亲x同侧者（zIg-zIg或zAg-zAg）优先*&#x2F; \</span><br><span class="line">   ) \</span><br><span class="line">   ) \</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>这里通过比较子树的高度直接计算。失衡节点的恢复方案取决于节点$g(x)$、$p$、$v$之间具体的联接方向。</p>
+<p><strong>单旋</strong></p>
+<p>不妨设$p$是$g$的右孩子，$c$是$p$的右孩子。在这种情况下，必定是子树$v$中插入节点$x$，而使$g(x)$不再平衡。逆时针旋转<code>zag(g(x))</code>，$g(x)$必将恢复平衡。对称情况可由<code>zig(g(x))</code>恢复平衡。</p>
+<p><img src="https://i.loli.net/2019/09/05/OgtlCb9r2SEGB3s.png"></p>
+<p><strong>双旋</strong></p>
+<p>不妨设节点$v$是$p$的左孩子，而$p$是$g(x)$的右孩子。在这种情况下，必定是在子树$v$中插入了新节点$x$，而致使$g(x)$不再平衡。先顺时针旋转<code>zig(p)</code>，再<code>zag(g(x))</code>，$g(x)$必将恢复平衡。</p>
+<p><img src="https://i.loli.net/2019/09/05/Er2TLX4YKDyC3hu.png"></p>
+<p>经过局部调整后，局部子树高度也必将复原，$g(x$)以上所有祖先的平衡因子亦将统一地复原。在AVL树中插入新节点后，仅需不超过两次旋转即可使整树恢复平衡。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; BinNodePosi(T) AVL&lt;T&gt;::insert ( <span class="keyword">const</span> T&amp; e ) &#123; <span class="comment">//将关键码e插入AVL树中</span></span><br><span class="line">   BinNodePosi(T) &amp; x = search ( e ); <span class="keyword">if</span> ( x ) <span class="keyword">return</span> x; <span class="comment">//确认目标节点不存在</span></span><br><span class="line">   BinNodePosi(T) xx = x = <span class="keyword">new</span> BinNode&lt;T&gt; ( e, _hot ); _size++; <span class="comment">//创建新节点x</span></span><br><span class="line"><span class="comment">// 此时，x的父亲_hot若增高，则其祖父有可能失衡</span></span><br><span class="line">   <span class="keyword">for</span> ( BinNodePosi(T) g = _hot; g; g = g-&gt;parent ) &#123; <span class="comment">//从x之父出发向上，逐层检查各代祖先g</span></span><br><span class="line">      <span class="keyword">if</span> ( !AvlBalanced ( *g ) ) &#123; <span class="comment">//一旦发现g失衡，则（采用“3 + 4”算法）使之复衡，并将子树</span></span><br><span class="line">         FromParentTo ( *g ) = rotateAt ( tallerChild ( tallerChild ( g ) ) ); <span class="comment">//重新接入原树</span></span><br><span class="line">         <span class="keyword">break</span>; <span class="comment">//g复衡后，局部子树高度必然复原；其祖先亦必如此，故调整随即结束</span></span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="comment">//否则（g依然平衡），只需简单地</span></span><br><span class="line">         updateHeight ( g ); <span class="comment">//更新其高度（注意：即便g未失衡，高度亦可能增加）</span></span><br><span class="line">   &#125; <span class="comment">//至多只需一次调整；若果真做过调整，则全树高度必然复原</span></span><br><span class="line">   <span class="keyword">return</span> xx; <span class="comment">//返回新节点位置</span></span><br><span class="line">&#125; <span class="comment">//无论e是否存在于原树中，总有AVL::insert(e)-&gt;data == e</span></span><br></pre></td></tr></table></figure>
+<p>在AVL树中引入一个节点后，失衡的节点可能多达$\Omega(logn)$个。</p>
+<h2 id="节点删除"><a href="#节点删除" class="headerlink" title="节点删除"></a>节点删除</h2><p>同时至多一个失衡节点，首个可能就是$x$的父亲$hot$</p>
+<p>在不包含$x$的一侧，必有一个非空孩子$p$，且$p$的孩子至少为1。于是，可按以下规则从$p$的两个孩子中选出节点$v$</p>
+<ul>
+<li>若两个孩子不等高，则$v$取作其中更高者</li>
+<li>否则，优先取与$v$与$p$同向者</li>
+</ul>
+<p><strong>单旋</strong></p>
+<p>在$T_{3}$中删除了节点而使$g(x)$不再平衡，但$p$的平衡因子非负时，通过以g(x)为轴顺时针旋转一次可恢复局部的平衡。</p>
+<p><img src="https://i.loli.net/2019/09/05/56Jglbcdf1XWQNI.png"></p>
+<p><strong>双旋</strong></p>
+<p>若$g(x)$失衡时$p$的平衡因子为-1，则经过以$p$为轴的一次逆时针旋转和以$g(x)$为轴顺时针旋转时可恢复局部平衡。</p>
+<p><img src="https://i.loli.net/2019/09/05/o7CGOzSfMXla3Ji.png"></p>
+<p><strong>失衡传播</strong></p>
+<p>在删除节点后，通过单旋或双旋调整使局部子树恢复平衡，但是恢复平衡后，子树的高度未必可以复原，可能再次失衡。</p>
+<p>设$g(x)$复衡后，局部子树的高度的确降低。此时，若$g(x)$原本属于某一更高祖先的更短分支，则因为该分支的进一步缩短，从而致使该祖先失衡，称作失衡传播。失衡传播的方向必然为自底而上，而不至于影响到后代节点。在此过程的任一时刻，至多只有一个失衡的节点；高层的某一节点由平衡转为失衡只可能发生在下层失衡节点恢复平衡之后。因此，可沿<code>parent</code>指针遍历所有祖先，每找到一个失衡的祖先节点，即可套用以上算法使之恢复平衡。</p>
+<p>在AVL树中摘除一个节点后，刚刚通过调整使$g(x)$恢复了平衡，此时，若发现$g(x)$原先的父节点依然平衡，在更高层仍可能有失衡的祖先，仅仅通过平衡性不足以确定可否终止自底而上的重平衡过程，转而核对重平衡后节点的高度可判断是否可以立即终止上溯过程。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">bool</span> AVL&lt;T&gt;::remove ( <span class="keyword">const</span> T&amp; e ) &#123; <span class="comment">//从AVL树中删除关键码e</span></span><br><span class="line">   BinNodePosi(T) &amp; x = search ( e ); <span class="keyword">if</span> ( !x ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//确认目标存在（留意_hot的设置）</span></span><br><span class="line">   removeAt ( x, _hot ); _size--; <span class="comment">//先按BST规则删除之（此后，原节点之父_hot及其祖先均可能失衡）</span></span><br><span class="line">   <span class="keyword">for</span> ( BinNodePosi(T) g = _hot; g; g = g-&gt;parent ) &#123; <span class="comment">//从_hot出发向上，逐层检查各代祖先g</span></span><br><span class="line">      <span class="keyword">if</span> ( !AvlBalanced ( *g ) ) <span class="comment">//一旦发现g失衡，则（采用“3 + 4”算法）使之复衡，并将该子树联至</span></span><br><span class="line">         g = FromParentTo ( *g ) = rotateAt ( tallerChild ( tallerChild ( g ) ) ); <span class="comment">//原父亲</span></span><br><span class="line">      updateHeight ( g ); <span class="comment">//并更新其高度（注意：即便g未失衡，高度亦可能降低）</span></span><br><span class="line">   &#125; <span class="comment">//可能需做Omega(logn)次调整——无论是否做过调整，全树高度均可能降低</span></span><br><span class="line">   <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">//删除成功</span></span><br><span class="line">&#125; <span class="comment">//若目标节点存在且被删除，返回true；否则返回false</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>在AVL树中摘除一个节点后，失衡的节点至多一个</p>
+</blockquote>
+<p>节点的平衡与否取决于其左、右子树之差。因此反过来，只要子树的高度不变，则节点不可能失衡。</p>
+<p>在删除节点以后自底而上逐层核对平衡因子的过程中，一旦遇到一个失衡节点$v$，则被删除的节点必然来自$v$原来更低的一棵子树，而$v$的高度必然由其另一更高的子树确定，故$v$的高度必然保持不变。由此可知，其祖先节点必然不可能失衡。</p>
+<blockquote>
+<p>在高度为h的AVL树中，任一叶节点的深度均不小于$\lfloor h/2 \rfloor$</p>
+</blockquote>
+<p>对树高做数学归纳。作为归纳基时，$h=1$的情况显然。假设以上命题对高度小于$h$的AVL树均成立。</p>
+<p>根据AVL树的性质，此时左、右子树的高度至多为$h-1$，至少为$h-2$。</p>
+<p>由归纳假设，在高度为$h-1$的子树内部，叶节点的深度不小于$\lceil (h-1)/2 \rceil \geq \lceil h/2 \rceil -1$ </p>
+<p>而在高度为$h-2$的子树内部，叶节点的深度也不小于$ \lceil h/2 \rceil -1$ </p>
+<p>因此在全树中，任何叶节点深度都不至小于</p>
+<p>$ 1+(\lceil h/2 \rceil -1)=\lceil h/2 \rceil$ </p>
+<p>对于任意大的正整数都存在一棵规模为$n$的AVL树，从中删除某一特定节点后的确需要做$\Omega(logn)$次旋转方能使全树恢复平衡。</p>
+<blockquote>
+<p>knuth指出，remove()操作尽管在最坏情况下需做$\Omega(logn)$次旋转，但平均而言仅需0.21次</p>
+</blockquote>
+<p>设在AVL树中摘除一个节点后，刚刚通过调整使g(x)恢复了平衡。此时若发现g(x)原来的父节点恢复了平衡，仍然需要检查更高层的祖先。</p>
+<p>仅仅通过平衡性，并不足以确定可否及时终止自底而上的重平衡过程。转而核对重平衡后节点的高度，即可及时判断是否可以立即停止上溯过程。</p>
+<p>AVL的插入操作，可以在首次重平衡后随即终止上溯，原因在于此时不仅局部子树的平衡性能够恢复，而且局部子树的高度亦必然同时恢复。</p>
+<h2 id="统一重平衡算法"><a href="#统一重平衡算法" class="headerlink" title="统一重平衡算法"></a>统一重平衡算法</h2><p>从刚发生失衡的节点$x$出发逆行而上，直至遇到最低的失衡节点$g(x)$。于是在$g(x)$的更高一侧的子树内，其孩节点$p$和孙节点$v$必然存在，这一局部可以$g(x)$，$p$，$v$为界，分为四棵子树。按照中序遍历序列再重新排序$g(x)$和$p$,$v$，分别命名为$a$,$b$,$c$。观察之前的例子，可以发现四7棵子树的高度彼此相差不过一层，所以将这四棵树重新组装起来恰好即是一棵AVL树。</p>
+<p><img src="https://i.loli.net/2019/09/05/iwsFpGeAUv6aLVx.png"></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; BinNodePosi(T) BST&lt;T&gt;::connect34 (</span><br><span class="line">   BinNodePosi(T) a, BinNodePosi(T) b, BinNodePosi(T) c,</span><br><span class="line">   BinNodePosi(T) T0, BinNodePosi(T) T1, BinNodePosi(T) T2, BinNodePosi(T) T3</span><br><span class="line">) &#123;</span><br><span class="line">   <span class="comment">//*DSA*/print(a); print(b); print(c); printf(&quot;\n&quot;);</span></span><br><span class="line">   a-&gt;lc = T0; <span class="keyword">if</span> ( T0 ) T0-&gt;parent = a;</span><br><span class="line">   a-&gt;rc = T1; <span class="keyword">if</span> ( T1 ) T1-&gt;parent = a; updateHeight ( a );</span><br><span class="line">   c-&gt;lc = T2; <span class="keyword">if</span> ( T2 ) T2-&gt;parent = c;</span><br><span class="line">   c-&gt;rc = T3; <span class="keyword">if</span> ( T3 ) T3-&gt;parent = c; updateHeight ( c );</span><br><span class="line">   b-&gt;lc = a; a-&gt;parent = b;</span><br><span class="line">   b-&gt;rc = c; c-&gt;parent = b; updateHeight ( b );</span><br><span class="line">   <span class="keyword">return</span> b; <span class="comment">//该子树新的根节点</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; BinNodePosi(T) BST&lt;T&gt;::rotateAt ( BinNodePosi(T) v ) &#123; <span class="comment">//v为非空孙辈节点</span></span><br><span class="line">   <span class="comment">/*DSA*/</span><span class="keyword">if</span> ( !v ) &#123; <span class="built_in">printf</span> ( <span class="string">&quot;\a\nFail to rotate a null node\n&quot;</span> ); <span class="built_in">exit</span> ( <span class="number">-1</span> ); &#125;</span><br><span class="line">   BinNodePosi(T) p = v-&gt;parent; BinNodePosi(T) g = p-&gt;parent; <span class="comment">//视v、p和g相对位置分四种情况</span></span><br><span class="line">   <span class="keyword">if</span> ( IsLChild ( *p ) ) <span class="comment">/* zig */</span></span><br><span class="line">      <span class="keyword">if</span> ( IsLChild ( *v ) ) &#123; <span class="comment">/* zig-zig */</span> </span><br><span class="line">         p-&gt;parent = g-&gt;parent; <span class="comment">//向上联接</span></span><br><span class="line">         <span class="keyword">return</span> connect34 ( v, p, g, v-&gt;lc, v-&gt;rc, p-&gt;rc, g-&gt;rc );</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123; <span class="comment">/* zig-zag */</span>  </span><br><span class="line">         v-&gt;parent = g-&gt;parent; <span class="comment">//向上联接</span></span><br><span class="line">         <span class="keyword">return</span> connect34 ( p, v, g, p-&gt;lc, v-&gt;lc, v-&gt;rc, g-&gt;rc );</span><br><span class="line">      &#125;</span><br><span class="line">   <span class="keyword">else</span>  <span class="comment">/* zag */</span></span><br><span class="line">      <span class="keyword">if</span> ( IsRChild ( *v ) ) &#123; <span class="comment">/* zag-zag */</span> </span><br><span class="line">         p-&gt;parent = g-&gt;parent; <span class="comment">//向上联接</span></span><br><span class="line">         <span class="keyword">return</span> connect34 ( g, p, v, g-&gt;lc, p-&gt;lc, v-&gt;lc, v-&gt;rc );</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123; <span class="comment">/* zag-zig */</span>  </span><br><span class="line">         v-&gt;parent = g-&gt;parent; <span class="comment">//向上联接</span></span><br><span class="line">         <span class="keyword">return</span> connect34 ( g, v, p, g-&gt;lc, v-&gt;lc, v-&gt;rc, p-&gt;rc );</span><br><span class="line">      &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/bst/" title="二叉搜索树">http://example.com/bst/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Data-structure/" rel="tag"><i class="fa fa-tag"></i> Data structure</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/graph/" rel="prev" title="图">
+                  <i class="fa fa-chevron-left"></i> 图
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/hash/" rel="next" title="词典">
+                  词典 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  <script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'none'
+      },
+      options: {
+        renderActions: {
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              const target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.typesetClear();
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+
+
+</body>
+</html>

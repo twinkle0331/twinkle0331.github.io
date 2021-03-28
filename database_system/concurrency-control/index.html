@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="事务的基本特性是隔离性，然而当数据库中由多个事务并发执行时，事务的隔离性不一定能保持。为保持事务的隔离性，系统必须对并发事务之间的相互作用加以控制，这种控制通过并发控制机制来实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="并发控制">
+<meta property="og:url" content="http://example.com/database_system/concurrency-control/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="事务的基本特性是隔离性，然而当数据库中由多个事务并发执行时，事务的隔离性不一定能保持。为保持事务的隔离性，系统必须对并发事务之间的相互作用加以控制，这种控制通过并发控制机制来实现。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2020/02/06/JLQBVAg3ubpvkMz.png">
+<meta property="og:image" content="https://i.loli.net/2020/02/06/zgCqmRNaUSLfI3Y.png">
+<meta property="og:image" content="https://i.loli.net/2020/02/06/5G4bs23khoDpdOw.png">
+<meta property="article:published_time" content="2020-02-06T01:31:08.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="database systems">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/02/06/JLQBVAg3ubpvkMz.png">
+
+
+<link rel="canonical" href="http://example.com/database_system/concurrency-control/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>并发控制 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database_system/concurrency-control/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          并发控制
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-02-06 09:31:08" itemprop="dateCreated datePublished" datetime="2020-02-06T09:31:08+08:00">2020-02-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Systems/" itemprop="url" rel="index"><span itemprop="name">Systems</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>事务的基本特性是隔离性，然而当数据库中由多个事务并发执行时，事务的隔离性不一定能保持。为保持事务的隔离性，系统必须对并发事务之间的相互作用加以控制，这种控制通过并发控制机制来实现。</p>
+<a id="more"></a>
+
+<p>之前我们了解到视图串行化并不存在有效验证方法，那么还需要有一种方式来确保在不提前知道所有调度的情况下所有执行调度仍然是正确的，因此引入锁机制。</p>
+<p>之前的调度序列在引入锁机制后</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"> T1                      T2</span><br><span class="line">BEGIN</span><br><span class="line">LOCK(A)</span><br><span class="line">R(A)</span><br><span class="line">                       BEGIN</span><br><span class="line">                       LOCK(A)</span><br><span class="line">W(A)</span><br><span class="line">R(A)</span><br><span class="line">UNLOCK(A)</span><br><span class="line">                       R(A)</span><br><span class="line">                       W(A)                       </span><br><span class="line">COMMIT</span><br><span class="line">                       UNLOCK(A)</span><br><span class="line">                       COMMIT</span><br></pre></td></tr></table></figure>
+<p>在T2申请对A锁的时候，T1已经取得了对A的锁，在T1释放对A锁之后，T2才可得到对A的锁。</p>
+<p>锁的基本类型有两种</p>
+<ul>
+<li>S-LOCK: 共享读锁</li>
+<li>X-LOCK: 排他写锁</li>
+</ul>
+<p>对于给定的一个锁类型集合,令A与B代表任意的锁类型，假设事务Ti请求对数据项加A类型锁，而事务Tj当前在数据库Q上拥有B类型锁，而事务Ti可立即获得数据项Q上的锁，那么A类型锁和B类型锁是相容的。</p>
+<p>S-LOCK和X-LOCK的相容性矩阵如下</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>S</th>
+<th>X</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>S</td>
+<td>true</td>
+<td>false</td>
+</tr>
+<tr>
+<td>X</td>
+<td>false</td>
+<td>false</td>
+</tr>
+</tbody></table>
+<p>关于锁的流程为</p>
+<ol>
+<li><p>事务申请锁(或者更新)</p>
+</li>
+<li><p>锁管理器授予锁或者拒绝请求</p>
+</li>
+<li><p>事务释放锁</p>
+</li>
+<li><p>锁管理器释放内部的锁表</p>
+<p>锁表中存储持有锁的事务信息和等待锁的事务信息</p>
+</li>
+</ol>
+<p>在系统中每一个事物遵从称为封锁协议的一组规则，这些规则规定事务何时对数据项进行加锁、解锁，封锁协议限制了可能的调度数目。</p>
+<h1 id="两阶段封锁协议"><a href="#两阶段封锁协议" class="headerlink" title="两阶段封锁协议"></a>两阶段封锁协议</h1><p>确保串行性的一个协议是两阶段封锁协议，该协议要求每个事务分两个阶段提出加锁和释放锁申请。</p>
+<ol>
+<li><p>增长阶段：事务可以获得锁，但是不能释放锁</p>
+<p>锁管理器允许/拒绝请求</p>
+</li>
+<li><p>缩减阶段：事务可以释放锁，但是不能释放锁</p>
+<p>在增长阶段后不允许申请/升级锁。</p>
+</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"> T1                      T2</span><br><span class="line">BEGIN</span><br><span class="line">X-LOCK(A)</span><br><span class="line">R(A)</span><br><span class="line">W(A)</span><br><span class="line">                       BEGIN</span><br><span class="line">                       X-LOCK(A)</span><br><span class="line">R(A)</span><br><span class="line">UNLOCK(A)</span><br><span class="line">                       W(A)                       </span><br><span class="line">COMMIT</span><br><span class="line">                       UNLOCK(A)</span><br><span class="line">                       COMMIT</span><br></pre></td></tr></table></figure>
+<p>两阶段封锁协议可保证冲突可串行化，产生无环的依赖图。</p>
+<p>在两阶段封锁协议中，可能存在级联回滚现象。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"> T1                      T2</span><br><span class="line">BEGIN</span><br><span class="line">X-LOCK(A)</span><br><span class="line">X-LOCK(B)</span><br><span class="line">R(A)</span><br><span class="line">W(A)</span><br><span class="line">UNLOCK(A)</span><br><span class="line">                       BEGIN</span><br><span class="line">                       X-LOCK(A)</span><br><span class="line">                       R(A)</span><br><span class="line">                       W(A)</span><br><span class="line">R(B)                    .</span><br><span class="line">W(B)                    .</span><br><span class="line">ABORT                   .</span><br></pre></td></tr></table></figure>
+<p>在事务T1的W(B)后发生故障，从而导致T2级联回滚，从而导致无效的操作。同时存在可能的可串行化调度，但是不被两阶段封锁协议允许。</p>
+<p>可通过严格两阶段封锁协议或者强两阶段封锁协议解决。</p>
+<h2 id="强两阶段封锁协议"><a href="#强两阶段封锁协议" class="headerlink" title="强两阶段封锁协议"></a>强两阶段封锁协议</h2><p>除了要求封锁是两阶段以外，还要求事务持有的所有锁必须在事务提交后方可释放。</p>
+<ul>
+<li>仅仅允许可冲突可串行化调度</li>
+<li>不存在级联回滚现象</li>
+<li>一个事务写入的值在该事务结束前不可被其余事务读入或者写入</li>
+<li>可能存在死锁现象</li>
+</ul>
+<p><img src="https://i.loli.net/2020/02/06/JLQBVAg3ubpvkMz.png"></p>
+<h2 id="死锁处理"><a href="#死锁处理" class="headerlink" title="死锁处理"></a>死锁处理</h2><p><strong>死锁检测</strong></p>
+<p>系统创建等待图，节点为事务，若事务Ti等待事务Tj释放锁，那么添加从Ti到Tj的边。系统定期检查等待图中是否出现环路，再决定如何破坏循环。</p>
+<ul>
+<li><p>当系统检测到死锁，系统将会选择一个回滚的事务来破坏环路</p>
+</li>
+<li><p>取决于应用处理方式，选择的事务将重启或者终止</p>
+</li>
+<li><p>有多种事务属性可作为选择替代的根据，不存在哪个优于其余选择</p>
+<p>按照时间(最早或者最晚)</p>
+<p>按照进程(最少/最多执行的查询)</p>
+<p>按照已经锁住的条目个数</p>
+<p>按照回滚事务的个数</p>
+<p>按照事务过去重启的次数</p>
+</li>
+<li><p>在选择事务后，系统还需决定回滚的长度，要么整个事务的操作均撤销，要么撤销操作数目达到死锁解除的要求即可。</p>
+</li>
+</ul>
+<p><strong>死锁预防</strong></p>
+<p>当一个事务请求已经被其他事务持有的锁，此时执行死锁预防算法。</p>
+<p>基于时间给定优先级，例如，时间越久意味着优先级越高。如此可确保不存在死锁，因为只有一个方向的等待。当一个事务重启，它将继承之前的优先级。</p>
+<ul>
+<li>wait-die:若T1优先级高于T2,T1等待T2，否则T1终止</li>
+<li>wound-wait:若T1优先级高于T2，T2终止，否则T1等待</li>
+</ul>
+<p><img src="https://i.loli.net/2020/02/06/zgCqmRNaUSLfI3Y.png"></p>
+<h2 id="多粒度"><a href="#多粒度" class="headerlink" title="多粒度"></a>多粒度</h2><p>之前提到的例子均将一个个数据项作为同步执行的单元，如果一个事务想更新一百万个元组，那么该事务将请求一百万个条目。为了避免多余的开销，系统将通过层次化锁来允许一个事务粗粒度加锁。例如，该事务将为一百个元组申请一个锁，而不是为每个元组申请一个锁。当一个事务请求层次化结构中的某个节点，该事务隐式地为其后代加锁。</p>
+<p>若事务Ti希望封锁整个数据库，而Tj持有其中某个节点的锁，那么系统如何判定根节点是否可以加锁呢？</p>
+<p>一种可能的方法是遍历整棵树，显然违背了多粒度锁机制的初衷。通过引入意向锁来允许高层次节点在无需检查后代节点即可加共享锁或者排他锁。如果一个节点加上了意向锁，那么意味着在树的更低层进行显式加锁，即以更小的粒度加锁。在一个节点显示加锁之前，其所有祖先节点均加上了意向锁。因此，事务不必遍历整棵树即可判定能否成功地给一个节点加锁。</p>
+<ul>
+<li><strong>共享型意向锁(IS)</strong> 将在树的较低层进行显式封锁，但是只能加共享锁</li>
+<li><strong>排他型意向锁(IX)</strong> 在树的较低层进行显式封锁，可以是共享锁或排他锁</li>
+<li><strong>共享排他型意向锁(SIX)</strong> 以该节点为根的子树显式地加上共享锁，在树的更低层显示地加上排他锁</li>
+</ul>
+<p>这些锁的相容矩阵为</p>
+<p><img src="https://i.loli.net/2020/02/06/5G4bs23khoDpdOw.png"></p>
+<p>多粒度封锁协议根据以下规则对数据项Q加锁：</p>
+<ul>
+<li>事务Ti必须首先封锁树的根节点，并可以加任意类型的锁</li>
+<li>仅当Ti当前对Q的父节点具有IX或IS锁时，Ti可以对节点Q可加S锁或者IS锁、</li>
+<li>仅当Ti当前对Q的父节点具有IX或SIX锁时，Ti可以对节点Q加X、SIX或IX锁</li>
+</ul>
+<p>加锁按照从上到下的顺序，而锁的释放则按照从下到上的顺序。</p>
+<p>在低层次的锁申请过多时，为了更高粒度的并行，可以升级锁。</p>
+<h1 id="时间戳排序协议"><a href="#时间戳排序协议" class="headerlink" title="时间戳排序协议"></a>时间戳排序协议</h1>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/database_system/concurrency-control/" title="并发控制">http://example.com/database_system/concurrency-control/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/database-systems/" rel="tag"><i class="fa fa-tag"></i> database systems</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/transaction/" rel="prev" title="事务">
+                  <i class="fa fa-chevron-left"></i> 事务
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/database_system/sql/" rel="next" title="结构化查询语言SQL">
+                  结构化查询语言SQL <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  <script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'none'
+      },
+      options: {
+        renderActions: {
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              const target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.typesetClear();
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="数据库管理系统的并发控制和恢复机制存在于数据库管理系统设计中的各个部分。并发控制确保在多个线程写入&#x2F;读取时数据的正确性，而恢复机制确保数据库管理系统在系统突然断电后数据仍然正常。基于事务的特性，并发控制和恢复机制是数据库管理系统的重要部分。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="事务">
+<meta property="og:url" content="http://example.com/transaction/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="数据库管理系统的并发控制和恢复机制存在于数据库管理系统设计中的各个部分。并发控制确保在多个线程写入&#x2F;读取时数据的正确性，而恢复机制确保数据库管理系统在系统突然断电后数据仍然正常。基于事务的特性，并发控制和恢复机制是数据库管理系统的重要部分。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2020/02/06/MrI5yFLmDUfbcCJ.png">
+<meta property="article:published_time" content="2020-02-05T08:09:36.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="database systems">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/02/06/MrI5yFLmDUfbcCJ.png">
+
+
+<link rel="canonical" href="http://example.com/transaction/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>事务 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/transaction/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          事务
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-02-05 16:09:36" itemprop="dateCreated datePublished" datetime="2020-02-05T16:09:36+08:00">2020-02-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Systems/" itemprop="url" rel="index"><span itemprop="name">Systems</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>数据库管理系统的并发控制和恢复机制存在于数据库管理系统设计中的各个部分。并发控制确保在多个线程写入/读取时数据的正确性，而恢复机制确保数据库管理系统在系统突然断电后数据仍然正常。基于事务的特性，并发控制和恢复机制是数据库管理系统的重要部分。</p>
+<a id="more"></a>
+
+<p>事务是在数据库上执行一系列的一个或多个操作（例如SQL查询）以执行一些更高级别的功能。事务是数据库管理系统变化的基本单位。只执行部分事务是不允许的。</p>
+<p>比如，从小明的账户转100元给小红</p>
+<ul>
+<li>检查小明是否有100元</li>
+<li>小明的账户减少100元</li>
+<li>小红的账户增加100元</li>
+</ul>
+<h1 id="简易设计"><a href="#简易设计" class="headerlink" title="简易设计"></a>简易设计</h1><p>可按照事务到达数据库管理系统顺序依次执行，同一时刻仅可以执行一个事务。</p>
+<p>在事务开始之前，将整个数据库复制到一个新文件，之后的更改均在新文件上执行。</p>
+<ul>
+<li>写入成功时用新文件覆盖原有文件</li>
+<li>写入失败时，删除新文件</li>
+</ul>
+<p>以上设计存在一定的问题，可允许相互独立的事务并发执行以提高执行效率。</p>
+<p>任意交错的操作将会导致暂时不一致，系统必然会在某一时刻处于不一致状态。但是这样不一致的状态不可一直存在。事务的作用域仅限于数据库管理系统中，在数据库管理系统以外不可回滚，所以事务不可更改数据库系统以外的文件。</p>
+<h1 id="ACID特性"><a href="#ACID特性" class="headerlink" title="ACID特性"></a>ACID特性</h1><p>事务可能在从数据库中检索到的数据中执行很多操作，但是数据库管理系统仅仅关注从数据库中读入/写入的数据。</p>
+<p>我们将数据库定义为固定的数据集合，例如A,B,C。相应地，事务定义为读/写操作的序列。例如R(A),R(B)。事务是数据库管理系统对应用程序的抽象。</p>
+<p>在SQL中，事务以BEGIN为开始，要么以COMMIT,要么以ABORT结束。</p>
+<ul>
+<li><strong>COMMIT</strong> 如果提交了，数据库管理系统要么保存所有的更改，要么放弃更改</li>
+<li><strong>ABORT</strong> 如果失败，所有操作将取消，和之前并未执行这些操作一样</li>
+</ul>
+<h2 id="原子性"><a href="#原子性" class="headerlink" title="原子性"></a>原子性</h2><p>在事务中所有操作要么都执行，要么都不执行。</p>
+<p>考虑以下两种情形</p>
+<ol>
+<li>从小明的账户中取出了100元后，数据库管理系统在转账时失败</li>
+<li>从小明账户中转出100元后，系统关机</li>
+</ol>
+<p>以上事务执行后小明账户正确的数目应该是多少？</p>
+<p>可通过以下两种方式来确保操作的原子性</p>
+<ul>
+<li><p><strong>日志</strong> </p>
+<p>数据库管理系统记录所有的操作，在事务失败时取消失败事务的相关操作</p>
+<p>在内存和磁盘中均存储取消的操作记录</p>
+<p>目前大多数数据管理系统的方式，效率高</p>
+</li>
+<li><p><strong>不可见页</strong></p>
+<p>数据库操作系统复制页，事务对这些页更改。仅当事务提交时这些页才对其余事务可见。</p>
+</li>
+</ul>
+<h2 id="一致性"><a href="#一致性" class="headerlink" title="一致性"></a>一致性</h2><p>数据库表示的世界在逻辑上是正确的，所有对数据的查询也应得到正确的应答。</p>
+<p>通过以下一致性来确保正确性：</p>
+<p><strong>数据库一致性</strong></p>
+<p>数据库准确地模拟了真实世界，符合完整性约束。</p>
+<p>将来的事务可查看过去在数据库中提交的事务。</p>
+<p><strong>事务一致性</strong></p>
+<p>如果每个事务都是一致的，并且在事务开始时数据库是一致的，则可确保事务完成时数据库是一致的。</p>
+<h2 id="隔离性"><a href="#隔离性" class="headerlink" title="隔离性"></a>隔离性</h2><p>用户提交事务，每个事务独立执行，互不干扰。</p>
+<p>数据库管理系统通过交错事务的操作来实现并发。</p>
+<p>并发模型即是如何决定从多个事务中决定合适的交错顺序。</p>
+<ul>
+<li><strong>消极型</strong> 首要的一点是不让问题出现</li>
+<li><strong>乐观型</strong> 假定冲突很少见，在发生时再对冲突处理</li>
+</ul>
+<p>考虑以下情况，假定A,B中初始时刻均有1000元</p>
+<p>T1从A的账户中转100元到B的账户，T2给两个账户6%的利息。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"> T1                     T2</span><br><span class="line">BEGIN                  BEGIN</span><br><span class="line">A&#x3D;A-100                A&#x3D;A*1.06 </span><br><span class="line">B&#x3D;B+100                B&#x3D;B*1.06</span><br><span class="line">COMMIT                 COMMIT</span><br></pre></td></tr></table></figure>
+<p>执行T1和T2的结果可能是什么呢？</p>
+<p>可能有很多执行结果，但是A+B应该是$2000*1.06=2120$</p>
+<p>若两个事务同时提交，无法确保T1一定在T2之前执行，反之亦然。但是最后的结果必须等同于按照一定顺序串行执行的这两个事务。</p>
+<p>合理的结果可能为：</p>
+<ul>
+<li>$A=954,B=1166$</li>
+<li>$A=960,B=1160$</li>
+</ul>
+<p>结果取决于A先执行还是B先执行。</p>
+<p>调度a</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"> T1                     T2</span><br><span class="line">BEGIN                </span><br><span class="line">A&#x3D;A-100                </span><br><span class="line">B&#x3D;B+100                </span><br><span class="line">COMMIT                </span><br><span class="line">                       BEGIN</span><br><span class="line">                       A&#x3D;A*1.06 </span><br><span class="line">                       B&#x3D;B*1.06</span><br><span class="line">                       COMMIT</span><br></pre></td></tr></table></figure>
+<p>执行后，$A=954,B=1166$</p>
+<p>调度b</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"> T1                     T2</span><br><span class="line">                       BEGIN</span><br><span class="line">                       A&#x3D;A*1.06 </span><br><span class="line">                       B&#x3D;B*1.06</span><br><span class="line">                       COMMIT</span><br><span class="line">BEGIN                </span><br><span class="line">A&#x3D;A-100                </span><br><span class="line">B&#x3D;B+100                </span><br><span class="line">COMMIT                                      </span><br></pre></td></tr></table></figure>
+<p>执行后，$A=960,B=1160$</p>
+<p>交叉执行的调度同样正确，例如调度c</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"> T1                     T2</span><br><span class="line">BEGIN                </span><br><span class="line">A&#x3D;A-100</span><br><span class="line">                       BEGIN</span><br><span class="line">                       A&#x3D;A*1.06</span><br><span class="line">B&#x3D;B+100                </span><br><span class="line">COMMIT</span><br><span class="line">                       B&#x3D;B*1.06</span><br><span class="line">                       COMMIT</span><br></pre></td></tr></table></figure>
+<p>执行后结果为，$A=954,B=1166$</p>
+<p>调度c和调度b最后的结果均满足$A+B=2120$，所以二者等价。</p>
+<p>但是若T1和T2按照以下顺序执行，会得到错误的结果。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"> T1                     T2</span><br><span class="line">BEGIN                </span><br><span class="line">A&#x3D;A-100</span><br><span class="line">                       BEGIN</span><br><span class="line">                       A&#x3D;A*1.06</span><br><span class="line">                       B&#x3D;B*1.06</span><br><span class="line">                       COMMIT</span><br><span class="line">B&#x3D;B+100                </span><br><span class="line">COMMIT</span><br></pre></td></tr></table></figure>
+<p>$A=954,B=1060,A+B=2014$ 损失了106元。</p>
+<p>如何判定调度是正确的呢？</p>
+<p>如果调度等价于某个顺序的串行执行，则该调度是正确的。</p>
+<ul>
+<li><p>串行执行调度</p>
+<p>不同事务的操作不交错的调度</p>
+</li>
+<li><p>等价执行调度</p>
+<p>对于任何数据库状态来说，先执行前者和先执行后者的结果相同</p>
+</li>
+<li><p>可串行化调度</p>
+<p>等价于某一事务串行执行的调度</p>
+</li>
+</ul>
+<p>如果每个事务均可持久，每个串行调度也将是持久的。</p>
+<p>为了有效描述冲突操作之间的等价，我们给出以下定义</p>
+<p>假如两个操作冲突，那么它们属于不同事务，对同一对象作用，至少有一个是写操作。</p>
+<p>交错执行异常有以下几种：</p>
+<ul>
+<li>读写冲突</li>
+<li>写读冲突</li>
+<li>写写冲突</li>
+</ul>
+<p><strong>读写冲突</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">     T1                    T2</span><br><span class="line">    BEGIN</span><br><span class="line">10&lt;-R(A)</span><br><span class="line">                         BEGIN</span><br><span class="line">                         R(A) -&gt;10</span><br><span class="line">                         W(A) &lt;-19</span><br><span class="line">                         COMMIT</span><br><span class="line">19&lt;-R(A)</span><br><span class="line">    COMMIT</span><br></pre></td></tr></table></figure>
+<p>两次读结果应该是一致的，在这里却不一致。</p>
+<p><strong>写读冲突</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">      T1                  T2</span><br><span class="line">    BEGIN</span><br><span class="line">10&lt;-R(A)</span><br><span class="line">12-&gt;W(A)</span><br><span class="line">                         BEGIN</span><br><span class="line">                         R(A)-&gt;12</span><br><span class="line">                         W(A)&lt;-14</span><br><span class="line">                         COMMIT</span><br><span class="line">    ABORT</span><br></pre></td></tr></table></figure>
+<p>T2读取T1未提交的更改数据。</p>
+<p><strong>写写冲突</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">      T1                  T2</span><br><span class="line">    BEGIN</span><br><span class="line">10-&gt;W(A)</span><br><span class="line"></span><br><span class="line">                         BEGIN</span><br><span class="line">                         W(A)&lt;-19</span><br><span class="line">                         W(A)&lt;-Andy</span><br><span class="line">                         COMMIT</span><br><span class="line">Bieber-&gt;W(B)</span><br><span class="line">    COMMIT</span><br></pre></td></tr></table></figure>
+<p>T1提交的数据A被T2覆盖，T2提交的数据B被T1覆盖。</p>
+<p>给定以上例子，串行化调度用于检查调度是否正确，而不是用于产生正确的调度。</p>
+<p>串行性有不同级别</p>
+<ul>
+<li><p>冲突串行化</p>
+<p>大部分数据库管理系统支持</p>
+</li>
+<li><p>视图串行化</p>
+<p>仅仅是理论</p>
+</li>
+</ul>
+<p>两个调度是等价的，当且仅当：</p>
+<ul>
+<li>由相同事务的相同操作组成</li>
+<li>每组冲突的操作都按照相同顺序执行</li>
+</ul>
+<p>如果调度S与某个串行调度冲突等价，那么调度S是可串行化冲突。</p>
+<p>可通过交换相邻的不同事务的不冲突操作得到可串行化冲突S。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"> T1                   T2</span><br><span class="line">BEGIN                BEGIN</span><br><span class="line">R(A)</span><br><span class="line">W(A)</span><br><span class="line">                     R(A)</span><br><span class="line">                     W(A)</span><br><span class="line">R(B)</span><br><span class="line">W(B)</span><br><span class="line">COMMIT</span><br><span class="line">                     R(B)</span><br><span class="line">                     W(B)</span><br><span class="line">                     COMMIT</span><br></pre></td></tr></table></figure>
+<p>W(A)与R(B)不冲突，可调换顺序。R(B)和R(A)也不冲突，可再次调换顺序，我们得到以下调度</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"> T1                   T2</span><br><span class="line">BEGIN               BEGIN</span><br><span class="line">R(A)</span><br><span class="line">W(A)</span><br><span class="line">R(B)</span><br><span class="line">                     R(A)</span><br><span class="line">                     W(A)</span><br><span class="line">W(B)</span><br><span class="line">COMMIT</span><br><span class="line">                     R(B)</span><br><span class="line">                     W(B)</span><br><span class="line">                     COMMIT</span><br></pre></td></tr></table></figure>
+<p>类似地，我们也可以得到以下调度</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"> T1                   T2</span><br><span class="line">BEGIN                BEGIN</span><br><span class="line">R(A)</span><br><span class="line">W(A)</span><br><span class="line">R(B)</span><br><span class="line">W(B)</span><br><span class="line">COMMIT</span><br><span class="line">                     R(A)</span><br><span class="line">                     W(A)</span><br><span class="line">                     R(B)</span><br><span class="line">                     W(B)</span><br><span class="line">                     COMMIT</span><br></pre></td></tr></table></figure>
+<p>仅有两个事务的时候可通过简单的交换来构造串行化的调度。</p>
+<p>对于更多事务的操作，存在更好的算法吗？</p>
+<p><strong>依赖图</strong></p>
+<p>每个事务对应一个节点，满足</p>
+<ul>
+<li><p>$T_i$中的$O_i$操作与$T_j$中的$O_j$冲突</p>
+</li>
+<li><p>$O_i$比$O_j$出现早</p>
+<p>那么就从$T_i$引一条到$T_j$的边。</p>
+</li>
+</ul>
+<p>一个调度是可串行化冲突当且仅当依赖图是无环的。</p>
+<p><strong>视图串行性</strong></p>
+<p>弱化的串行性，对于调度$S_1$和调度$S_2$，满足</p>
+<ul>
+<li>$T_1$读入$S_1$中$A$的初始值时，$T_1$也读入$S_2$中$A$的初始值</li>
+<li>$T_1$读取$S_1$中$T_2$写入到$A$的值时,$T_1$也读取$S_2$中$T_2$写入到$A$的值时</li>
+<li>$T_1$写入到$S_1$中$A$的最终值时，也写入$A$的最终值到$S_2$</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">T1              T2              T3</span><br><span class="line">BEGIN</span><br><span class="line">R(A)</span><br><span class="line">W(A)</span><br><span class="line">COMMIT</span><br><span class="line">               BEGIN</span><br><span class="line">               W(A)</span><br><span class="line">               COMMIT</span><br><span class="line">                               BEGIN</span><br><span class="line">                               W(A)</span><br><span class="line">                               COMMIT</span><br></pre></td></tr></table></figure>
+<p>与以下调度视图等价。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">T1              T2              T3</span><br><span class="line">BEGIN</span><br><span class="line">               BEGIN</span><br><span class="line">               W(A)</span><br><span class="line">R(A)</span><br><span class="line">W(A)</span><br><span class="line">COMMIT</span><br><span class="line">               </span><br><span class="line">               COMMIT</span><br><span class="line">                               BEGIN</span><br><span class="line">                               W(A)</span><br><span class="line">                               COMMIT</span><br></pre></td></tr></table></figure>
+<p>视图串行化即所有的串行化冲突再附加上随意写的事务，即不限定写入的事务的顺序。</p>
+<p>与冲突串行化不同，视图串行化不存在有效验证的方法，目前没有任何数据库支持视图串行化。</p>
+<p>以上分析用文氏图表示如下</p>
+<p><img src="https://i.loli.net/2020/02/06/MrI5yFLmDUfbcCJ.png"></p>
+<h2 id="持久性"><a href="#持久性" class="headerlink" title="持久性"></a>持久性</h2><p>一个事务成功完成后，对数据库的更改是永久的。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/transaction/" title="事务">http://example.com/transaction/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/database-systems/" rel="tag"><i class="fa fa-tag"></i> database systems</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/database_system/database/" rel="prev" title="数据库导论">
+                  <i class="fa fa-chevron-left"></i> 数据库导论
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/database_system/concurrency-control/" rel="next" title="并发控制">
+                  并发控制 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  <script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'none'
+      },
+      options: {
+        renderActions: {
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              const target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.typesetClear();
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+
+
+</body>
+</html>

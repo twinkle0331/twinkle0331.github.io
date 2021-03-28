@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="执行多任务的计算机必然会涉及到进程切换的问题，进程切换也是CPU当前使用者的切换，下一个使用CPU运行的进程或线程则由处理及调度来完成。与页面置换算法不同，调度策略有不一致的目标比如响应时间、吞吐量、公平性。针对不同目标，设计了不同的调度算法，各有优劣之处，无法兼顾各个指标。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="处理机调度">
+<meta property="og:url" content="http://example.com/sched/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="执行多任务的计算机必然会涉及到进程切换的问题，进程切换也是CPU当前使用者的切换，下一个使用CPU运行的进程或线程则由处理及调度来完成。与页面置换算法不同，调度策略有不一致的目标比如响应时间、吞吐量、公平性。针对不同目标，设计了不同的调度算法，各有优劣之处，无法兼顾各个指标。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2019/07/28/5d3d00e7554e429648.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/28/5d3d5f6bc76fe78757.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/28/5d3d608c131df35716.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/28/5d3d619c46aa437160.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/28/5d3d64997672476756.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/28/5d3d6d38d183130897.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/28/5d3d6b036e4d596984.png">
+<meta property="article:published_time" content="2019-07-04T23:20:08.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="Operating Systems">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2019/07/28/5d3d00e7554e429648.png">
+
+
+<link rel="canonical" href="http://example.com/sched/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>处理机调度 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/sched/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          处理机调度
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-07-05 07:20:08" itemprop="dateCreated datePublished" datetime="2019-07-05T07:20:08+08:00">2019-07-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Systems/" itemprop="url" rel="index"><span itemprop="name">Systems</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p> 执行多任务的计算机必然会涉及到进程切换的问题，进程切换也是CPU当前使用者的切换，下一个使用CPU运行的进程或线程则由处理及调度来完成。与页面置换算法不同，调度策略有不一致的目标比如响应时间、吞吐量、公平性。针对不同目标，设计了不同的调度算法，各有优劣之处，无法兼顾各个指标。</p>
+<a id="more"></a>
+
+<h1 id="CPU资源的时分复用"><a href="#CPU资源的时分复用" class="headerlink" title="CPU资源的时分复用"></a>CPU资源的时分复用</h1><p><strong>进程切换</strong> CPU资源的当前占用者的切换</p>
+<ul>
+<li>保存当前进程在 PCB中的执行上下文(CPU状态)</li>
+<li>恢复下一个进程的执行上下文</li>
+</ul>
+<p><strong>处理机调度</strong></p>
+<ul>
+<li>选线程：从就绪队列中挑选出下一个占用CPU运行的线程</li>
+<li>选CPU:  从多个可用CPU中挑选就绪进程可使用的CPU资源</li>
+</ul>
+<p> <strong>调度程序</strong> 挑选就绪进程的内核函数，若为多处理系统，则还需挑选处理机</p>
+<h1 id="调度时机"><a href="#调度时机" class="headerlink" title="调度时机"></a>调度时机</h1><p>内核运行调度程序的条件</p>
+<ul>
+<li>进程从运行状态切换到等待状态 (等待某个事件的发生)</li>
+<li>进程结束</li>
+</ul>
+<p><strong>非抢占系统</strong></p>
+<p>占用CPU运行的进程的主动放弃（退出、等待）</p>
+<p><strong>可抢占系统</strong></p>
+<ul>
+<li>中断请求被服务例程响应完成时<ul>
+<li>进程从运行状态切换到就绪状态</li>
+</ul>
+</li>
+<li>当前进程被抢占<ul>
+<li>进程时间片用完</li>
+<li>某更高优先级进程从等待状态切换到就绪状态</li>
+</ul>
+</li>
+</ul>
+<p><img src="https://i.loli.net/2019/07/28/5d3d00e7554e429648.png"></p>
+<h1 id="调度策略"><a href="#调度策略" class="headerlink" title="调度策略"></a>调度策略</h1><p>调度策略用于从就绪队列中选择下一个执行进程(与调度目标有关)。</p>
+<p><strong>调度算法</strong> 在调度程序中实现的调度策略</p>
+<p><strong>处理机资源使用模式特征</strong></p>
+<p>进程在CPU计算和I/O操作(CPU处于等待状态)交替</p>
+<ul>
+<li>在时间片机制下，进程可能在结束当前CPU计算前被迫放弃CPU</li>
+<li>应选择一个合适的时间尺度来作为时间片的基本单位</li>
+<li>交替执行，每次执行时间很短，占用CPU执行指令的时间长度分布多数在10ms以内。</li>
+</ul>
+<h1 id="比较调度算法的准则"><a href="#比较调度算法的准则" class="headerlink" title="比较调度算法的准则"></a>比较调度算法的准则</h1><p>与之前的页面置换算法不同，比较调度算法的准则并不一致，分为以下几种，</p>
+<ul>
+<li>CPU利用率<ul>
+<li>CPU 处于忙状态的时间百分比</li>
+</ul>
+</li>
+<li>吞吐量<ul>
+<li>单位时间内完成的进程数量</li>
+</ul>
+</li>
+<li>周转时间<ul>
+<li>进程从初始化到结束(包括等待)的总时间</li>
+</ul>
+</li>
+<li>等待时间<ul>
+<li>进程在就绪队列中的总时间，缩小就绪时间</li>
+</ul>
+</li>
+<li>响应时间<ul>
+<li>从提交请求到产生响应所花费的总时间(延迟)</li>
+</ul>
+</li>
+</ul>
+<h1 id="处理机调度策略的目标"><a href="#处理机调度策略的目标" class="headerlink" title="处理机调度策略的目标"></a>处理机调度策略的目标</h1><h2 id="响应时间"><a href="#响应时间" class="headerlink" title="响应时间"></a>响应时间</h2><p>响应时间时操作系统的计算延迟。</p>
+<ul>
+<li>减少响应时间<ul>
+<li>及时处理用户的输入请求 尽快将输出反馈给用户</li>
+</ul>
+</li>
+<li>减少平均响应时间的波动<ul>
+<li>在交互系统中 可预测性比高差异低平均更重要</li>
+</ul>
+</li>
+</ul>
+<h2 id="吞吐量"><a href="#吞吐量" class="headerlink" title="吞吐量"></a>吞吐量</h2><p>吞吐量是操作系统的计算带宽(单位时间内执行进程数)。</p>
+<ul>
+<li>增加吞吐量<ul>
+<li>减少开销(操作系统开销 上下文切换)</li>
+<li>提高系统资源的利用率(CPU 、I/O设备)</li>
+</ul>
+</li>
+<li>减少等待时间<ul>
+<li>减少每个进程的等待时间</li>
+</ul>
+</li>
+</ul>
+<h2 id="公平性"><a href="#公平性" class="headerlink" title="公平性"></a>公平性</h2><ul>
+<li>保证每个进程的等待时间相同</li>
+<li>保证每个进程占用CPU时间相同</li>
+<li>公平通常会增加平均响应时间，会由开销来保证公平</li>
+</ul>
+<h1 id="传统调度算法"><a href="#传统调度算法" class="headerlink" title="传统调度算法"></a>传统调度算法</h1><p><strong>就绪队列排列顺序</strong></p>
+<ul>
+<li>先来先服务算法<ul>
+<li>FCFS: First Come, First Served</li>
+</ul>
+</li>
+<li>短进程优先算法(考虑进程特征)<ul>
+<li>SPN: Shortest Process Next</li>
+<li>SJF: Shortest Job First(短作业优先算法)</li>
+<li>SRT: Shortest Remaining Time(短剩余时间优先算法)</li>
+</ul>
+</li>
+<li>最高响应比优先算法 (进程在就绪队列里的等待时间)<ul>
+<li>HRRN: Highest Response Ratio Next</li>
+</ul>
+</li>
+</ul>
+<p><strong>时间长短控制</strong></p>
+<ul>
+<li>时间片轮转算法 (轮流，先来先服务)<ul>
+<li>RR: Round Robin</li>
+</ul>
+</li>
+</ul>
+<p><strong>多种算法综合</strong></p>
+<ul>
+<li>多级反馈队列算法 (将就绪队列分成不同子序列，不同队列使用不同的算法)<ul>
+<li>MLFQ: Multilevel Feedback Queues</li>
+</ul>
+</li>
+<li>公平共享调度算法 (按照进程占用的资源来调度)<ul>
+<li>FSS: Fair Share Scheduling</li>
+</ul>
+</li>
+</ul>
+<h2 id="先来先服务算法"><a href="#先来先服务算法" class="headerlink" title="先来先服务算法"></a>先来先服务算法</h2><p><strong>先来先服务算法(FCFS First Come, First Served)</strong> </p>
+<p>依据进程进入就绪队列的先后顺序排列</p>
+<ul>
+<li>进程进入等待或结束状态时 就绪队列中下一个进程占用CPU(主动让出)</li>
+</ul>
+<p><strong>FCFS算法的周转时间</strong></p>
+<p><img src="https://i.loli.net/2019/07/28/5d3d5f6bc76fe78757.png"></p>
+<p>从例子中可以看出：周转时间跟队列到达时间有很大关系。</p>
+<p><strong>先来先服务算法的特征</strong></p>
+<p>优点</p>
+<ul>
+<li>简单</li>
+</ul>
+<p>缺点</p>
+<ul>
+<li>平均等待时间波动较大</li>
+<li>I/O资源和CPU资源利用率较低 (未考虑到I/O和CPU并行)</li>
+</ul>
+<h2 id="短进程优先算法"><a href="#短进程优先算法" class="headerlink" title="短进程优先算法"></a>短进程优先算法</h2><p><strong>短进程优先算法(SPN Shortest Process Next)</strong></p>
+<p><img src="https://i.loli.net/2019/07/28/5d3d608c131df35716.png"></p>
+<p><strong>短剩余时间优先算法(SRT short remaining time)</strong></p>
+<p>若进程执行过程中有新进程进入就绪队列，预期执行时间比当前进程剩余执行时间段，则允许其抢占正在执行的进程(被动)。</p>
+<p><strong>周转时间</strong></p>
+<p>SPN算法具有最优平均周转时间，具体证明如下所示：</p>
+<p><img src="https://i.loli.net/2019/07/28/5d3d619c46aa437160.png"></p>
+<p><strong>短进程优先算法的特征</strong></p>
+<ul>
+<li>可能导致饥饿<ul>
+<li>连续的短进程流会使长进程无法获得CPU资源</li>
+</ul>
+</li>
+<li>如何预测下一个CPU计算的持续时间<ul>
+<li>询问用户 用户欺骗就杀死相应进程</li>
+<li>用过去预测未来</li>
+</ul>
+</li>
+</ul>
+<p><strong>执行时间预估</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">τ(n+1) &#x3D; αt(n)+(1-α)τ(n)，其中 0≤α≤1</span><br><span class="line">t(n)——第n次的CPU计算时间</span><br><span class="line">τ(n+1)&#x3D;αt(n)+(1-α)αt(n-1)+(1-α)(1-α)αt(n-2)+…</span><br></pre></td></tr></table></figure>
+<p>预估CPU时间会越来越接近实际CPU执行时间(近似拟合)。</p>
+<h2 id="最高响应比优先算法"><a href="#最高响应比优先算法" class="headerlink" title="最高响应比优先算法"></a>最高响应比优先算法</h2><p><strong>最高响应比优先算法(HRRN Highest Response Ratio Next)</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">R &#x3D; (w + s) &#x2F; s</span><br><span class="line">w: 等待时间(waiting time)</span><br><span class="line">s: 执行时间(service time)</span><br></pre></td></tr></table></figure>
+<p>选择就绪队列中响应比R值最高的进程</p>
+<ul>
+<li>基于短进程优先算法的改进，但是不可抢占</li>
+<li>关注进程等待时间</li>
+<li>防止无限期推迟</li>
+</ul>
+<h2 id="时间片轮转算法"><a href="#时间片轮转算法" class="headerlink" title="时间片轮转算法"></a>时间片轮转算法</h2><p><strong>时间片轮转算法(Round Robin)</strong></p>
+<p>将时间片作为分配处理机资源的基本时间单元。在时间片结束时，按 FCFS(先来先服务)算法切换到下一个就绪进程。</p>
+<ul>
+<li>每隔(n-1)个时间片进程执行一个时间片</li>
+</ul>
+<p>以时间片为20的RR算法为例：</p>
+<p>周转时间=等待时间+执行时间</p>
+<p><img src="https://i.loli.net/2019/07/28/5d3d64997672476756.png"></p>
+<p><strong>时间片轮转算法特征</strong></p>
+<p>有额外的上下文切换开销 </p>
+<ul>
+<li>当时间片太大时<ul>
+<li>等待时间过长</li>
+<li>极端情况下退化成 FCFS</li>
+</ul>
+</li>
+<li>当时间片太小时<ul>
+<li>反应迅速 但产生大量的上下文切换</li>
+<li>大量上下文切换开销影响系统的吞吐量(单位时间内 运行的总进程数)</li>
+</ul>
+</li>
+<li>时间片长度选择目标<ul>
+<li>选择一个合适的时间片长度</li>
+<li>维持上下文开销处于1%以内</li>
+</ul>
+</li>
+</ul>
+<p><strong>多级队列调度算法(MQ Multilevel Queues)</strong></p>
+<p>就绪队列被划分为多个独立的子序列 (分前台后台)</p>
+<p>每个队列拥有自己的调度策略</p>
+<p>队列间调度</p>
+<ul>
+<li><strong>固定优先级</strong> 可能导致饥饿</li>
+<li><strong>时间片轮转</strong> 每个队列都得到一个确定的能够调度其进程的CPU总时间</li>
+</ul>
+<p><strong>多级反馈队列算法(MLFQ Multilevel Feedback Queues)</strong></p>
+<p>进程可在不同队列间移动的多级队列算法</p>
+<ul>
+<li>时间片大小随优先级级别增加而增加</li>
+<li>进程在当前时间片没有完成 则降到下一优先级</li>
+</ul>
+<p><strong>多级反馈队列算法特征</strong></p>
+<ul>
+<li>CPU密集型进程的优先级会下降的很快</li>
+<li>I/O密集型进程保留在高优先级</li>
+</ul>
+<p><strong>公平共享调度算法(FSS Fair Share Scheduling)</strong></p>
+<p>FSS 控制用户对系统资源的访问</p>
+<ul>
+<li><p>一些用户组比其他用户组更重要</p>
+</li>
+<li><p>保证不重要的组无法垄断资源</p>
+</li>
+<li><p>未使用的资源按比例分配 </p>
+</li>
+<li><p>没有达到资源使用率目标的组获得更高优先级</p>
+</li>
+</ul>
+<h2 id="传统调度算法总结"><a href="#传统调度算法总结" class="headerlink" title="传统调度算法总结"></a>传统调度算法总结</h2><blockquote>
+<p>先来先服务算法(FCFS)</p>
+</blockquote>
+<ul>
+<li>不公平 平均等待时间变动大</li>
+</ul>
+<blockquote>
+<p>短进程优先算法(SPN)</p>
+</blockquote>
+<ul>
+<li>不公平 平均周转时间最小</li>
+<li>需要精确的预测执行时间</li>
+<li>可能导致饥饿</li>
+</ul>
+<blockquote>
+<p>最高响应比优先算法(HRRN)</p>
+</blockquote>
+<ul>
+<li>基于 SPN调度(关注等待时间)</li>
+<li>不可抢占</li>
+</ul>
+<blockquote>
+<p>时间片轮转算法(RR)</p>
+</blockquote>
+<ul>
+<li>公平 平均等待时间较差 交互比较好</li>
+</ul>
+<blockquote>
+<p>多级反馈队列算法(MLFQ)</p>
+</blockquote>
+<ul>
+<li>多种算法的集合(在实际系统中所使用)</li>
+</ul>
+<blockquote>
+<p>公平共享调度(FSS)</p>
+</blockquote>
+<ul>
+<li>公平</li>
+</ul>
+<h1 id="实时操作系统"><a href="#实时操作系统" class="headerlink" title="实时操作系统"></a>实时操作系统</h1><p>正确性依赖于其时间和功能两方面的操作系统</p>
+<ul>
+<li>实时操作系统的性能指标<ul>
+<li>时间约束的及时性(deadlines)</li>
+<li>速度和平均性能相对不重要</li>
+</ul>
+</li>
+<li>实时操作系统的特性<ul>
+<li>时间约束的可预测性</li>
+</ul>
+</li>
+</ul>
+<p><strong>实时操作系统分类</strong></p>
+<ul>
+<li>强实时操作系统<ul>
+<li>要求在指定时间内必须完成重要的任务</li>
+</ul>
+</li>
+<li>弱实时操作系统<ul>
+<li>重要进程有高优先级，但并非必须完成</li>
+</ul>
+</li>
+</ul>
+<p><strong>实时任务</strong></p>
+<ul>
+<li>任务(工作单元)<ul>
+<li>一次计算，一次文件读取，一次信息传递等</li>
+</ul>
+</li>
+<li>任务属性<ul>
+<li>完成任务所需要的资源</li>
+<li>规定时间</li>
+</ul>
+</li>
+</ul>
+<p><strong>周期实时任务</strong></p>
+<p>一系列相似的任务</p>
+<ul>
+<li>任务有规律地重复</li>
+<li>周期p = 任务请求时间间隔 (0 &lt; p)</li>
+<li>执行时间e = 最大执行时间(0 &lt; e &lt; p)</li>
+<li>使用率U = e / p</li>
+</ul>
+<p><strong>硬时限和软时限</strong></p>
+<p>硬时限和软时限对时间要求宽松程度不同，所以应对策略也有所不同。</p>
+<ul>
+<li>硬时限(Hard deadline)<ul>
+<li>错过任务时会导致灾难性或非常严重的后果</li>
+<li>必须验证在最坏的情况下能够满足时限</li>
+</ul>
+</li>
+<li>软时限(Soft deadline)<ul>
+<li>通常能满足任务时限，若不满足则降低要求</li>
+<li>尽力满足任务时限</li>
+</ul>
+</li>
+</ul>
+<p><strong>可调度性</strong></p>
+<p>可调度表示一个实时操作系统能够满足任务时限要求</p>
+<ul>
+<li>需要确定实时任务的执行顺序</li>
+<li>静态优先级调度(执行前确定执行顺序)<ul>
+<li>速率单调调度算法(RM: Rate Monotonic)</li>
+</ul>
+</li>
+<li>动态优先级调度(执行时确定执行顺序) <ul>
+<li>最早截止时间优先算法(EDF: Earliest Deadline First)</li>
+</ul>
+</li>
+</ul>
+<h1 id="多处理机调度"><a href="#多处理机调度" class="headerlink" title="多处理机调度"></a>多处理机调度</h1><p><strong>多处理机的特征</strong></p>
+<ul>
+<li>多个处理机组成一个多处理机系统</li>
+<li>处理机间可负载共享</li>
+</ul>
+<p><strong>对称多处理器(SMP Symmetric multiprocessing)调度</strong></p>
+<ul>
+<li>截止时间越早 优先级越高 每个处理器运行自己的调度程序</li>
+<li>调度程序对共享资源的访问需要进行同步</li>
+</ul>
+<p><strong>对称多处理器进程分配</strong></p>
+<ul>
+<li>静态进程分配<ul>
+<li>进程从开始到结束都被分配到一个固定的处理机上执行</li>
+<li>每个处理机有自己的就绪队列，刚开始队列分配后就不再切换就绪队列</li>
+<li>调度开销小</li>
+<li>各处理机可能忙闲不均</li>
+</ul>
+</li>
+<li>动态进程分配<ul>
+<li>进程在执行中可分配到任意空闲处理机上执行</li>
+<li>所有处理机共享一个就绪队列</li>
+<li>调度开销大</li>
+<li>各处理机的负载是均衡的</li>
+</ul>
+</li>
+</ul>
+<h1 id="优先级反置"><a href="#优先级反置" class="headerlink" title="优先级反置"></a>优先级反置</h1><p>操作系统中出现高优先级进程长时间等待低优先级进程所占用资源的现象</p>
+<ul>
+<li>基于优先级的可抢占调度算法中存在优先级反置</li>
+</ul>
+<p><img src="https://i.loli.net/2019/07/28/5d3d6d38d183130897.png"></p>
+<p>T2运行中申请T1已经占用的资源，但是T1正在占用资源L1,释放之后T2才可以执行，这时候T3优先级比T1高，抢占T1进入运行状态，这时候就会出现高优先级的T2等待。</p>
+<blockquote>
+<p>如何解决优先级反置?</p>
+</blockquote>
+<ul>
+<li>优先级继承(Priority Inheritance)</li>
+<li>优先级天花板协议(Priority Ceiling Protocol)</li>
+</ul>
+<p><strong>优先级继承</strong></p>
+<p><img src="https://i.loli.net/2019/07/28/5d3d6b036e4d596984.png"></p>
+<p><strong>优先级天花板协议</strong></p>
+<p>占用资源的进程的优先级和所有可能申请该资源的进程的最高优先级相同</p>
+<ul>
+<li>不管是否发生等待，都提升占用资源进程的优先级</li>
+<li>优先级高于系统中所有被锁定的资源的优先级上限，任务执行临界区时就不会被阻塞</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/sched/" title="处理机调度">http://example.com/sched/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Operating-Systems/" rel="tag"><i class="fa fa-tag"></i> Operating Systems</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/ucore-lab5/" rel="prev" title="ucore lab5">
+                  <i class="fa fa-chevron-left"></i> ucore lab5
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/ucore-lab6/" rel="next" title="ucore lab6">
+                  ucore lab6 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+</body>
+</html>

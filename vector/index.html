@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="在导论中，我们了解到数据结构是若干数据项的结构化集合，其结构性表现为数据项之间的某种逻辑次序。根据这种逻辑次序的复杂程度可大致将数据结构分为线性、半线性、非线性结构三大类。在线性结构中，各数据项按照一个线性次序组织为一个整体。在向量中，所有数据项的物理存放位置与其逻辑次序完全吻合。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="向量">
+<meta property="og:url" content="http://example.com/vector/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="在导论中，我们了解到数据结构是若干数据项的结构化集合，其结构性表现为数据项之间的某种逻辑次序。根据这种逻辑次序的复杂程度可大致将数据结构分为线性、半线性、非线性结构三大类。在线性结构中，各数据项按照一个线性次序组织为一个整体。在向量中，所有数据项的物理存放位置与其逻辑次序完全吻合。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2019/11/05/GlLOQrfTt17D3x9.png">
+<meta property="og:image" content="https://i.loli.net/2019/11/05/B23VfkubCRrhXdj.png">
+<meta property="og:image" content="https://i.loli.net/2019/11/06/NIBimO1kYDL5jsS.png">
+<meta property="og:image" content="https://i.loli.net/2019/11/06/BmWlncHbugyGSZA.png">
+<meta property="article:published_time" content="2019-11-06T03:11:37.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="Data structure">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2019/11/05/GlLOQrfTt17D3x9.png">
+
+
+<link rel="canonical" href="http://example.com/vector/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>向量 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/vector/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          向量
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-11-06 11:11:37" itemprop="dateCreated datePublished" datetime="2019-11-06T11:11:37+08:00">2019-11-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>在导论中，我们了解到数据结构是若干数据项的结构化集合，其结构性表现为数据项之间的某种逻辑次序。根据这种逻辑次序的复杂程度可大致将数据结构分为线性、半线性、非线性结构三大类。在线性结构中，各数据项按照一个线性次序组织为一个整体。在向量中，所有数据项的物理存放位置与其逻辑次序完全吻合。</p>
+<a id="more"></a>
+
+<p>在C/C++语言中，数组支持对一组相关元素的存储组织和访问操作。若集合S由$n$个元素组成，则可将它们存放于起始于地址A、物理地址连续的一段存储空间，并统称为数组。数组A[]中每一元素都唯一对应于某一下标编号。反之，每个元素均由非负编号唯一指代，并可直接访问。</p>
+<p>向量是数组的抽象与泛化，由一组元素按线性次序封装而成，各元素与[0,n)内的秩一一对应。</p>
+<h1 id="静态空间管理"><a href="#静态空间管理" class="headerlink" title="静态空间管理"></a>静态空间管理</h1><p>内部数组所占物理空间的容量，若在向量的生命周期内不允许调整，则称为静态空间管理策略。</p>
+<p><strong>上溢</strong>  数组不足以存放所有元素，尽管系统此时仍有足够的空间</p>
+<p><strong>下溢</strong> 元素寥寥无几，即装填因子(向量实际规模和内部数组容量的比值)远远小于50%.</p>
+<h1 id="动态空间管理"><a href="#动态空间管理" class="headerlink" title="动态空间管理"></a>动态空间管理</h1><p>一般的应用环境难以准确预测空间的需求量，使向量可随实际需求动态调整容量，在即将发生上溢时适当扩大向量的容量。</p>
+<h2 id="可扩充向量"><a href="#可扩充向量" class="headerlink" title="可扩充向量"></a>可扩充向量</h2><p><strong>倍增策略</strong>  每次新数组的容量总是取作原数组的两倍</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">void</span> Vector&lt;T&gt;::expand() &#123; <span class="comment">//向量空间不足时扩容</span></span><br><span class="line">   <span class="keyword">if</span> ( _size &lt; _capacity ) <span class="keyword">return</span>; <span class="comment">//尚未满员时，不必扩容</span></span><br><span class="line">   <span class="keyword">if</span> ( _capacity &lt; DEFAULT_CAPACITY ) _capacity = DEFAULT_CAPACITY; <span class="comment">//不低于最小容量</span></span><br><span class="line">   T* oldElem = _elem;  _elem = <span class="keyword">new</span> T[_capacity &lt;&lt;= <span class="number">1</span>]; <span class="comment">//容量加倍</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> i = <span class="number">0</span>; i &lt; _size; i++ )</span><br><span class="line">      _elem[i] = oldElem[i]; <span class="comment">//复制原向量内容（T为基本类型，或已重载赋值操作符&#x27;=&#x27;）</span></span><br><span class="line">   <span class="keyword">delete</span> [] oldElem; <span class="comment">//释放原空间</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最坏情况：在初始容量为0的空向量中，连续插入$n=mI&gt;&gt;2$个元素</p>
+<p>于是在第$1，2,4,8…$次插入时都需扩容，</p>
+<p>即便不计申请空间操作，各次扩容过程中复制原向量的时间成本依次为</p>
+<p>$1,2,4,8,…,2^m=n$</p>
+<p>总体耗时$O(n)$,每次扩容的分摊成本为O(1)</p>
+<p><strong>递增策略</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">T* oldElem = _elem;  _elem = <span class="keyword">new</span> T[_capacity+increment]; </span><br></pre></td></tr></table></figure>
+<p>最坏情况：在初始容量为0的空向量中，连续插入$n=mI&gt;&gt;2$个元素</p>
+<p>于是在第$1，I+1,2I+1,3I+1…$次插入时都需扩容，</p>
+<p>即便不计申请空间操作，各次扩容过程中复制原向量的时间成本依次为</p>
+<p>$0,I,2I,3I,..(m-1)I$</p>
+<p>每次扩容的分摊成本为$O(n)$</p>
+<h2 id="分摊分析"><a href="#分摊分析" class="headerlink" title="分摊分析"></a>分摊分析</h2><blockquote>
+<p>平均分析和分摊分析</p>
+</blockquote>
+<p><strong>平均复杂度</strong> </p>
+<p>在假定各种输入实例的出现符合某种概率分布后，对对应成本加权平均。</p>
+<p>各种可能的操作，作为独立事件分别考查，割裂了操作之间的相关性和连贯性</p>
+<p>往往不能准确地评价数据结构和算法的平均性能</p>
+<p><strong>分摊复杂度</strong></p>
+<p>对数据结构连续地实施足够多次操作，所需总体成本分摊至单次操作</p>
+<p>从实际可行的角度，对一系列操作做整体的考量</p>
+<p>更加忠实得刻画了可能出现的操作序列</p>
+<p>更为精准地评判数据结构和算法地真实性能</p>
+<p>条件不规整时，可添加约束，比如$n=2^k$</p>
+<h1 id="无序向量"><a href="#无序向量" class="headerlink" title="无序向量"></a>无序向量</h1><h2 id="置乱算法"><a href="#置乱算法" class="headerlink" title="置乱算法"></a>置乱算法</h2><p>在软件模拟、仿真测试等应用中，随机向量的生成都是一项至关重要的操作。理论上说，调用permute可以枚举出同一向量所有可能的排列，而且能够保证生成各种序列的概率相等。但是基于种子的伪随机数发生器无法保证所生成随机数之间的独立性，所以无法等可能地生成所有排列。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="function"><span class="keyword">void</span> <span class="title">permute</span> <span class="params">( Vector&lt;T&gt;&amp; V )</span> </span>&#123; <span class="comment">//随机置乱向量，使各元素等概率出现于各位置</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> i = V.size(); i &gt; <span class="number">0</span>; i-- ) <span class="comment">//自后向前</span></span><br><span class="line">      swap ( V[i - <span class="number">1</span>], V[rand() % i] ); <span class="comment">//V[i - 1]与V[0, i)中某一随机元素交换</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="查找"><a href="#查找" class="headerlink" title="查找"></a>查找</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//无序向量的顺序查找：返回最后一个元素e的位置；失败时，返回lo - 1</span></span><br><span class="line">Rank Vector&lt;T&gt;::find ( T <span class="keyword">const</span>&amp; e, Rank lo, Rank hi ) <span class="keyword">const</span> &#123; <span class="comment">//assert: 0 &lt;= lo &lt; hi &lt;= _size</span></span><br><span class="line">   <span class="keyword">while</span> ( ( lo &lt; hi-- ) &amp;&amp; ( e != _elem[hi] ) ); <span class="comment">//从后向前，顺序查找</span></span><br><span class="line">   <span class="keyword">return</span> hi; <span class="comment">//若hi &lt; lo，则意味着失败；否则hi即命中元素的秩</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>约定在命中多个元素时可返回秩最大者</p>
+<p>输入敏感算法，,最好$O(1)$,最差$O(n)$</p>
+<h2 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//将e作为秩为r元素插入</span></span><br><span class="line">Rank Vector&lt;T&gt;::insert ( Rank r, T <span class="keyword">const</span>&amp; e ) &#123; <span class="comment">//assert: 0 &lt;= r &lt;= size</span></span><br><span class="line">   expand(); <span class="comment">//若有必要，扩容</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> i = _size; i &gt; r; i-- ) _elem[i] = _elem[i<span class="number">-1</span>]; <span class="comment">//自后向前，后继元素顺次后移一个单元</span></span><br><span class="line">   _elem[r] = e; _size++; <span class="comment">//置入新元素并更新容量</span></span><br><span class="line">   <span class="keyword">return</span> r; <span class="comment">//返回秩</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>为了避免元素被覆盖，自后向前对元素操作。时间复杂度主要取决于后继元素的后移，故总体为$O(size-r+1)$，r取最大值size时只需$O(1)$时间，r取最小值时需要$O(size)$时间，平均时间正比于向量规模。</p>
+<h2 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h2><p><strong>区间删除</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">int</span> Vector&lt;T&gt;::remove ( Rank lo, Rank hi ) &#123; <span class="comment">//删除区间[lo, hi)</span></span><br><span class="line">   <span class="keyword">if</span> ( lo == hi ) <span class="keyword">return</span> <span class="number">0</span>; <span class="comment">//出于效率考虑，单独处理退化情况，比如remove(0, 0)</span></span><br><span class="line">   <span class="keyword">while</span> ( hi &lt; _size ) _elem[lo++] = _elem[hi++]; <span class="comment">//[hi, _size)顺次前移hi - lo个单元</span></span><br><span class="line">   _size = lo; <span class="comment">//更新规模，直接丢弃尾部[lo, _size = hi)区间</span></span><br><span class="line">   shrink(); <span class="comment">//若有必要，则缩容</span></span><br><span class="line">   <span class="keyword">return</span> hi - lo; <span class="comment">//返回被删除元素的数目</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>单元素删除可视为区间删除操作的特例</p>
+<p>此处自前向后的顺序不可颠倒，否则在后继元素多于待删除元素后部分单元会相互覆盖。每次操作正比于删除区间的后缀长度$=n-hi=O(n)$，与被删除区间本身的长度无关，循环次数等于区间宽度$=hi-lo=O(n)$,总体复杂度为$O(n^2)$</p>
+<p><strong>单元素删除</strong></p>
+<p>时间复杂度$O(n-r)$，被删除元素在向量中的位置越靠后所需的时间越短，最好为$O(1)$,最坏为$O(n)$</p>
+<h2 id="去重"><a href="#去重" class="headerlink" title="去重"></a>去重</h2><p>应用实例：以网络搜索引擎为例，多个计算节点各自获得的局部搜索结果需首先剔除其中重复的部分，方可汇总成一份完整的报告。</p>
+<p><strong>错误版</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">int</span> Vector&lt;T&gt;::deduplicate() &#123; <span class="comment">//删除无序向量中重复元素（错误版）</span></span><br><span class="line">   <span class="keyword">int</span> oldSize = _size; <span class="comment">//记录原规模</span></span><br><span class="line">   <span class="keyword">for</span> ( Rank i = <span class="number">1</span>; i &lt; _size; i++ ) &#123; <span class="comment">//逐一考查_elem[i]</span></span><br><span class="line">      Rank j = find ( _elem[i], <span class="number">0</span>, i ); <span class="comment">//在_elem[i]的前驱中寻找与之雷同者（至多一个）</span></span><br><span class="line">      <span class="keyword">if</span> ( <span class="number">0</span> &lt;= j ) remove ( j ); <span class="comment">//若存在，则删除之（但在此种情况，下一迭代不必做i++）</span></span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> oldSize - _size; <span class="comment">//向量规模变化量，即被删除元素总数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在前驱存在相同元素时，删除该元素时该元素所有后继均会向前移动一个单位，所以此时$i$不必后移，后移将会跳过元素，此算法错误。</p>
+<p><strong>繁琐版</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">int</span> Vector&lt;T&gt;::deduplicate() &#123; <span class="comment">//删除无序向量中重复元素（繁琐版）</span></span><br><span class="line">   <span class="keyword">int</span> oldSize = _size; <span class="comment">//记录原规模</span></span><br><span class="line">   <span class="keyword">int</span> i = <span class="number">-1</span>; <span class="comment">//从最前端开始</span></span><br><span class="line">   <span class="keyword">while</span> ( ++i &lt; _size - <span class="number">1</span> ) &#123; <span class="comment">//从前向后，逐一</span></span><br><span class="line">      <span class="keyword">int</span> j = i + <span class="number">1</span>; <span class="comment">//assert: _elem[0, i]中不含重复元素</span></span><br><span class="line">      <span class="keyword">while</span> ( j &lt; _size )</span><br><span class="line">         <span class="keyword">if</span> ( _elem[i] == _elem[j] ) remove ( j ); <span class="comment">//若雷同，则删除后者</span></span><br><span class="line">         <span class="keyword">else</span> j++; <span class="comment">//并继续扫描</span></span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> oldSize - _size; <span class="comment">//向量规模变化量，即被删除元素总数</span></span><br></pre></td></tr></table></figure>
+<p>此算法在处理时不同于前一方法，在雷同元素中删除后者，避免了跳过元素的问题，元素的移动操作与之前的算法相比也有所减少,同时查找操作会有所增加。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">int</span> Vector&lt;T&gt;::deduplicate() &#123; </span><br><span class="line">   <span class="keyword">int</span> oldSize = _size; <span class="comment">//记录原规模</span></span><br><span class="line">   <span class="keyword">int</span> i=<span class="number">1</span>;</span><br><span class="line">   <span class="keyword">while</span>(i&lt;size)</span><br><span class="line">	   find(_elem[i],<span class="number">0</span>,i)&lt;<span class="number">0</span> ? i++ :remove(i);</span><br><span class="line">   <span class="keyword">return</span> oldSize - _size; <span class="comment">//向量规模变化量，即被删除元素总数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>算法分析</p>
+</blockquote>
+<p><strong>正确性</strong> 凡被剔除者均为重复元素(不多)，故只需证明，算法不致遗漏重复元素(不少)。</p>
+<p><strong>不变性</strong> 在当前元素V[i]的前缀V[0,i)中，各元素彼此互异 </p>
+<p><strong>单调性</strong> 随着反复的while迭代，</p>
+<ol>
+<li>当前元素的前缀长度单调非降，且迟早增至size</li>
+<li>当前元素后缀的长度单调下降，且迟早降至0</li>
+</ol>
+<p>故算法必然终止，且至多迭代$O(n)$轮</p>
+<p><strong>复杂度</strong> 每轮迭代中<code>find()</code>和<code>remove()</code>累计耗费线性时间，总体$O(n^2)$</p>
+<p>即便在最好情况下，仍然需要运行$\Omega(n^2)$时间，每次迭代都需要做一次查找操作和一次可能的删除操作，对于_elem[k],若需要做删除操作，为此需花费$O(n-k)$，反之，若不需要做删除操作，则此前的查找操作以失败告终，其间已花费了$O(k)$时间，无论如何，每次迭代需要$\Omega(min(n-k,k))$时间，累计为$\Omega (n^2)$</p>
+<ul>
+<li>仿照<code>uniquify</code>高效版思路，元素移动的次数可降低至$O(n)$，但是比较次数仍然是$O(n^2)$。在发现重复元素后不必立即剔除，借助位图结构先对需删除的重复元素标记，然后再统一删除，稳定性保持，但是查找长度更长，从而导致更多比对操作。时间消耗主要来源于静态的比较操作，所以实际运行时间仍将大幅提高。</li>
+</ul>
+<p><strong>改进方法</strong></p>
+<p>可先对无序向量进行排序，后再调用有序向量的唯一化方法，总时间为$O(nlogn)+O(n)=O(nlogn)$</p>
+<h1 id="有序向量"><a href="#有序向量" class="headerlink" title="有序向量"></a>有序向量</h1><h2 id="有序性"><a href="#有序性" class="headerlink" title="有序性"></a>有序性</h2><p>有序/无序序列中，任意/总有一对相邻元素顺序/逆序。</p>
+<p>因此，相邻逆序对的数目，在一定程度上可用来度量向量的逆序程度。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;  <span class="keyword">int</span> Vector&lt;T&gt;::disordered() <span class="keyword">const</span> &#123; <span class="comment">//返回向量中逆序相邻元素对的总数</span></span><br><span class="line">   <span class="keyword">int</span> n = <span class="number">0</span>; <span class="comment">//计数器</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> i = <span class="number">1</span>; i &lt; _size; i++ ) <span class="comment">//逐一检查_size - 1对相邻元素</span></span><br><span class="line">      <span class="keyword">if</span> ( _elem[i - <span class="number">1</span>] &gt; _elem[i] ) n++; <span class="comment">//逆序则计数</span></span><br><span class="line">   <span class="keyword">return</span> n; <span class="comment">//向量有序当且仅当n = 0</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="唯一化"><a href="#唯一化" class="headerlink" title="唯一化"></a>唯一化</h2><p><strong>低效算法</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">int</span> Vector&lt;T&gt;::uniquify() &#123; </span><br><span class="line">   <span class="keyword">int</span> oldsize=_size,<span class="keyword">int</span> i=<span class="number">1</span>;</span><br><span class="line">   <span class="keyword">while</span>(i&lt;_size)</span><br><span class="line">     _elem[i<span class="number">-1</span>]==elem[i]?remove[i]:i++;</span><br><span class="line">   <span class="keyword">return</span> oldsize-_size;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行时间主要取决于<code>while</code>循环次数，共计数$n-1$次</p>
+<p>最坏情况下，每次都需要调用<code>remove()</code>,各自耗时$O(n-1)$~$O(1)$，累计$O(n^2)$</p>
+<p>低效的根源在于同一元素可作为被删除元素的后继多次被前移。</p>
+<p><strong>高效算法</strong><br>有序向量每一组重复元素必然相互紧邻构成一个重复区间，所谓去重就是为每一重复区间保留单个元素，以重复区间为单位，成批删除雷同元素。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">int</span> Vector&lt;T&gt;::uniquify() &#123; <span class="comment">//有序向量重复元素剔除算法（高效版）</span></span><br><span class="line">   Rank i = <span class="number">0</span>, j = <span class="number">0</span>; <span class="comment">//各对互异“相邻”元素的秩</span></span><br><span class="line">   <span class="keyword">while</span> ( ++j &lt; _size ) <span class="comment">//逐一扫描，直至末元素</span></span><br><span class="line">      <span class="keyword">if</span> ( _elem[i] != _elem[j] ) <span class="comment">//跳过雷同者</span></span><br><span class="line">         _elem[++i] = _elem[j]; <span class="comment">//发现不同元素时，向前移至紧邻于前者右侧</span></span><br><span class="line">   _size = ++i; shrink(); <span class="comment">//直接截除尾部多余元素</span></span><br><span class="line">   <span class="keyword">return</span> j - i; <span class="comment">//向量规模变化量，即被删除元素总数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>共计$n-1$次迭代，累计$O(n)$时间。</p>
+<h2 id="二分查找"><a href="#二分查找" class="headerlink" title="二分查找"></a>二分查找</h2><p><strong>版本a</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="function"><span class="keyword">static</span> Rank <span class="title">binSearch</span> <span class="params">( T* A, T <span class="keyword">const</span>&amp; e, Rank lo, Rank hi )</span> </span>&#123;</span><br><span class="line">   <span class="keyword">while</span> ( lo &lt; hi ) &#123; <span class="comment">//每步迭代可能要做两次比较判断，有三个分支</span></span><br><span class="line">      Rank mi = ( lo + hi ) &gt;&gt; <span class="number">1</span>; <span class="comment">//以中点为轴点</span></span><br><span class="line">      <span class="keyword">if</span>      ( e &lt; A[mi] ) hi = mi; <span class="comment">//深入前半段[lo, mi)继续查找</span></span><br><span class="line">      <span class="keyword">else</span> <span class="keyword">if</span> ( A[mi] &lt; e ) lo = mi + <span class="number">1</span>; <span class="comment">//深入后半段(mi, hi)继续查找</span></span><br><span class="line">      <span class="keyword">else</span>                <span class="keyword">return</span> mi; <span class="comment">//在mi处命中</span></span><br><span class="line">   &#125; <span class="comment">//成功查找可以提前终止</span></span><br><span class="line">   <span class="keyword">return</span> <span class="number">-1</span>; <span class="comment">//查找失败</span></span><br><span class="line">&#125; <span class="comment">//有多个命中元素时，不能保证返回秩最大者；查找失败时，简单地返回-1，而不能指示失败的位置</span></span><br></pre></td></tr></table></figure>
+<p>尽管二分查找将之前的向量分为了两部分，却不是二分递归，而是线性递归。每一实例有两个可能的递归方向，却只能从中选择其一，故每个层次上的递归实例构成一个线性次序关系。</p>
+<blockquote>
+<p>递推方程分析</p>
+</blockquote>
+<p>$T(n)=T(n/2)+O(1)=O(logn)$,大大优于顺序查找</p>
+<blockquote>
+<p>递归跟踪分析</p>
+</blockquote>
+<p>轴点总取作中点，递归深度$O(logn)$,各递归实例均耗时$O(1)$</p>
+<p><strong>查找长度</strong>  </p>
+<p>为了更为精细地评估查找算法地性能，考查关键码的比较次数。</p>
+<p>分别针对成功查找和失败查找，从最好、最坏、平均情况等角度评估。</p>
+<p>对于长度为$n$的有序向量，共有$n$种可能的成功查找，分别对应于某一元素。实际上，每一种成功的查找长度仅仅取决于$n$和目标元素所对应的秩，而与元素的具体数值无关。</p>
+<blockquote>
+<p>将平均的成功查找长度和失败查找长度分别记作S和S’,则(S+1)n=F(n+1)</p>
+</blockquote>
+<p>成功查找长度和失败查找长度均为$O(1.5logn)$</p>
+<p>在每一步迭代过程中为了确定左右分支方向，需要做一次或两次比较，从而造成不同情况对应查找长度的不均衡。</p>
+<p>转向左右分支的关键码比较次数不等，而递归深度却相同。</p>
+<p>为了改善均衡性，有两种解决思路：</p>
+<ul>
+<li>通过递归深度的不均衡，对转向成本进行补偿，缩短平均查找长度</li>
+<li>统一沿两个方向深入需要执行的比较次数</li>
+</ul>
+<p><strong>版本b</strong></p>
+<p>每次迭代时仅做1次关键码比较，如此，所有的分支只有2个方向而不是3个方向</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="function"><span class="keyword">static</span> Rank <span class="title">binSearch</span> <span class="params">( T* A, T <span class="keyword">const</span>&amp; e, Rank lo, Rank hi )</span> </span>&#123;</span><br><span class="line">   <span class="keyword">while</span> ( <span class="number">1</span> &lt; hi - lo ) &#123; <span class="comment">//每步迭代仅需做一次比较判断，有两个分支；成功查找不能提前终止</span></span><br><span class="line">      Rank mi = ( lo + hi ) &gt;&gt; <span class="number">1</span>; <span class="comment">//以中点为轴点</span></span><br><span class="line">      ( e &lt; A[mi] ) ? hi = mi : lo = mi; <span class="comment">//经比较后确定深入[lo, mi)或[mi, hi)</span></span><br><span class="line">   &#125; <span class="comment">//有效区间的宽度缩减至1时算法才会终止</span></span><br><span class="line">   <span class="keyword">return</span> ( e == A[lo] ) ? lo : <span class="number">-1</span> ; <span class="comment">//查找成功时返回对应的秩；否则统一返回-1</span></span><br><span class="line">&#125; <span class="comment">//有多个命中元素时，不能保证返回秩最大者；查找失败时，简单地返回-1，而不能指示失败的位置</span></span><br></pre></td></tr></table></figure>
+<p>只有当元素数目$hi-lo=1$时才判断元素是否命中。</p>
+<p>knuth指出将三分支改为两分支的改进效果需要到n非常大(2^66)后方能体现，针对当前规模来说，这一优化得不偿失。</p>
+<p><strong>版本c</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="function"><span class="keyword">static</span> Rank <span class="title">binSearch</span> <span class="params">( T* A, T <span class="keyword">const</span>&amp; e, Rank lo, Rank hi )</span> </span>&#123;</span><br><span class="line">   <span class="keyword">while</span> ( lo &lt; hi ) &#123; <span class="comment">//每步迭代仅需做一次比较判断，有两个分支</span></span><br><span class="line">      Rank mi = ( lo + hi ) &gt;&gt; <span class="number">1</span>; <span class="comment">//以中点为轴点</span></span><br><span class="line">      ( e &lt; A[mi] ) ? hi = mi : lo = mi + <span class="number">1</span>; <span class="comment">//经比较后确定深入[lo, mi)或(mi, hi)</span></span><br><span class="line">   &#125; <span class="comment">//成功查找不能提前终止</span></span><br><span class="line">   <span class="keyword">return</span> --lo; <span class="comment">//循环结束时，lo为大于e的元素的最小秩，故lo - 1即不大于e的元素的最大秩</span></span><br><span class="line">&#125; <span class="comment">//有多个命中元素时，总能保证返回秩最大者；查找失败时，能够返回失败的位置</span></span><br></pre></td></tr></table></figure>
+<p>待查找区间宽度缩减为0时算法结束，返回不大于e的最后一个元素，此前的版本均未实现此约定。</p>
+<p><strong>不变性</strong> </p>
+<p>在算法执行的任意过程中，<code>A[lo-1]/A[hi]</code>​总是当前不大于e的最大者/大于e的最小者</p>
+<p>当算法终止时，<code>A[lo-1]/A[hi]​</code>即是全局的大于e的最大者/大于e的最小者</p>
+<h2 id="斐波那契查找"><a href="#斐波那契查找" class="headerlink" title="斐波那契查找"></a>斐波那契查找</h2><p>二分查找版本A转向左右分之前的关键码比较次数不相等，而递归长度却相同，通过递归深度的不平衡对转向成本的不平衡进行补偿，平均查找长度可进一步缩短。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="function"><span class="keyword">static</span> Rank <span class="title">fibSearch</span> <span class="params">( T* A, T <span class="keyword">const</span>&amp; e, Rank lo, Rank hi )</span> </span>&#123;</span><br><span class="line">   <span class="function">Fib <span class="title">fib</span> <span class="params">( hi - lo )</span></span>; <span class="comment">//用O(log_phi(n = hi - lo)时间创建Fib数列</span></span><br><span class="line">   <span class="keyword">while</span> ( lo &lt; hi ) &#123; <span class="comment">//每步迭代仅仅做一次比较判断，有两个分支</span></span><br><span class="line">      <span class="keyword">while</span> ( hi - lo &lt; fib.get() ) fib.prev(); <span class="comment">//通过向前顺序查找（分摊O(1)）——至多迭代几次？</span></span><br><span class="line">      Rank mi = lo + fib.get() - <span class="number">1</span>; <span class="comment">//确定形如Fib(k) - 1的轴点</span></span><br><span class="line">      ( e &lt; A[mi] ) ? hi = mi : lo = mi + <span class="number">1</span>; <span class="comment">//比较后确定深入前半段[lo, mi)或后半段(mi, hi)</span></span><br><span class="line">   &#125; <span class="comment">//成功查找不能提前终止</span></span><br><span class="line">   <span class="keyword">return</span> --lo; <span class="comment">//循环结束时，lo为大于e的元素的最小秩，故lo - 1即不大于e的元素的最大秩</span></span><br><span class="line">&#125; <span class="comment">//有多个命中元素时，总能保证返回最秩最大者；查找失败时，能够返回失败的位置</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>成功平均查找长度为$O(log_{\phi}n)=O(log_{\phi}nlog_{2} \phi)=O(1.44log_2{n})$\</p>
+<p>失败平均查找长度不超过$\lambda log_2{n+1}=O(\lambda log_2{n})$</p>
+<p>其中$\lambda=1+1/\phi^2=3-\phi=1.382$</p>
+<h2 id="通用策略"><a href="#通用策略" class="headerlink" title="通用策略"></a>通用策略</h2><p><img src="https://i.loli.net/2019/11/05/GlLOQrfTt17D3x9.png"></p>
+<p><img src="https://i.loli.net/2019/11/05/B23VfkubCRrhXdj.png"></p>
+<h2 id="索引查找"><a href="#索引查找" class="headerlink" title="索引查找"></a>索引查找</h2><p>$m$级索引，每一级索引内部采用顺序查找，可将查找的时间复杂度降低至$n^{1/m}$</p>
+<h2 id="插值查找"><a href="#插值查找" class="headerlink" title="插值查找"></a>插值查找</h2><p>假设：已知有序向量中各元素随机分布的规律，比如：均匀且独立的随机分布，</p>
+<p>于是[lo,hi)内各元素应大致按照线性趋势增长</p>
+<p>$\displaystyle \frac{mi-hi}{hi-lo}  \approx \frac{e-A[lo]}{A[hi]-A[lo]}$</p>
+<p>因此，通过猜测轴点mi,可以极大地提高收敛速度</p>
+<p>$\displaystyle mi  \approx lo+(hi-lo)\frac{e-A[lo]}{A[hi]-A[lo]} $</p>
+<p>以英文字典为例，<code>binary</code>大致位于$2/26$处</p>
+<p><code>search</code>大致位于$19/26$处</p>
+<p><img src="https://i.loli.net/2019/11/06/NIBimO1kYDL5jsS.png"></p>
+<p><strong>性能分析</strong></p>
+<p>最坏:$O(hi-lo)=O(n)$</p>
+<p>平均:每经过一次比较，待查找区间宽度由$n$缩至$\sqrt{n}$</p>
+<p>$n,\sqrt{n},\sqrt{\sqrt{n}},…,2$</p>
+<p>$n,n^{1/2},n^{1/2^2},n^{1/2^{k}},…,2$</p>
+<p>经过$k$次比较后，$n^{1/2^k}&lt;2$,$k=O(loglogn)$</p>
+<p>每经过一次比较，待查找区间宽度地数值开放，有效字长减半</p>
+<p>插值查找为在字长意义上地折半查找</p>
+<p>二分查找为在字长意义上的顺序查找</p>
+<blockquote>
+<p>从$O(logn)$到$O(loglogn)$,是否值得？</p>
+</blockquote>
+<p>通常优势不明显，除非查找区间宽度极大，或者比较操作成本极高</p>
+<p>比如,$n=2^(2^5)=2^{32}=4G$时，$log2{n}=32,log_2(log_2(n))=5$</p>
+<p>易受小扰动的干扰和蒙骗</p>
+<p>须引入乘法和除法运算</p>
+<p>可先通过插值查找将查找范围缩小至一定的尺度，然后再进行二分查找</p>
+<blockquote>
+<p>每经过一次插值和查找，待搜索区间的宽度大致以平方根的速度递减</p>
+</blockquote>
+<p>最坏情况下仍然为$O(n)$，即极端不平衡的情况，{1,2,2000,2001,999999,9999999}</p>
+<p>假设数据在某个范围内均匀分布，插值查找每经过一次比较，待搜索区间以平方根速度递减。时间复杂度为$O(loglogN)$。需要注意，$O(loglogN)$的复杂度是平均期望复杂度，而不是最坏情况复杂度。</p>
+<h1 id="起泡排序"><a href="#起泡排序" class="headerlink" title="起泡排序"></a>起泡排序</h1><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Vector&lt;T&gt;::bubbleSort ( Rank lo, Rank hi ) <span class="comment">//assert: 0 &lt;= lo &lt; hi &lt;= size</span></span><br><span class="line">&#123; <span class="keyword">while</span> ( !bubble ( lo, hi-- ) ); &#125; <span class="comment">//逐趟做扫描交换，直至全序</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">bool</span> Vector&lt;T&gt;::bubble ( Rank lo, Rank hi ) &#123; <span class="comment">//一趟扫描交换</span></span><br><span class="line">   <span class="keyword">bool</span> sorted = <span class="literal">true</span>; <span class="comment">//整体有序标志</span></span><br><span class="line">   <span class="keyword">while</span> ( ++lo &lt; hi ) <span class="comment">//自左向右，逐一检查各对相邻元素</span></span><br><span class="line">      <span class="keyword">if</span> ( _elem[lo - <span class="number">1</span>] &gt; _elem[lo] ) &#123; <span class="comment">//若逆序，则</span></span><br><span class="line">         sorted = <span class="literal">false</span>; <span class="comment">//意味着尚未整体有序，并需要</span></span><br><span class="line">         swap ( _elem[lo - <span class="number">1</span>], _elem[lo] ); <span class="comment">//通过交换使局部有序</span></span><br><span class="line">      &#125;</span><br><span class="line">   <span class="keyword">return</span> sorted; <span class="comment">//返回有序标志</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在对$n$个元素做起泡排序的过程中，可能会发生：</p>
+<ul>
+<li>所有元素均无需移动</li>
+<li>某元素会一度(朝着远离其最终位置的方向)逆向移动</li>
+<li>某元素的初始位置与其最终位置相邻，却需要参与$n-1$次交换</li>
+<li>所有元素均参加$n-1$次交换</li>
+</ul>
+<p>稳定算法的特征是，重复元素之间的相对次序在排序前后保持一致。反之，不具有这一特征的排序算法都是不稳定算法。以上排序算法是稳定的，在起泡排序算法中，元素相对位置调整的唯一可能是某元素<code>_elem[i-1]</code>严格大于其后继<code>_elem[i]</code>。也就是说，在这种亦步亦趋的交换算法中，重复元素可能靠拢，但绝对不会相互跨越。由此可知，起泡排序算法为稳定算法。</p>
+<p>乱序在$A[0,\sqrt{n}]$时，仍然需要调用<code>bubble()</code>,共做$\Omega(n)$次交换操作和$\Omega(n^{3/2})$次比较操作，外循环$\sqrt{n}$次，内循环$n$次</p>
+<p><strong>优化</strong> 返回最右侧逆序对的位置</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> Vector&lt;T&gt;::bubbleSort ( Rank lo, Rank hi ) <span class="comment">//assert: 0 &lt;= lo &lt; hi &lt;= size</span></span><br><span class="line">&#123; <span class="keyword">while</span> ( lo &lt; ( hi = bubble ( lo, hi ) ) ); &#125; <span class="comment">//逐趟做扫描交换，直至全序</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; Rank Vector&lt;T&gt;::bubble ( Rank lo, Rank hi ) &#123; <span class="comment">//一趟扫描交换</span></span><br><span class="line">   Rank last = lo; <span class="comment">//最右侧的逆序对初始化为[lo - 1, lo]</span></span><br><span class="line">   <span class="keyword">while</span> ( ++lo &lt; hi ) <span class="comment">//自左向右，逐一检查各对相邻元素</span></span><br><span class="line">      <span class="keyword">if</span> ( _elem[lo - <span class="number">1</span>] &gt; _elem[lo] ) &#123; <span class="comment">//若逆序，则</span></span><br><span class="line">         last = lo; <span class="comment">//更新最右侧逆序对位置记录，并</span></span><br><span class="line">         swap ( _elem[lo - <span class="number">1</span>], _elem[lo] ); <span class="comment">//通过交换使局部有序</span></span><br><span class="line">      &#125;</span><br><span class="line">   <span class="keyword">return</span> last; <span class="comment">//返回最右侧的逆序对位置</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>同样以乱序只存在$A[0,\sqrt{n}]$时，仅需一趟扫描交换$O( n )$即可确定逆序数存在的空间，累计耗时：</p>
+<p>$O(n+(\sqrt n)^2)$=$O(n)$</p>
+<h1 id="归并排序"><a href="#归并排序" class="headerlink" title="归并排序"></a>归并排序</h1><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//向量归并排序</span></span><br><span class="line"><span class="keyword">void</span> Vector&lt;T&gt;::mergeSort ( Rank lo, Rank hi ) &#123; <span class="comment">//0 &lt;= lo &lt; hi &lt;= size</span></span><br><span class="line">   <span class="keyword">if</span> ( hi - lo &lt; <span class="number">2</span> ) <span class="keyword">return</span>; <span class="comment">//单元素区间自然有序，否则...</span></span><br><span class="line">   <span class="keyword">int</span> mi = ( lo + hi ) / <span class="number">2</span>; <span class="comment">//以中点为界</span></span><br><span class="line">   mergeSort ( lo, mi ); mergeSort ( mi, hi ); <span class="comment">//分别排序</span></span><br><span class="line">   merge ( lo, mi, hi ); <span class="comment">//归并</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//有序向量的归并</span></span><br><span class="line"><span class="keyword">void</span> Vector&lt;T&gt;::merge ( Rank lo, Rank mi, Rank hi ) &#123; <span class="comment">//各自有序的子向量[lo, mi)和[mi, hi)</span></span><br><span class="line">   T* A = _elem + lo; <span class="comment">//合并后的向量A[0, hi - lo) = _elem[lo, hi)</span></span><br><span class="line">   <span class="keyword">int</span> lb = mi - lo; T* B = <span class="keyword">new</span> T[lb]; <span class="comment">//前子向量B[0, lb) = _elem[lo, mi)</span></span><br><span class="line">   <span class="keyword">for</span> ( Rank i = <span class="number">0</span>; i &lt; lb; B[i] = A[i++] ); <span class="comment">//复制前子向量</span></span><br><span class="line">   <span class="keyword">int</span> lc = hi - mi; T* C = _elem + mi; <span class="comment">//后子向量C[0, lc) = _elem[mi, hi)</span></span><br><span class="line">   <span class="keyword">for</span> ( Rank i = <span class="number">0</span>, j = <span class="number">0</span>, k = <span class="number">0</span>; ( j &lt; lb ) || ( k &lt; lc ); ) &#123; <span class="comment">//B[j]和C[k]中的小者续至A末尾</span></span><br><span class="line">      <span class="keyword">if</span> ( ( j &lt; lb ) &amp;&amp; ( ! ( k &lt; lc ) || ( B[j] &lt;= C[k] ) ) ) A[i++] = B[j++];</span><br><span class="line">      <span class="keyword">if</span> ( ( k &lt; lc ) &amp;&amp; ( ! ( j &lt; lb ) || ( C[k] &lt;  B[j] ) ) ) A[i++] = C[k++];</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">delete</span> [] B; <span class="comment">//释放临时空间B</span></span><br><span class="line">&#125; <span class="comment">//归并后得到完整的有序向量[lo, hi)</span></span><br></pre></td></tr></table></figure>
+<p><strong>综合评价</strong></p>
+<p>优点</p>
+<ul>
+<li>实现最坏情况下最优$O(nlogn)$性能的第一个排序算法</li>
+<li>不许随机读写，完全顺序访问，尤其适用于列表之类的序列和磁盘之类的设备</li>
+<li>只要实现得当，可保证稳定，在出现雷同元素时，左侧子向量优先</li>
+<li>可扩展性极佳，十分适宜于外部排序(海量网页搜索结果的合并)</li>
+<li>易于并行化</li>
+</ul>
+<p>缺点</p>
+<ul>
+<li>非就地，需要对等规模的辅助空间</li>
+<li>即便输入完全(接近)有序，仍需$O(nlogn)$时间</li>
+</ul>
+<p><strong>优化</strong></p>
+<p>在最好情况下仍然需要$O(nlogn)$时间，在业已有序的情况下不必再合并，每个递归实例为常数时间，复杂度优化至$O(n)$。以mi为界划分为两个子序列A[lo,mi),A[mi,hi)，若后一个子序列的最小值大于等于前一个子序列的最大值，则已有序，无需再合并。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//向量归并排序</span></span><br><span class="line"><span class="keyword">void</span> Vector&lt;T&gt;::mergeSort ( Rank lo, Rank hi ) &#123; <span class="comment">//0 &lt;= lo &lt; hi &lt;= size</span></span><br><span class="line">   <span class="keyword">if</span> ( hi - lo &lt; <span class="number">2</span> ) <span class="keyword">return</span>; <span class="comment">//单元素区间自然有序，否则...</span></span><br><span class="line">   <span class="keyword">int</span> mi = ( lo + hi ) / <span class="number">2</span>; <span class="comment">//以中点为界</span></span><br><span class="line">   mergeSort ( lo, mi ); mergeSort ( mi, hi ); <span class="comment">//分别排序</span></span><br><span class="line">   <span class="keyword">if</span>(_elem[mi<span class="number">-1</span>]&gt;_elem[mi])merge ( lo, mi, hi ); <span class="comment">//归并</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="排序与下界"><a href="#排序与下界" class="headerlink" title="排序与下界"></a>排序与下界</h1><p>从数据处理的角度来看，有序性在很多场合都可以极大地提高计算效率。在解决许多应用问题时普遍采用的一种策略就是首先将向量转换为有序向量，再调用有序向量支持的各种高效算法，这一过程就是向量的排序。</p>
+<p>以下给出排序的准确定义：</p>
+<p>任意给定N个元素${R1,R2,…,Rn}$,对应关键码${K1,…,Kn}$,需按某种次序排列。亦即是找出$&lt;1,2,3,..,n&gt;$的一个排列，使得$K_{i1}\leq K_{i2}\leq K_{i3}\leq…\leq K_{in}$</p>
+<p>例如，$3,1,4,1,5,9,2,6$ 经排序后的序列为$1,1,2,3,4,5,6,9$</p>
+<p>在实际应用中，25%到50%的计算都可以归于排序。</p>
+<p>排序算法是个庞大的家族，其中根据处理数据的规模和存储的特点不同，分为内部排序算法和外部排序算法，内部排序是数据记录在内存中进行排序，而外部排序因为排序的数据很大，一次不能容纳全部的排序记录，在排序的过程中需要访问外存。</p>
+<p>根据输入方式的不同，可分为在线算法和离线算法。前一情况下，待排序算法通常以批处理的形式整理给出，在网络计算等环境中，待排序的算法通常需要实时生成，在排序算法启动后数据才陆续到达。</p>
+<p>再如，针对所依赖的体系结构的不同，排序算法又可分为串行和并行两类排序算法。另外，根据算法是否采用随机策略，还有确定式和随机式之分。</p>
+<h2 id="下界"><a href="#下界" class="headerlink" title="下界"></a>下界</h2><p>在着手优化算法时，我们首先需要解决以下几个问题</p>
+<ul>
+<li>起泡排序的复杂度为$O(n^2)$,归并排序算法的复杂度为$O(nlogn)$,这一效率是否已经足够高？</li>
+<li>能否以更快的速度完成排序</li>
+</ul>
+<p>考虑以下问题：三只苹果外观一致，其中两只重量相同另一只不同，利用一架天平如何从中找出重量不同的那只？</p>
+<p>以上问题所需的最少比较次数为多少次？</p>
+<p>尽管很多算法都可以优化，但是对任一特定应用问题随着算法的不断改进，其效率的提高必然存在某一极限。这一极限不仅必然存在，其具体的数值应取决于应用问题本身以及所采用的计算模型。</p>
+<p>一般地，任一问题在最快情况下的最低计算成本，即为该问题的复杂度下界，一旦某一算法的性能达到这一下界，即意味着它已经是最坏情况下最优的。</p>
+<h2 id="比较树"><a href="#比较树" class="headerlink" title="比较树"></a>比较树</h2><p>若用结点表示算法中的不同状态，用有方向的边表示不同状态之间的转换相互转换。</p>
+<p>一般地，树根结点对应于算法入口处的起始状态，内部结点对应于过程中的某步计算，通常属于基本操作，叶结点则对应于经一系列计算后某次运行的终止状态。</p>
+<p>算法所有可能的执行过程都可涵盖于比较树中。具体地，该树具有以下性质</p>
+<ul>
+<li>每一内部节点对应于一次比对操作</li>
+<li>内部节点的左右分支分别对应于在两种比对操作下的执行方向</li>
+<li>叶节点(根到叶节点的路径)对应于算法某次执行的完整过程及输出</li>
+<li>反过来，算法的每一次运行都对应于从根到某一叶节点的路径</li>
+</ul>
+<p>按上述规则与算法对应的树称为比较树。无论什么算法，只要其中的分支都完全取决于不同变量或常量的比对或比较结果，则该算法所有可能的执行过程都对应于从根到某一叶节点的路径。反之，可如此描述的算法都称为基于比较式算法，简称CBA式算法。</p>
+<p><strong>估计下界</strong></p>
+<p>考查任一CBA式算法A,设CT(A)为与之对应的一棵比较树。</p>
+<p>根据比较树的性质，算法A每次运行的时间都取决于其对应叶节点到根节点的距离，而算法A在最坏情况下的运行时间将取决于比较树中所有叶节点的最大深度，即该树的高度，记作h(CT(A))。就渐进意义而言，算法A的时间复杂度应不低于h(CT(A))。</p>
+<p>以苹果鉴别为例，可能的输出结果有N=3种，故解决该问题的任一CBA式算法所对应比较树的高度为：</p>
+<p>$h \geq \lceil log_23 \rceil=2$ </p>
+<p>因此，只要是采用CBA式算法，则无论如何优化，在最坏情况下都至少需要2次称量。</p>
+<p>再以CBA式排序算法为例,$n$个元素而言，可能的输出有$n!$种，元素之间不仅可以判等还可以比较大小，因此每一节点都对应有三个分支(分别对应大于、等于、小于的情况)。任一CBA式排序算法对应比较树的高度为：</p>
+<p>$h \geq \lceil log_3{n!}\rceil=\Omega(nlogn)$</p>
+<p>可见，最坏情况下CBA式排序算法至少需要$\Omega(nlogn)$时间，其中$n$为待排序元素的数目。</p>
+<p>这一复杂度下界是针对基于比较树的模型而言的，很多不属于此类型的算法在最坏情况下的复杂度可能低于这一下界。</p>
+<h2 id="归约"><a href="#归约" class="headerlink" title="归约"></a>归约</h2><p>除了比较树，归约同样也是证明下界的有力工具。</p>
+<p>一般地，考查难度待界定的问题B，若另一问题A满足以下性质：</p>
+<ul>
+<li>问题A的任一输入，在线性时间内可以转换为问题B的输入</li>
+<li>问题B的任一输出，在线性时间内可以转换为问题A的输出</li>
+</ul>
+<p>则称问题A在线性时间内归约为问题B，若问题A的难度已界定为严格地高于$\Omega(n)$,亦即</p>
+<p>$|A|=\Omega(f(n))=\omega(n)$</p>
+<p>则问题B也不会低于这个复杂度下界,亦即</p>
+<p>$|B|\geq|A|=\Omega(f(n))$</p>
+<p>实际上，若问题A可线性归约为问题B，则由后者的任一算法必然可以导出前者的一个算法。为求解问题A，可将其输入转化为问题B的输入，再调用后者的算法，将其转换为前者的输出。</p>
+<p><img src="https://i.loli.net/2019/11/06/BmWlncHbugyGSZA.png"></p>
+<p>因此，假若问题B具有一个更低的下界，则至少存在一个$\alpha(f(n))$的算法，于是由以上可知，问题A存在一个$\alpha(f(n))$的算法，这与问题A的已知下界不符。</p>
+<p>为运用线性归约问题B的下界，须经历以下步骤：</p>
+<ul>
+<li>找到难度已知的问题A</li>
+<li>证明问题A可归约为问题B</li>
+</ul>
+<blockquote>
+<p>证明有序向量唯一化的最低复杂度为nlogn</p>
+</blockquote>
+<p>作为参照，考查所谓元素的唯一性问题(element uniqueness,简称EU)A:对于任意n个实数，判定其中是否有重复者，无序向量唯一化为难度待界定的问题B，简称为UNIQ</p>
+<p>作为EU问题的输入，任意n个实数可在线性时间内组织为一个无序向量，从而转换为UNIQ问题的输入，另一方面，一旦得到UNIQ的问题输出(即去重以后的向量)，只需线性时间核对向量的规模是否仍然为n，即可判定原实数中是否存在重复者。</p>
+<p>EU问题具有$\Omega(nlogn)$的复杂度下界，故以上所给的$nlogn$已属最优。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/vector/" title="向量">http://example.com/vector/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Data-structure/" rel="tag"><i class="fa fa-tag"></i> Data structure</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/bbst/" rel="prev" title="平衡二叉搜索树">
+                  <i class="fa fa-chevron-left"></i> 平衡二叉搜索树
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/database_system/database/" rel="next" title="数据库导论">
+                  数据库导论 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  <script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'none'
+      },
+      options: {
+        renderActions: {
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              const target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.typesetClear();
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+
+
+</body>
+</html>

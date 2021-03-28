@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="我们一般打开电脑从启动电源开始，等待开机后再进行具体的操作，运行特定的程序。具体计算机是怎么加载程序并开始运行的呢？在操作系统内核运行之前需要先执行系统初始化软件，完成基本的I&#x2F;O初始化和引导加载功能，为操作系统内核运行构建环境。之后，操作系统通过中断、异常、系统调用来响应用户的一系列操作。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="启动 中断 异常 系统调用">
+<meta property="og:url" content="http://example.com/interrupt-exception-syscall/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="我们一般打开电脑从启动电源开始，等待开机后再进行具体的操作，运行特定的程序。具体计算机是怎么加载程序并开始运行的呢？在操作系统内核运行之前需要先执行系统初始化软件，完成基本的I&#x2F;O初始化和引导加载功能，为操作系统内核运行构建环境。之后，操作系统通过中断、异常、系统调用来响应用户的一系列操作。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2019/07/26/5d3ac38ff22b218900.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/26/5d3ac3ed7486f36988.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/26/5d3ad70b4641f40620.png">
+<meta property="article:published_time" content="2019-05-11T02:18:37.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="Operating Systems">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2019/07/26/5d3ac38ff22b218900.png">
+
+
+<link rel="canonical" href="http://example.com/interrupt-exception-syscall/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>启动 中断 异常 系统调用 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/interrupt-exception-syscall/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          启动 中断 异常 系统调用
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-05-11 10:18:37" itemprop="dateCreated datePublished" datetime="2019-05-11T10:18:37+08:00">2019-05-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Systems/" itemprop="url" rel="index"><span itemprop="name">Systems</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p> 我们一般打开电脑从启动电源开始，等待开机后再进行具体的操作，运行特定的程序。具体计算机是怎么加载程序并开始运行的呢？在操作系统内核运行之前需要先执行系统初始化软件，完成基本的I/O初始化和引导加载功能，为操作系统内核运行构建环境。之后，操作系统通过中断、异常、系统调用来响应用户的一系列操作。</p>
+<a id="more"></a>
+
+<h1 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h1><p>计算机启动时内存和磁盘布局如下，具体分布情况参考<a target="_blank" rel="noopener" href="https://wiki.osdev.org/Memory_Map_(x86)">Memory Map</a>。</p>
+<p><img src="https://i.loli.net/2019/07/26/5d3ac38ff22b218900.png"></p>
+<h2 id="CPU初始化"><a href="#CPU初始化" class="headerlink" title="CPU初始化"></a>CPU初始化</h2><p>CS寄存器分为可见的选择子<code>selector</code>区域（16位）和不可见的基址<code>base address</code>区域（32位）。 计算机加电后，CPU从物理地址<code>0xFFFFFFF0</code>（由初始化的<code>CS：EIP</code>确定，此时CS和IP的值分别是<code>0xF000</code>和<code>0xFFF0</code>）开始执行。在<code>0xFFFFFFF0</code>这里只是存放了一条跳转指令，通过跳转指令跳到BIOS例行程序起始点。</p>
+<p>在16位的8086时代，内存限制在1MB范围内，此时，BIOS的代码固化在EPROM中，且EPROM被编址在1MB内存地址空间的最高64KB中。计算机加电后，CS寄存器初始化为<code>0xF000</code>，IP寄存器初始化为<code>0xFFF0</code>，所以CPU要执行的第一条指令的地址为<code>CS:IP=0xF000:0XFFF0</code>（ <code>Segment:Offset</code>表示） =<code>0xFFFF0</code>（ Linear表示） 。这个地址位于被固化的EPROM中，该地址存储了一条指令，它是一个长跳转指令<code>JMP F000:E05B</code>。这样就开启了BIOS的执行过程。 </p>
+<p> 到了32位的80386 CPU时代，内存空间扩大到了4G，多了段机制和页机制。如果仍然把BIOS启动固件编址在<code>0xF0000</code>起始的64KB内存地址空间内，就会把整个物理内存地址空间隔离成不连续的两段，一段是<code>0xF0000</code>以前的地址，一段是1MB以后的地址，这很不协调。为此，intel采用了一个折中的方案：默认将执行BIOS ROM编址在32位内存地址空间的最高端，即位于4GB地址的最后一个64KB内。在PC系统开机复位时，CPU进入实模式，并将CS寄存器设置成<code>0xF000</code>，将<code>shadow register</code>初始化设置为<code>0xFFFF0000</code>，EIP寄存器初始化设置为<code>0x0000FFF0</code>。所以机器执行的第一条指令的物理地址是<code>0xFFFFFFF0</code>。80386的BIOS代码也要和以前8086的BIOS代码兼容，故地址<code>0xFFFFFFF0</code>处的指令还是一条长跳转指令<code>jmp F000:E05B</code>。这个长跳转指令会更新CS寄存器和<code>shadow register</code>，即执行<code>jmp F000:E05B</code>后，CS将被更新成<code>0xF000</code>。表面上看CS其实没有变化，但CS的<code>shadow register</code>被更新为另外一个值了，它的Base域被更新成<code>0x000F0000</code>，此时 <code>PC = 16*CS + IP</code>，形成的物理地址为<code>0x000FE05B</code>系统地址空间只有20位（1MB） ，这就是CPU执行的第二条指令的地址。此时这条指令的地址已经是1M以内了，且此地址不再位于BIOS ROM中，而是位于RAM空间中。由于Intel设计了一种映射机制，将内存高端的BIOS ROM映射到1MB以内的RAM空间里，并且可以使这一段被映射的RAM空间具有与ROM类似的只读属性。所以计算机启动时将开启这种映射机制，让4GB地址空间的最高一个64KB的内容等同于1MB地址空间的最高一个64K的内容，从而使得执行了长跳转指令后，其实是回到了早期的8086CPU初始化控制流，保证了向下兼容。 </p>
+<h2 id="BIOS初始化"><a href="#BIOS初始化" class="headerlink" title="BIOS初始化"></a>BIOS初始化</h2><ul>
+<li>在实模式下提供基本输入输出方法<ul>
+<li>通过中断调用实现</li>
+<li>只能在实模式下使用，操作系统不能使用</li>
+</ul>
+</li>
+<li>系统设置信息</li>
+<li>开机后自检<ol>
+<li>硬件自检POST<ul>
+<li>检测系统中内存或显卡等关键部位的存在和工作状态</li>
+<li>查找并执行显卡等接口的初始化程序</li>
+</ul>
+</li>
+<li>系统初始化<ul>
+<li>检测配置即插即用设备</li>
+<li>更新 ESCD 扩展系统配置数据</li>
+</ul>
+</li>
+</ol>
+</li>
+<li>系统自启动程序等</li>
+<li>用户选择引导设备（从什么介质启动）</li>
+<li>将<code>bootloader</code>从磁盘的引导扇区加载到内存中<code>0x7c00</code>开始的位置</li>
+<li>跳转到<code>bootloader</code>的位置：<code>CS:IP=0000:7c00</code></li>
+</ul>
+<p>之后，控制权就交给了<code>bootloader</code>。</p>
+<h2 id="bootloader"><a href="#bootloader" class="headerlink" title="bootloader"></a>bootloader</h2><p>加载后内存布局如下：</p>
+<p><img src="https://i.loli.net/2019/07/26/5d3ac3ed7486f36988.png"></p>
+<p>最后，加载程序(bootloader)把控制权交给了操作系统。</p>
+<h2 id="BIOS如何读取bootloader"><a href="#BIOS如何读取bootloader" class="headerlink" title="BIOS如何读取bootloader"></a>BIOS如何读取bootloader</h2><p>BIOS先读取主引导扇区(又称主引导记录)代码，主引导扇区代码再读取活动分区的引导扇区代码，再由引导扇区代码读取文件系统的加载程序。</p>
+<blockquote>
+<p>BIOS为什么没有直接从磁盘读入操作系统内核映像？</p>
+</blockquote>
+<p>BIOS完成硬件初始化和自检后，会根据CMOS中设置的启动顺序启动相应的设备，这里假定按顺序系统要启动硬盘。但此时，文件系统并没有建立，BIOS也不知道硬盘里存放的是什么，所以BIOS无法直接启动操作系统。另外一个硬盘可以有多个分区，每个分区都有可能包括一个不同的操作系统，BIOS也无从判断应该从哪个分区启动，所以对待硬盘，所有的BIOS都是读取硬盘的0磁头、0柱面、1扇区的内容，然后把控制权交给这里面的MBR (Main Boot Record）。</p>
+<blockquote>
+<p>BIOS读取主引导记录的过程</p>
+</blockquote>
+<ol>
+<li>BIOS加电自检。BIOS执行内存地址为<code>FFFF:0000H</code>处的跳转指令，跳转到固化在ROM中的自检程序处，对系统硬件（包括内存）进行检查。</li>
+<li>读取主引导记录（MBR）。当BIOS检查到硬件正常并与CMOS中的设置相符后，按照CMOS中对启动设备的设置顺序检测可用的启动设备。BIOS将相应启动设备的第一个扇区（也就是MBR扇区）读入内存地址为<code>0000:7C00H</code>处。</li>
+<li>检查<code>0000:7DFEH-0000:7DFFH</code>（MBR的结束标志位）是否等于<code>55AAH</code>，若不等于则转去尝试其他启动设备，如果没有启动设备满足要求则显示”NO ROM BASIC”然后死机。</li>
+<li>当检测到有启动设备满足要求后，BIOS将控制权交给相应启动设备。启动设备的MBR将自己复制到<code>0000:0600H</code>处，然后继续执行。</li>
+<li>根据MBR中的引导代码启动<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%BC%95%E5%AF%BC%E7%A8%8B%E5%BA%8F">引导程序</a>。</li>
+</ol>
+<p>事实上，BIOS不仅检查<code>0000:7DFEH-0000:7DFFH</code>（MBR的结束标志位）是否等于<code>55AAH</code>，往往还对磁盘是否有写保护、主引导扇区中是否存在活动分区等进行检查。如果发现磁盘有写保护，则显示磁盘写保护出错信息；如果发现磁盘中不存在活动分区，则显示类似如下的信息“Remove disk or other media Press any key to restart”。</p>
+<p>标准MBR结构如下：</p>
+<table>
+<thead>
+<tr>
+<th>地址（十进制）</th>
+<th>描述</th>
+<th>长度（字节）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>代码区</td>
+<td>440（最大446）</td>
+</tr>
+<tr>
+<td>440</td>
+<td>选用磁盘标志</td>
+<td>4</td>
+</tr>
+<tr>
+<td>444</td>
+<td>一般为空值; 0x0000</td>
+<td>2</td>
+</tr>
+<tr>
+<td>446</td>
+<td>标准MBR分区表规划（四个16 byte的主分区表入口）</td>
+<td>64</td>
+</tr>
+<tr>
+<td>510</td>
+<td>MBR有效标志：0x55AA</td>
+<td>2</td>
+</tr>
+</tbody></table>
+<h2 id="系统启动规范"><a href="#系统启动规范" class="headerlink" title="系统启动规范"></a>系统启动规范</h2><p><strong>BIOS</strong> 固化到计算机主板上的程序(系统设置、自检程序和系统自启动程序)</p>
+<ul>
+<li>BIOS-MBR 主引导记录最多支持4个分区，一个分区占用 16字节，四个分区占用 64字节</li>
+<li>BIOS-GPT 全局唯一标识分区表，不受4个分区的限制</li>
+<li>PXE 网络启动标准，通过服务器下载内核镜像来加载</li>
+</ul>
+<p><strong>UEFI</strong> 统一可扩展固件接口 目标是在所有平台上一致的操作系统启动服务 会对引导记录进行可信性检查 只有通过可信性检查的才能运行</p>
+<blockquote>
+<p>UEFI和BIOS的区别</p>
+</blockquote>
+<p>统一可扩展固件接口 (Unified Extensible Firmware Interface, UEFI) 是一种个人电脑系统规格，用来定义操作系统与系统固件之间的软件界面，作为BIOS的替代方案。</p>
+<p>UEFI启动对比BIOS启动的优势有：</p>
+<ol>
+<li>安全性更强：UEFI启动需要一个独立的分区，它将系统启动文件和操作系统本身隔离，可以更好的保护系统的启动；</li>
+<li>启动配置更灵活：EFI启动和GRUB启动类似，在启动的时候可以调用EFIShell，在此可以加载指定硬件驱动，选择启动文件。比如默认启动失败，在EFIShell加载U盘上的启动文件继续启动系统；</li>
+<li>支持容量更大：传统的BIOS启动由于MBR的限制，默认是无法引导超过2TB以上的硬盘的。随着硬盘价格的不断走低，2TB以上的硬盘会逐渐普及，因此UEFI启动也是今后主流的启动方式。</li>
+</ol>
+<h1 id="中断-异常-系统调用"><a href="#中断-异常-系统调用" class="headerlink" title="中断 异常 系统调用"></a>中断 异常 系统调用</h1><p>系统调用（system call）：应用程序主动向操作系统发出的服务请求</p>
+<p>异常（exception）：非法指令或其他原因导致当前指令执行失败（如：内存出错）后的处理请求</p>
+<p>中断（hardware interrupt）：来自硬件设备的处理请求</p>
+<p><img src="https://i.loli.net/2019/07/26/5d3ad70b4641f40620.png"></p>
+<p>无论是发生异常、中断，还是系统调用，都需要由硬件保存现场和中断号，转到内核态，进入中断向量表，查找对应的设备驱动程序地址（异常）、异常服务例程地址（异常），或找到系统调用表，并在其中查找对应的系统调用实现的起始地址。处理完毕之后，再进行现场的切换，回到用户态继续执行程序（如果可以继续的话）。</p>
+<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><table>
+<thead>
+<tr>
+<th></th>
+<th>来源</th>
+<th>响应方式</th>
+<th>处理机制</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>中断</td>
+<td>外部中断</td>
+<td>异步</td>
+<td>持续，对用户应用程序是透明的</td>
+</tr>
+<tr>
+<td>异常</td>
+<td>应用程序或内核意想不到的行为</td>
+<td>同步</td>
+<td>杀死或者重新执行意想不到的应用程序指令</td>
+</tr>
+<tr>
+<td>系统调用</td>
+<td>应用程序请求操作系统提供服务</td>
+<td>同步或异步</td>
+<td>等待和持续</td>
+</tr>
+</tbody></table>
+<p>相比于用户态的函数调用，中断和异常的开销是比较大的，因为它们需要进行：</p>
+<ul>
+<li>特权级的切换</li>
+<li>建立内核堆栈</li>
+<li>验证参数的合法性（防止对内核的恶意攻击）</li>
+<li>内核态需要映射到用户态的地址空间（因为需要访问用户程序的一些内容），因此需要更新页面映射权限</li>
+<li>内核态也拥有独立的地址空间，因此TLB会失效</li>
+</ul>
+<h2 id="中断和异常处理机制"><a href="#中断和异常处理机制" class="headerlink" title="中断和异常处理机制"></a>中断和异常处理机制</h2><p>中断和异常处理需要涉及软件和硬件操作</p>
+<p>硬件：在CPU初始化时设置中断使能标志</p>
+<ul>
+<li>依据内部标志或外部中断事件设置中断标志位</li>
+<li>依据中断向量表调用相应中断服务例程</li>
+</ul>
+<p>软件：</p>
+<ul>
+<li>现场保存(CPU+编译器)</li>
+<li>中断服务处理(服务例程)</li>
+<li>清楚中断标记(服务例程)</li>
+<li>现场恢复(CPU+编译器)</li>
+</ul>
+<h2 id="中断嵌套"><a href="#中断嵌套" class="headerlink" title="中断嵌套"></a>中断嵌套</h2><p>硬件中断服务例程可被打断</p>
+<ul>
+<li>不同硬件中断源可能在硬件中断处理时出现</li>
+<li>硬件中断服务例程中需要临时禁止中断服务例程</li>
+<li>中断请求会保持到CPU做出响应</li>
+</ul>
+<p>异常服务例程中可被打断</p>
+<ul>
+<li>异常服务例程执行时可能出现硬件中断</li>
+</ul>
+<p>异常服务例程可嵌套</p>
+<ul>
+<li>异常服务例程可能出现缺页</li>
+</ul>
+<p>在<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%BC%95%E5%AF%BC%E7%A8%8B%E5%BA%8F">intel 手册</a>中，intel架构总共可用的中断号有256个（从0到255），其中前32个（从0到31）中断号保留给Intel架构内部使用，也就是说这些中断都有其特定的含义而不可被用户更改，而剩余的224（从32到255）个中断则可由用户自定义和实现其具体功能。其中Double Fault即为中断嵌套，对应中断情况如下所示：</p>
+<table>
+<thead>
+<tr>
+<th align="center">First Exception</th>
+<th align="center">Second Exception</th>
+<th align="center">Second Exception</th>
+<th>Second Exception</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">Benign</td>
+<td align="center">Contributory</td>
+<td align="center">Page Fault</td>
+<td></td>
+</tr>
+<tr>
+<td align="center">Benign</td>
+<td align="center">x</td>
+<td align="center">x</td>
+<td>x</td>
+</tr>
+<tr>
+<td align="center">Contributory</td>
+<td align="center">x</td>
+<td align="center">Double Fault</td>
+<td>x</td>
+</tr>
+<tr>
+<td align="center">Page Fault</td>
+<td align="center">x</td>
+<td align="center">Double Fault</td>
+<td>Double Fault</td>
+</tr>
+</tbody></table>
+<p>从上表中我们可以看到一些嵌套的情况，比如硬件中断“Device Not Available”和系统调用都属于Benign类，因此它们可以和任何其他中断/异常进行嵌套；而Page Fault就不可嵌套。</p>
+<h2 id="系统调用"><a href="#系统调用" class="headerlink" title="系统调用"></a>系统调用</h2><blockquote>
+<p>系统调用的特点</p>
+</blockquote>
+<ul>
+<li>系统调用是操作系统服务的编程接口</li>
+<li>通常由高级语言编写（C或C++）</li>
+<li>程序访问系统调用通常是通过高层次的API接口而不是直接进行系统调用</li>
+<li>3种最常用的应用程序编程接口（API）：<ul>
+<li>Win32 API：Windows</li>
+<li>POSIX API：UNIX、LINUX、Mac OS X</li>
+<li>Java API：用于JAVA虚拟机（JVM），是对实际系统调用的进一步抽象</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>系统调用的实现</p>
+</blockquote>
+<ul>
+<li>每个系统调用对应一个系统调用号<ul>
+<li>系统调用接口根据系统调用号来维护表的索引</li>
+</ul>
+</li>
+<li>系统调用接口调用内核态中的系统调用功能实现，并返回系统调用的状态和结果</li>
+<li>用户不需要知道系统调用的实现<ul>
+<li>需要设置调用参数和获取返回结果</li>
+<li>操作系统接口的细节大部分都隐藏在应用编程接口后</li>
+</ul>
+</li>
+<li>通过运行程序支持的库来管理</li>
+</ul>
+<blockquote>
+<p>系统调用过程中堆栈的切换</p>
+</blockquote>
+<p>由tss(task state segment)切换不同特权级堆栈</p>
+<blockquote>
+<p>系统调用与函数调用的区别</p>
+</blockquote>
+<ul>
+<li>汇编指令的区别<ul>
+<li>系统调用：使用INT和IRET指令</li>
+<li>函数调用：使用CALL和RET指令</li>
+</ul>
+</li>
+<li>安全性的区别<ul>
+<li>系统调用有堆栈和特权级的转换过程，函数调用没有这样的过程，系统调用相对更为安全</li>
+</ul>
+</li>
+<li>性能的区别<ul>
+<li>时间角度：系统调用比函数调用要做更多和特权级切换的工作，所以需要更多的时间开销</li>
+<li>空间角度：在一些情况下，如果函数调用采用静态编译，往往需要大量的空间开销，此时系统调用更具有</li>
+</ul>
+</li>
+</ul>
+<h2 id="ucore系统调用分析"><a href="#ucore系统调用分析" class="headerlink" title="ucore系统调用分析"></a>ucore系统调用分析</h2><p>在 ucore 中，执行系统调用前，需要将系统调用的参数储存在寄存器中。<br><code>eax</code>表示系统调用类型，其余参数依次存在 <code>edx</code>, <code>ecx</code>, <code>ebx</code>, <code>edi</code>, <code>esi</code> 中。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line"><span class="keyword">int</span> num = tf-&gt;tf_regs.reg_eax;</span><br><span class="line">...</span><br><span class="line">arg[<span class="number">0</span>] = tf-&gt;tf_regs.reg_edx;</span><br><span class="line">arg[<span class="number">1</span>] = tf-&gt;tf_regs.reg_ecx;</span><br><span class="line">arg[<span class="number">2</span>] = tf-&gt;tf_regs.reg_ebx;</span><br><span class="line">arg[<span class="number">3</span>] = tf-&gt;tf_regs.reg_edi;</span><br><span class="line">arg[<span class="number">4</span>] = tf-&gt;tf_regs.reg_esi;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>以下为用户态的系统调用<code>syscall</code>函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">syscall(<span class="keyword">int</span> num, ...) &#123;</span><br><span class="line">    va_list ap;</span><br><span class="line">    va_start(ap, num);</span><br><span class="line">    <span class="keyword">uint32_t</span> a[MAX_ARGS];</span><br><span class="line">    <span class="keyword">int</span> i, ret;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; MAX_ARGS; i ++) &#123;</span><br><span class="line">        a[i] = va_arg(ap, <span class="keyword">uint32_t</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    va_end(ap);</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">asm</span> <span class="title">volatile</span> <span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="string">&quot;int %1;&quot;</span></span></span></span><br><span class="line"><span class="function"><span class="params">        : <span class="string">&quot;=a&quot;</span> (ret)</span></span></span><br><span class="line"><span class="function"><span class="params">        : <span class="string">&quot;i&quot;</span> (T_SYSCALL),</span></span></span><br><span class="line"><span class="function"><span class="params">          <span class="string">&quot;a&quot;</span> (num),</span></span></span><br><span class="line"><span class="function"><span class="params">          <span class="string">&quot;d&quot;</span> (a[<span class="number">0</span>]),</span></span></span><br><span class="line"><span class="function"><span class="params">          <span class="string">&quot;c&quot;</span> (a[<span class="number">1</span>]),</span></span></span><br><span class="line"><span class="function"><span class="params">          <span class="string">&quot;b&quot;</span> (a[<span class="number">2</span>]),</span></span></span><br><span class="line"><span class="function"><span class="params">          <span class="string">&quot;D&quot;</span> (a[<span class="number">3</span>]),</span></span></span><br><span class="line"><span class="function"><span class="params">          <span class="string">&quot;S&quot;</span> (a[<span class="number">4</span>])</span></span></span><br><span class="line"><span class="function"><span class="params">        : <span class="string">&quot;cc&quot;</span>, <span class="string">&quot;memory&quot;</span>)</span></span>;</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中<code>num</code>参数为系统调用号，该函数将参数准备好后，通过 <code>SYSCALL</code> 汇编指令进行系统调用，进入内核态，返回值放在 <code>eax</code> 寄存器，传入参数通过 <code>eax</code> ~ <code>esi</code> 依次传递进去。<br>在内核态中，首先进入 <code>trap()</code> 函数，然后调用 <code>trap_dispatch()</code>进入中断分发，当系统得知该中断为系统调用后，OS调用如下的 <code>syscall</code> 函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">syscall(<span class="keyword">void</span>) &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">trapframe</span> *<span class="title">tf</span> =</span> current-&gt;tf;</span><br><span class="line">    <span class="keyword">uint32_t</span> arg[<span class="number">5</span>];</span><br><span class="line">    <span class="keyword">int</span> num = tf-&gt;tf_regs.reg_eax;</span><br><span class="line">    <span class="keyword">if</span> (num &gt;= <span class="number">0</span> &amp;&amp; num &lt; NUM_SYSCALLS) &#123;</span><br><span class="line">        <span class="keyword">if</span> (syscalls[num] != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            arg[<span class="number">0</span>] = tf-&gt;tf_regs.reg_edx;</span><br><span class="line">            arg[<span class="number">1</span>] = tf-&gt;tf_regs.reg_ecx;</span><br><span class="line">            arg[<span class="number">2</span>] = tf-&gt;tf_regs.reg_ebx;</span><br><span class="line">            arg[<span class="number">3</span>] = tf-&gt;tf_regs.reg_edi;</span><br><span class="line">            arg[<span class="number">4</span>] = tf-&gt;tf_regs.reg_esi;</span><br><span class="line">            tf-&gt;tf_regs.reg_eax = syscalls[num](arg);</span><br><span class="line">            <span class="keyword">return</span> ;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    print_trapframe(tf);</span><br><span class="line">    panic(<span class="string">&quot;undefined syscall %d, pid = %d, name = %s.\n&quot;</span>,</span><br><span class="line">            num, current-&gt;pid, current-&gt;name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该函数得到系统调用号 <code>num = tf-&gt;tf_regs.reg_eax;</code>，通过计算快速跳转到相应的 <code>sys_</code> 开头的函数，最终在内核态中完成系统调用所需要的功能。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/interrupt-exception-syscall/" title="启动 中断 异常 系统调用">http://example.com/interrupt-exception-syscall/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Operating-Systems/" rel="tag"><i class="fa fa-tag"></i> Operating Systems</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/inlineassembly/" rel="prev" title="GCC内联汇编">
+                  <i class="fa fa-chevron-left"></i> GCC内联汇编
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/ucore-lab1/" rel="next" title="ucore lab1">
+                  ucore lab1 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script><script src="/js/bookmark.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+</body>
+</html>

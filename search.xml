@@ -206,6 +206,11 @@
       </tags>
   </entry>
   <entry>
+    <title>next</title>
+    <url>/config/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
     <title>datalab</title>
     <url>/datalab/</url>
     <content><![CDATA[<p>计算机中的数以二进制的形式存储和运算，每个比特不是0就是1。计算机通过对比特进行不同方式的编码和描述，从而执行纷繁复杂的各种任务。我们有诸多基于底层的接口，所以一般不会直接接触到比特的运算。datalab直接与编码数字序列的0和1打交道，通过对整数和浮点数的位操作来实现一系列的操作。</p>
@@ -1444,20 +1449,6 @@
       <tags>
         <tag>Operating Systems</tag>
       </tags>
-  </entry>
-  <entry>
-    <title>Hello World</title>
-    <url>/hello-world/</url>
-    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-]]></content>
   </entry>
   <entry>
     <title>GCC内联汇编</title>
@@ -3915,6 +3906,244 @@
       </categories>
       <tags>
         <tag>Operating Systems</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Next博客配置</title>
+    <url>/config/next/</url>
+    <content><![CDATA[<p>在将近一年没有写博客之后，我又重新捡起之前的博客开始写了。至于为什么想写博客呢，<a href="https://wdxtub.com/qa/why-writing-blog/2013/10/17/">小土刀</a>的博客中提到</p>
+<blockquote>
+<p>我睡觉的时候大家的夜生活才刚刚开始，我醒来的时候大家却仍在熟睡，每天在禅修中等待天亮。想找人聊聊最近读的书，但是却没有志趣相投的，平日的聊天也大都跟技术相关，不怪乎其他专业的人觉得我们无趣了。我找不到人聊政治制度，找不到人聊历史，找不到人聊心理学，找不到人聊经济，我只能自己跟自己聊。</p>
+<p>这就是我写博客的原因，这是我跟自己沟通的方式。我们每天每时每刻都有可能冒出各种各样光怪陆离的想法，这些想法在当时无比清晰，但是保质期却很短，常常睡一觉就变质，而写博客就是把这些想法打磨和雕琢的方法之一。通过写博客，我得意把这些想法永久地保存下来。</p>
+</blockquote>
+<p>不得不说，这一年来，不写博客的确思索少了很多，没有像之前一样，学过什么之后就及时回顾，只是记得一些大概的细节。之后应该会更新一下之前停滞的数据库系统和分布式系统系列，再写研究方向(自然语言处理)的分析。</p>
+<a id="more"></a>
+
+<p>博客选择主题为next,基于next有诸多<a href="https://github.com/theme-next/awesome-next#live-preview">博客</a>，其中个人比较喜欢<a href="https://tding.top/">小丁的个人博客</a>、<a href="http://yearito.cn/">yearito’s blog</a>、<a href="https://leay.net/">荷七博客</a>这几个。</p>
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><p>前期是基本的<a href="https://hexo.io/zh-cn/docs/">hexo</a>操作，参照官方文档执行。</p>
+<h2 id="安装前提"><a href="#安装前提" class="headerlink" title="安装前提"></a>安装前提</h2><p>安装 Hexo 相当简单，只需要先安装下列应用程序即可：</p>
+<ul>
+<li><a href="http://nodejs.org/">Node.js</a> (Node.js 版本需不低于 10.13，建议使用 Node.js 12.0 及以上版本)</li>
+<li><a href="http://git-scm.com/">Git</a></li>
+</ul>
+<h2 id="安装-Git"><a href="#安装-Git" class="headerlink" title="安装 Git"></a>安装 Git</h2><ul>
+<li>Windows：下载并安装 <a href="https://git-scm.com/download/win">git</a>.</li>
+<li>Mac：使用 <a href="http://mxcl.github.com/homebrew/">Homebrew</a>, <a href="http://www.macports.org/">MacPorts</a> 或者下载 <a href="http://sourceforge.net/projects/git-osx-installer/">安装程序</a>。</li>
+<li>Linux (Ubuntu, Debian)：<code>sudo apt-get install git-core</code></li>
+<li>Linux (Fedora, Red Hat, CentOS)：<code>sudo yum install git-core</code></li>
+</ul>
+<blockquote>
+<p>Mac 用户</p>
+<p>如果在编译时可能会遇到问题，请先到 App Store 安装 Xcode，Xcode 完成后，启动并进入 <strong>Preferences -&gt; Download -&gt; Command Line Tools -&gt; Install</strong> 安装命令行工具。</p>
+</blockquote>
+<blockquote>
+<p>Windows 用户</p>
+<p>对于中国大陆地区用户，可以前往 <a href="https://npm.taobao.org/mirrors/git-for-windows/">淘宝 Git for Windows 镜像</a> 下载 git 安装包。</p>
+</blockquote>
+<h2 id="安装-Node-js"><a href="#安装-Node-js" class="headerlink" title="安装 Node.js"></a>安装 Node.js</h2><p>Node.js 为大多数平台提供了官方的 <a href="https://nodejs.org/en/download/">安装程序</a>。对于中国大陆地区用户，可以前往 <a href="https://npm.taobao.org/mirrors/node">淘宝 Node.js 镜像</a> 下载。</p>
+<p>其它的安装方法：</p>
+<ul>
+<li>Windows：通过 <a href="https://github.com/jasongin/nvs/">nvs</a>（推荐）或者<a href="https://github.com/nvm-sh/nvm">nvm</a> 安装。</li>
+<li>Mac：使用 <a href="https://brew.sh/">Homebrew</a> 或 <a href="http://www.macports.org/">MacPorts</a> 安装。</li>
+<li>Linux（DEB/RPM-based）：从 <a href="https://github.com/nodesource/distributions">NodeSource</a> 安装。</li>
+<li>其它：使用相应的软件包管理器进行安装，可以参考由 Node.js 提供的 <a href="https://nodejs.org/en/download/package-manager/">指导</a></li>
+</ul>
+<p>对于 Mac 和 Linux 同样建议使用 nvs 或者 nvm，以避免可能会出现的权限问题。</p>
+<blockquote>
+<p>Windows 用户</p>
+<p>使用 Node.js 官方安装程序时，请确保勾选 <strong>Add to PATH</strong> 选项（默认已勾选）</p>
+</blockquote>
+<blockquote>
+<p>For Mac / Linux 用户</p>
+<p>如果在尝试安装 Hexo 的过程中出现 <code>EACCES</code> 权限错误，请遵循 <a href="https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally">由 npmjs 发布的指导</a> 修复该问题。强烈建议 <strong>不要</strong> 使用 root、sudo 等方法覆盖权限</p>
+</blockquote>
+<blockquote>
+<p>Linux</p>
+<p>If you installed Node.js using Snap, you may need to manually run <code>npm install</code> in the target folder when <a href="https://hexo.io/docs/commands#init">initializing</a> a blog.</p>
+</blockquote>
+<h2 id="安装-Hexo"><a href="#安装-Hexo" class="headerlink" title="安装 Hexo"></a>安装 Hexo</h2><p>所有必备的应用程序安装完成后，即可使用 npm 安装 Hexo。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ npm install -g hexo-cli</span><br></pre></td></tr></table></figure>
+<h2 id="进阶安装和使用"><a href="#进阶安装和使用" class="headerlink" title="进阶安装和使用"></a>进阶安装和使用</h2><p>对于熟悉 npm 的进阶用户，可以仅局部安装 <code>hexo</code> 包。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ npm install hexo</span><br></pre></td></tr></table></figure>
+<p>安装以后，可以使用以下两种方式执行 Hexo：</p>
+<ol>
+<li><p><code>npx hexo &lt;command&gt;</code></p>
+</li>
+<li><p>将 Hexo 所在的目录下的 <code>node_modules</code> 添加到环境变量之中即可直接使用 <code>hexo &lt;command&gt;</code>：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">echo &#39;PATH&#x3D;&quot;$PATH:.&#x2F;node_modules&#x2F;.bin&quot;&#39; &gt;&gt; ~&#x2F;.profile</span><br></pre></td></tr></table></figure>
+<h1 id="基本指令"><a href="#基本指令" class="headerlink" title="基本指令"></a>基本指令</h1></li>
+</ol>
+<h2 id="init"><a href="#init" class="headerlink" title="init"></a>init</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo init [folder]</span><br></pre></td></tr></table></figure>
+<p>新建一个网站。如果没有设置 <code>folder</code> ，Hexo 默认在目前的文件夹建立网站。</p>
+<p>This command is a shortcut that runs the following steps:</p>
+<ol>
+<li>Git clone <a href="https://github.com/hexojs/hexo-starter">hexo-starter</a> including <a href="https://github.com/hexojs/hexo-theme-landscape">hexo-theme-landscape</a> into the current directory or a target folder if specified.</li>
+<li>Install dependencies using a package manager: <a href="https://classic.yarnpkg.com/lang/en/">Yarn 1</a>, <a href="https://pnpm.js.org/">pnpm</a> or <a href="https://docs.npmjs.com/cli/install">npm</a>, whichever is installed; if there are more than one installed, the priority is as listed. npm is bundled with <a href="https://hexo.io/docs/#Install-Node-js">Node.js</a> by default.</li>
+</ol>
+<h2 id="new"><a href="#new" class="headerlink" title="new"></a>new</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo new [layout] &lt;title&gt;</span><br></pre></td></tr></table></figure>
+<p>新建一篇文章。如果没有设置 <code>layout</code> 的话，默认使用 <a href="https://hexo.io/zh-cn/docs/configuration">_config.yml</a> 中的 <code>default_layout</code> 参数代替。如果标题包含空格的话，请使用引号括起来。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo new &quot;post title with whitespace&quot;</span><br></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th align="left">参数</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-p</code>, <code>--path</code></td>
+<td align="left">自定义新文章的路径</td>
+</tr>
+<tr>
+<td align="left"><code>-r</code>, <code>--replace</code></td>
+<td align="left">如果存在同名文章，将其替换</td>
+</tr>
+<tr>
+<td align="left"><code>-s</code>, <code>--slug</code></td>
+<td align="left">文章的 Slug，作为新文章的文件名和发布后的 URL</td>
+</tr>
+</tbody></table>
+<p>默认情况下，Hexo 会使用文章的标题来决定文章文件的路径。对于独立页面来说，Hexo 会创建一个以标题为名字的目录，并在目录中放置一个 <code>index.md</code> 文件。你可以使用 <code>--path</code> 参数来覆盖上述行为、自行决定文件的目录：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo new page --path about&#x2F;me &quot;About me&quot;</span><br></pre></td></tr></table></figure>
+<p>以上命令会创建一个 <code>source/about/me.md</code> 文件，同时 Front Matter 中的 title 为 <code>&quot;About me&quot;</code></p>
+<p>注意！title 是必须指定的！如果你这么做并不能达到你的目的：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo new page --path about&#x2F;me</span><br></pre></td></tr></table></figure>
+<p>此时 Hexo 会创建 <code>source/_posts/about/me.md</code>，同时 <code>me.md</code> 的 Front Matter 中的 title 为 <code>&quot;page&quot;</code>。这是因为在上述命令中，hexo-cli 将 <code>page</code> 视为指定文章的标题、并采用默认的 <code>layout</code>。</p>
+<h2 id="generate"><a href="#generate" class="headerlink" title="generate"></a>generate</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>生成静态文件。</p>
+<table>
+<thead>
+<tr>
+<th align="left">选项</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-d</code>, <code>--deploy</code></td>
+<td align="left">文件生成后立即部署网站</td>
+</tr>
+<tr>
+<td align="left"><code>-w</code>, <code>--watch</code></td>
+<td align="left">监视文件变动</td>
+</tr>
+<tr>
+<td align="left"><code>-b</code>, <code>--bail</code></td>
+<td align="left">生成过程中如果发生任何未处理的异常则抛出异常</td>
+</tr>
+<tr>
+<td align="left"><code>-f</code>, <code>--force</code></td>
+<td align="left">强制重新生成文件 Hexo 引入了差分机制，如果 <code>public</code> 目录存在，那么 <code>hexo g</code> 只会重新生成改动的文件。 使用该参数的效果接近 <code>hexo clean &amp;&amp; hexo generate</code></td>
+</tr>
+<tr>
+<td align="left"><code>-c</code>, <code>--concurrency</code></td>
+<td align="left">最大同时生成文件的数量，默认无限制</td>
+</tr>
+</tbody></table>
+<p>该命令可以简写为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo g</span><br></pre></td></tr></table></figure>
+<h2 id="publish"><a href="#publish" class="headerlink" title="publish"></a>publish</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo publish [layout] &lt;filename&gt;</span><br></pre></td></tr></table></figure>
+<p>发表草稿。</p>
+<h2 id="server"><a href="#server" class="headerlink" title="server"></a>server</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>启动服务器。默认情况下，访问网址为： <code>http://localhost:4000/</code>。</p>
+<table>
+<thead>
+<tr>
+<th align="left">选项</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-p</code>, <code>--port</code></td>
+<td align="left">重设端口</td>
+</tr>
+<tr>
+<td align="left"><code>-s</code>, <code>--static</code></td>
+<td align="left">只使用静态文件</td>
+</tr>
+<tr>
+<td align="left"><code>-l</code>, <code>--log</code></td>
+<td align="left">启动日记记录，使用覆盖记录格式</td>
+</tr>
+</tbody></table>
+<h2 id="deploy"><a href="#deploy" class="headerlink" title="deploy"></a>deploy</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>部署网站。</p>
+<table>
+<thead>
+<tr>
+<th align="left">参数</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-g</code>, <code>--generate</code></td>
+<td align="left">部署之前预先生成静态文件</td>
+</tr>
+</tbody></table>
+<p>该命令可以简写为：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo d</span><br></pre></td></tr></table></figure>
+<h2 id="render"><a href="#render" class="headerlink" title="render"></a>render</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo render &lt;file1&gt; [file2] ...</span><br></pre></td></tr></table></figure>
+<p>渲染文件。</p>
+<table>
+<thead>
+<tr>
+<th align="left">参数</th>
+<th align="left">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-o</code>, <code>--output</code></td>
+<td align="left">设置输出路径</td>
+</tr>
+</tbody></table>
+<h2 id="migrate"><a href="#migrate" class="headerlink" title="migrate"></a>migrate</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo migrate &lt;type&gt;</span><br></pre></td></tr></table></figure>
+<p>从其他博客系统 <a href="https://hexo.io/zh-cn/docs/migration">迁移内容</a>。</p>
+<h2 id="clean"><a href="#clean" class="headerlink" title="clean"></a>clean</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo clean</span><br></pre></td></tr></table></figure>
+<p>清除缓存文件 (<code>db.json</code>) 和已生成的静态文件 (<code>public</code>)。</p>
+<p>平时写博客的时候，一般流程是</p>
+<ul>
+<li><code>hexo new page/post &quot;title&quot;</code> 新建为title的.md文件</li>
+<li><code>hexo clean &amp;&amp; hexo s</code> 清楚之前生成的文件，部署到本地服务器</li>
+<li><code>hexo g -d</code> 部署到远程服务器</li>
+</ul>
+<h1 id="next-配置"><a href="#next-配置" class="headerlink" title="next 配置"></a>next 配置</h1><p>next官方中文文档更新比较慢，不少特性和配置没有及时发布，主要参考<a href="https://theme-next.js.org/docs/">英文文档</a>。</p>
+<p>传统方式是配置两个文件，一个是站点下，即blog/下的_config.yml文件，称为站点配置文件，另一个是themes/next目录下的_config.yml，称为主题配置文件。</p>
+<p>从next7.3.0开始，官方推荐将主题配置文件与主题分离，以便于主题的版本更新。</p>
+<p>我们可以将所有主题配置放在一个位置（<code>hexo/source/_data/next.yml</code>）。这样就无需编辑主题配置文件（<code>next/_config.yml</code>）。</p>
+<p>具体步骤：</p>
+<ol>
+<li>在 <code>hexo/source/_data</code> 目录中创建 <code>next.yml</code>（如果<code>_data</code> 不存在，则创建目录）。</li>
+<li>在 <code>next.yml</code> 设置 <code>override</code> 选项为 true。</li>
+<li>将<strong>所有 NexT 主题选项</strong>从主题配置文件复制到 <code>hexo/source/_data/next.yml</code> 中。</li>
+</ol>
+<p>然后我们只需要根据自己的需求配置 <code>next.yml</code> 即可。</p>
+<h3 id="基本信息配置"><a href="#基本信息配置" class="headerlink" title="基本信息配置"></a>基本信息配置</h3><p>next主题的安装，站点作者、头像、侧边栏的配置参考<a href="https://theme-next.iissnan.com/getting-started.html">文档</a>，</p>
+<p>具体站点的部署通过github操作，具体配置参考<a href="https://hexo.io/docs/one-command-deployment">官方文档</a>，在站点<code>blog/_config.yml</code>最后一行配置以下信息： </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">deploy:</span><br><span class="line">  type: git</span><br><span class="line">  repo: https:&#x2F;&#x2F;github.com&#x2F;twinkle0331&#x2F;twinkle0331.github.io.git</span><br><span class="line">  branch: master</span><br></pre></td></tr></table></figure>
+<p>更为详细的配置参考<a href="https://hexo.io/docs/configuration.html">官方文档</a>，具体参数和设置里面都很详细。</p>
+<h3 id="个性化设置"><a href="#个性化设置" class="headerlink" title="个性化设置"></a>个性化设置</h3><p>设置网页链接为<code>title.html</code>格式而不是<code>2021/03/28/title.html</code>格式：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">permalink: :title&#x2F;</span><br></pre></td></tr></table></figure>
+<p>选择主题为next：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">theme: next</span><br></pre></td></tr></table></figure>
+<p>设置缓存生成模式：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># Allow to cache content generation.</span><br><span class="line">cache:</span><br><span class="line">  enable: true</span><br><span class="line"></span><br><span class="line"># Remove unnecessary files after hexo generate.</span><br><span class="line">minify: true</span><br></pre></td></tr></table></figure>
+<p>选择sheme为Mist:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scheme: Mist</span><br></pre></td></tr></table></figure>
+<p>menu显示home、about、tags、categories、archives五栏，之前版本的next需要设定具体对应的中文名，在版本升级后，设定语言后自动更改对应的标签栏。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">menu:</span><br><span class="line">  home: &#x2F; || fa fa-home</span><br><span class="line">  about: &#x2F;about&#x2F; || fa fa-user</span><br><span class="line">  tags: &#x2F;tags&#x2F; || fa fa-tags</span><br><span class="line">  categories: &#x2F;categories&#x2F; || fa fa-th</span><br><span class="line">  archives: &#x2F;archives&#x2F; || fa fa-archive</span><br></pre></td></tr></table></figure>
+<p>添加本地搜索：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># 本地搜索</span><br><span class="line">search:</span><br><span class="line">  path: search.xml</span><br><span class="line">  field: post</span><br><span class="line">  format: html</span><br><span class="line">  limit: 100</span><br><span class="line"></span><br><span class="line">feed:</span><br><span class="line">  type: atom</span><br><span class="line">  path: atom.xml</span><br><span class="line">  limit: 20</span><br><span class="line">  hub:</span><br><span class="line">  content:</span><br><span class="line">  content_limit: 140</span><br><span class="line">  content_limit_delim: &#39; &#39;</span><br><span class="line">  order_by: -date</span><br><span class="line">  icon: icon.png</span><br><span class="line">  autodiscovery: true</span><br><span class="line">  template:</span><br></pre></td></tr></table></figure>
+<p>添加代码高亮：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># _config.yml</span><br><span class="line">highlight:</span><br><span class="line">  enable: true</span><br><span class="line">  auto_detect: false</span><br><span class="line">  line_number: true</span><br><span class="line">  tab_replace: &#39;&#39;</span><br><span class="line">  wrap: true</span><br><span class="line">  hljs: false</span><br><span class="line">prismjs:</span><br><span class="line">  enable: false</span><br><span class="line">  preprocess: true</span><br><span class="line">  line_number: true</span><br><span class="line">  tab_replace: &#39;&#39;</span><br></pre></td></tr></table></figure>
+<p>设置内容宽度</p>
+<p>打开<code>/themes/next/source/css/_variables/base.styl</code>文件，找到<code>Layout sizes</code>字段修改如下</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$content-desktop                &#x3D; 82%;&#x2F;&#x2F;修改为占屏幕的82%，原先是固定值</span><br><span class="line">$content-desktop-large          &#x3D; 82%;</span><br><span class="line">$content-desktop-largest        &#x3D; 82%;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Config</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+        <tag>blog</tag>
       </tags>
   </entry>
   <entry>

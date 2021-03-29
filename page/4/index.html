@@ -185,7 +185,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/ucore-lab4/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/systems/ucore-lab4/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -198,7 +198,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/ucore-lab4/" class="post-title-link" itemprop="url">ucore lab4</a>
+          <a href="/systems/ucore-lab4/" class="post-title-link" itemprop="url">ucore lab4</a>
         </h2>
 
         <div class="post-meta-container">
@@ -234,7 +234,7 @@
           <p> 多任务即并行执行多个进程，控制流并发执行。之前的实验中，整个控制流仍为串行执行。ucore lab4在之前实验的基础上进行cpu的虚拟化，即让ucore实现分时共享cpu，实现多条指令流的并发执行。lab4首先涉及的是内核线程管理，指令执行流的单位称为线程，对线程管理就是线程调度和分派。进程作为操作系统分配资源的单位对线程提供支持。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ucore-lab4/#more" rel="contents">
+              <a class="btn" href="/systems/ucore-lab4/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -265,7 +265,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/proc-control/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/systems/proc-control/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -278,7 +278,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/proc-control/" class="post-title-link" itemprop="url">进程控制</a>
+          <a href="/systems/proc-control/" class="post-title-link" itemprop="url">进程控制</a>
         </h2>
 
         <div class="post-meta-container">
@@ -314,7 +314,7 @@
           <p> 进程生命周期存在多个状态，多个状态间可以相互转换。在unix系统中提供了一系列与进程状态相关的系统调用，比如fork用于创建新进程，exit用于退出进程，wait用于父进程等待子进程结束。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/proc-control/#more" rel="contents">
+              <a class="btn" href="/systems/proc-control/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -345,7 +345,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/process-thread/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/systems/process-thread/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -358,7 +358,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/process-thread/" class="post-title-link" itemprop="url">进程 线程</a>
+          <a href="/systems/process-thread/" class="post-title-link" itemprop="url">进程 线程</a>
         </h2>
 
         <div class="post-meta-container">
@@ -394,7 +394,7 @@
           <p>现代操作系统(比如Mac OS X，UNIX，Linux，Windows等）均为多用户操作系统。什么是多用户呢？概括一下，就是操作系统可以运行多个任务，我们可以一边用Chrome浏览器浏览网页，一边用网易云音乐听歌，这就是多任务。我们也可以在windows下任务管理器中看到多个正在执行的任务。对于操作系统来说，一个任务就是一个进程，进程内的子任务即为线程。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/process-thread/#more" rel="contents">
+              <a class="btn" href="/systems/process-thread/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -425,7 +425,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/ucore-lab3/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/systems/ucore-lab3/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -438,7 +438,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/ucore-lab3/" class="post-title-link" itemprop="url">ucore lab3</a>
+          <a href="/systems/ucore-lab3/" class="post-title-link" itemprop="url">ucore lab3</a>
         </h2>
 
         <div class="post-meta-container">
@@ -474,7 +474,7 @@
           <p>ucore lab2通过段页式机制将虚拟内存映射到物理内存，并具体实现了物理内存管理空间中的连续内存分配算法。ucore lab3将实现非连续内存分配中的虚拟内存，借助之前的页表机制和中断异常机制，通过缺页异常的处理来衔接虚拟内存和物理内存之间的差异。与前者差异主要区别在于如何在磁盘交换区缓存页，从而提供比实际物理内存更大的虚拟内存空间。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ucore-lab3/#more" rel="contents">
+              <a class="btn" href="/systems/ucore-lab3/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -505,7 +505,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/paging/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/systems/paging/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -518,7 +518,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/paging/" class="post-title-link" itemprop="url">页面置换算法</a>
+          <a href="/systems/paging/" class="post-title-link" itemprop="url">页面置换算法</a>
         </h2>
 
         <div class="post-meta-container">
@@ -554,7 +554,7 @@
           <p> 虚拟内存只把部分程序放到内存中，虚拟内存单元不一定由实际物理内存单元对应，因此访问的部分可能不在内存中。在内存中无空闲页时，访问的页面必须替换已经存在的某一页面才能放入到内存中。如何选择替换页由页面置换算法实现，其中根据是否区分不同进程的页面，分为局部置换算法和全局置换算法。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/paging/#more" rel="contents">
+              <a class="btn" href="/systems/paging/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -585,7 +585,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/ucore-lab2/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/systems/ucore-lab2/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -598,7 +598,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/ucore-lab2/" class="post-title-link" itemprop="url">ucore lab2</a>
+          <a href="/systems/ucore-lab2/" class="post-title-link" itemprop="url">ucore lab2</a>
         </h2>
 
         <div class="post-meta-container">
@@ -634,7 +634,7 @@
           <p>ucore lab1初步实现了一个可以读磁盘并且加载ELF执行文件格式的系统，也可以响应和显示字符。仅仅如此并不足以满足操作系统的要求，进程在执行过程中需要系统分配内存等资源。为了高效地管理内存，ucore lab2采用了段页式机制，把其中段式内存的功能弱化，实现以分页为主的内存管理。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ucore-lab2/#more" rel="contents">
+              <a class="btn" href="/systems/ucore-lab2/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -665,7 +665,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/vmm/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/systems/vmm/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -678,7 +678,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/vmm/" class="post-title-link" itemprop="url">虚拟存储</a>
+          <a href="/systems/vmm/" class="post-title-link" itemprop="url">虚拟存储</a>
         </h2>
 
         <div class="post-meta-container">
@@ -714,7 +714,7 @@
           <p>随着用户使用数据的增加，计算机系统本身的物理内存不足以满足用户的正常使用需求。早期的操作系统通过交换来解决内存不足的问题，现代操作系统则大多采用虚拟存储方式，在有限的内存中，只装入部分页面，在需要的页面或段不在内存中时再将相应的段或页调入内存。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/vmm/#more" rel="contents">
+              <a class="btn" href="/systems/vmm/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -745,7 +745,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/dvmm/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/systems/dvmm/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -758,7 +758,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/dvmm/" class="post-title-link" itemprop="url">非连续内存分配算法</a>
+          <a href="/systems/dvmm/" class="post-title-link" itemprop="url">非连续内存分配算法</a>
         </h2>
 
         <div class="post-meta-container">
@@ -794,7 +794,7 @@
           <p>连续内存分配内存利用效率比较低，无法适应动态修改。非连续内存分配通过允许分配非连续物理内存空间来解决问题，其中根据分块标准的不同，分为以段为单位的段式存储管理和以页为单位的页式存储管理。段式内存便于内存保护，而页式内存便于内存转移，将二者折衷又引入了段页式存储管理。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/dvmm/#more" rel="contents">
+              <a class="btn" href="/systems/dvmm/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -825,7 +825,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/pmm/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/systems/pmm/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -838,7 +838,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/pmm/" class="post-title-link" itemprop="url">连续内存分配算法</a>
+          <a href="/systems/pmm/" class="post-title-link" itemprop="url">连续内存分配算法</a>
         </h2>
 
         <div class="post-meta-container">
@@ -874,7 +874,7 @@
           <p>计算机会经常有访问内存的操作，内存最小访问单位是字节，每个字节都有自己的物理地址，MMU将程序的逻辑地址转化为物理地址后访问对应的字节。为了处理在分配过程中分配大小和实际使用大小的差异，引入了内存分配算法。内存分配分为连续内存分配和不连续内存分配两种方式，这取决于分配的物理内存空间是否连续。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/pmm/#more" rel="contents">
+              <a class="btn" href="/systems/pmm/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -905,7 +905,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="http://example.com/ucore-lab1/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/systems/ucore-lab1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -918,7 +918,7 @@
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/ucore-lab1/" class="post-title-link" itemprop="url">ucore lab1</a>
+          <a href="/systems/ucore-lab1/" class="post-title-link" itemprop="url">ucore lab1</a>
         </h2>
 
         <div class="post-meta-container">
@@ -954,7 +954,7 @@
           <p> ucore lab1是一个从无到有的过程，涉及比较多的硬件细节，比如实模式到保护模式的转换，ELF格式的加载，中断处理等内容。根据原理课的内容，ucore lab1设计了一个BIOS,一个bootloader和一个OS来实现初步的操作系统功能。其中BIOS执行系统初始化软件完成基本IO初始化和引导加载功能，bootloader可以切换到X86保护模式，能够读磁盘并加载ELF执行文件格式，并显示字符，OS初步实现处理时钟中断和显示字符等简单功能。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ucore-lab1/#more" rel="contents">
+              <a class="btn" href="/systems/ucore-lab1/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>

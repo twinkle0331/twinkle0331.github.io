@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="平衡二叉搜索树有诸多变种，以下将介绍其中几位成员。首先，鉴于数据访问的局部性在实际应用中普遍存在，按照最常用者优先的策略引入伸展树。接下来，通过对平衡二叉树的推广，引入平衡多路搜索树，并着重讨论其中比较典型的B树。对照4阶B树，引入红黑树，红黑树不仅仅能保证全树的适度平衡，从而有效地控制单次操作的时间成本并可将每次重平衡操作的时间复杂度控制在常数时间范围内。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="平衡二叉搜索树">
+<meta property="og:url" content="http://example.com/algorithm/bbst/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="平衡二叉搜索树有诸多变种，以下将介绍其中几位成员。首先，鉴于数据访问的局部性在实际应用中普遍存在，按照最常用者优先的策略引入伸展树。接下来，通过对平衡二叉树的推广，引入平衡多路搜索树，并着重讨论其中比较典型的B树。对照4阶B树，引入红黑树，红黑树不仅仅能保证全树的适度平衡，从而有效地控制单次操作的时间成本并可将每次重平衡操作的时间复杂度控制在常数时间范围内。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2019/09/13/ylN9vtDBVwfJbgS.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/13/uhrTU92Dpzajild.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/13/8cMjCFDBpqywiR7.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/13/AdHjvMufVEXqDyn.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/13/E4gPuBJhlKF16Wy.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/13/kqnsiNx6fF5LEQb.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/13/RYFQBuN12a9jIm6.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/14/AoJOaW2veMipu1K.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/14/USMY7jIRwepvfE1.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/14/pF3Y1nMVKxT9SDQ.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/14/fY3hx9C2E1doqr6.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/14/bmKkAOzeqQ78p2l.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/14/F9lHps87O24BI6i.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/14/ELKZVwIXD9CoghB.png">
+<meta property="og:image" content="https://i.loli.net/2019/09/14/OJHFB9piry1g8dl.png">
+<meta property="og:image" content="https://i.loli.net/2019/11/15/u6mtMnZhkaFCWJ7.png">
+<meta property="og:image" content="https://i.loli.net/2019/11/15/vAWzLa3b2KCUOYX.png">
+<meta property="og:image" content="https://i.loli.net/2019/11/16/Rnp8H3196dbYezZ.png">
+<meta property="article:published_time" content="2019-09-13T01:32:19.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="Data structure">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2019/09/13/ylN9vtDBVwfJbgS.png">
+
+
+<link rel="canonical" href="http://example.com/algorithm/bbst/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>平衡二叉搜索树 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/algorithm/bbst/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          平衡二叉搜索树
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-09-13 09:32:19" itemprop="dateCreated datePublished" datetime="2019-09-13T09:32:19+08:00">2019-09-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>平衡二叉搜索树有诸多变种，以下将介绍其中几位成员。首先，鉴于数据访问的局部性在实际应用中普遍存在，按照最常用者优先的策略引入伸展树。接下来，通过对平衡二叉树的推广，引入平衡多路搜索树，并着重讨论其中比较典型的B树。对照4阶B树，引入红黑树，红黑树不仅仅能保证全树的适度平衡，从而有效地控制单次操作的时间成本并可将每次重平衡操作的时间复杂度控制在常数时间范围内。</p>
+<a id="more"></a>
+
+<h1 id="伸展树"><a href="#伸展树" class="headerlink" title="伸展树"></a>伸展树</h1><p>伸展树和AVL树一样，也是平衡二叉搜索树的一种形式。相对于AVL树，伸展树无需时刻都保持全树的平衡，但却可在任何足够长的真实操作序列中保持分摊意义上的高效率。伸展树也不需要对基本的二叉树节点结构做任何附加要求或改动，更不需要记录平衡因子或高度之类的额外信息，故适用范围更广。</p>
+<h2 id="局部性"><a href="#局部性" class="headerlink" title="局部性"></a>局部性</h2><p>为考查和评价各操作接口的效率通常假设所有操作彼此独立、次序随即且概率均等，并从平均情况的角度出发。实际上，通常在数据的生命期内，不仅执行不同操作的概率往往极不平衡，而且各操作之间具有极强的相关性，并在整体上多呈现极强的规律性。其中最典型的为数据局部性，即：</p>
+<ul>
+<li>刚刚访问的元素，极有可能在不久之后被访问到</li>
+<li>将被访问的某个元素，极有可能就处于不久之前被访问过的某个元素附近</li>
+</ul>
+<p>就二叉搜索树而言，数据局部性具体体现为：</p>
+<ul>
+<li>刚刚被访问的节点，极有可能在不久后再次被访问到</li>
+<li>将被访问的下一节点，极有可能就处于不久之前被访问过的某个节点的附近</li>
+</ul>
+<p>因此，只需将被访问过的节点转至根节点，即可加速后续的操作。例如，连续的$m(m&gt;&gt;n)$次查找，采用AVL需要$O(mlogn)$次。</p>
+<h2 id="逐层伸展"><a href="#逐层伸展" class="headerlink" title="逐层伸展"></a>逐层伸展</h2><p>每访问过一个节点$E$后，随即反复地以它的父节点为轴，经适当的旋转将其提升一层，直至最终成为树根。随着节点$E$的不断上升，两侧子树的结构也不断地调整，所以这一过程也被称为伸展。伸展过程的效率取决于树的初始形态和节点的访问次序。</p>
+<p>对于很多访问序列，单次访问的分摊复杂度在极端情况下可达到$\Omega(n)$。例如以下情况，从空树开始插入关键码${1,2,3,4,5}$ ,通过<code>search()</code>接口，由小到大依次访问各节点一次。</p>
+<p><img src="https://i.loli.net/2019/09/13/ylN9vtDBVwfJbgS.png"></p>
+<p>可见，在每次访问之后，为将对应节点伸展调整至树根，分别需做$4、4、3、2、1$次旋转。一般地，若节点总数为$n$,则旋转操作的总次数应为：$(n-1)+(n-1)+(n-2)+…+1=(n^2+n-2)=\Omega(n^2)$</p>
+<p>如此分摊下来，每次访问平均需要$\Omega(n)$时间。这一效率不仅远远低于AVL树，甚至与原始的二叉搜索树相当。以上例子在经过$5$次访问后全树的结构将会复原，这意味着以上情况可以持续地再现。</p>
+<p>若其推广至规模任意的二叉搜索树，对于规模为任意$n$的伸展树，只要按照关键码单调的次序，周期性地反复进行查找，则无论总的访问次数$m&gt;&gt;n$有多大，就分摊意义而言，每次都需要$\Omega(n)$时间。</p>
+<h2 id="双层伸展"><a href="#双层伸展" class="headerlink" title="双层伸展"></a>双层伸展</h2><p>以上单层伸展的问题在于全树的拓扑结构始终呈单链表结构，等价于一维列表。被访问节点的深度，呈周期性的算术级数演变${n-1,n-2,n-3,…,3,2,1}$</p>
+<p>为了克服上述伸展调整策略的缺陷，可将逐层伸展改为双层伸展，每次都从当前节点$v$向上追溯两层而不是一层，并根据其父节点$p$和祖父$g$的相对位置进行相应的旋转。</p>
+<p>旋转的情况分为三种：</p>
+<p><strong>zig-zig/zag-zag</strong></p>
+<p>设$v$是$p$的左孩子，且$p$也是$g$的左孩子，设$W$和$Y$分别是$v$的左、右子树，$Y$和$Z$分别是$p$和$g$的左、右子树。</p>
+<p><img src="https://i.loli.net/2019/09/13/uhrTU92Dpzajild.png"></p>
+<p>一旦访问坏节点，对应的路径的长度随即减半。</p>
+<p><strong>zig-zag/zag-zig</strong></p>
+<p>设$v$是$p$的左孩子，而$p$是$v$的右孩子，设$W$是$g$的左子树，$X$和$Y$分别是$v$的左、右子树,$Z$是$p$的右子树。</p>
+<p><img src="https://i.loli.net/2019/09/13/8cMjCFDBpqywiR7.png"></p>
+<p><strong>zig/zag</strong></p>
+<p>若$v$最初的深度为奇数，则经过若干次双层调整至最后一次调整后，$v$的父亲即是树根$r$。将$v$的左右子树记作$X$和$Y$，节点$p=r$的另一棵子树记作$Z$。</p>
+<p><img src="https://i.loli.net/2019/09/13/AdHjvMufVEXqDyn.png"></p>
+<h2 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h2><p>综合以上情况，每经过一次双层调整操作，节点$v$都会上升两层。若v的初始深度<code>depth(v)</code>为偶数，则最终v将上升至树根。若<code>depth(v)</code>为奇数，则当$v$上升至深度为$1$时，不妨最后再相应地做一次zig或zag单旋转操作。无论如何，经过<code>depth(v)</code>次旋转后，$v$总能成为树根。</p>
+<p>最坏实例导致$\Omega(n)$平均单次访问时间的原因为：在这一可持续重复的过程中，二叉搜索树的高度始终不小于$\lfloor n/2 \rfloor$,而且至少有一半的节点在接受访问时没有如预期地靠近树根，反而恰恰处于最底层。从树高的角度来看，树高依算术级数逐步从$n-1$递减至$\lfloor n/2 \rfloor$,然后再逐步递增地增回到$n-1$。</p>
+<p><img src="https://i.loli.net/2019/09/13/E4gPuBJhlKF16Wy.png"></p>
+<p>以以上二叉搜索树为例，逐层调整和双层调整的区别如图所示。最深节点在经过双层调整后，不仅同样可将该节点伸展至树根，而且可使树的高度接近于减半，可有效避免对长分支的访问。在将节点$v$调整至树根的同时，对应分支长度以几何级数的速度(大致折半)收缩。</p>
+<p>在任一时刻伸展树中都可能存在很深的节点，但是经过随后的双层伸展，其对应的分支长度都会收缩至长度大致这般，最坏情况也不会持续发生。可见，伸展树虽不能杜绝最坏情况，却能有效地控制最坏情况发生的频率，从而在分摊意义上保证整体的高效率。</p>
+<p>分摊复杂度为$O(logn)$,与AVL树相当。在局部性强、缓存命中率高的时候，效率可以更高($k&lt;&lt;n&lt;&lt;m$),自适应的$O(logk)$。因为达到经常访问的$k$个元素分布在根节点附近需要常规的$n$次操作，每次复杂度不超过$logn$,所以时间复杂度还得再算入一个$O(nlogn)$因子。任何连续的$m$次查找都可在$O(mlogk+nlogn)$时间内完成。仍不能杜绝单次最坏情况的出现，不适用于对效率敏感的场合。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> NodePosi&gt; <span class="keyword">inline</span> <span class="comment">//在节点*p与*lc（可能为空）之间建立父（左）子关系</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">attachAsLChild</span> <span class="params">( NodePosi p, NodePosi lc )</span> </span>&#123; p-&gt;lc = lc; <span class="keyword">if</span> ( lc ) lc-&gt;parent = p; &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> NodePosi&gt; <span class="keyword">inline</span> <span class="comment">//在节点*p与*rc（可能为空）之间建立父（右）子关系</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">attachAsRChild</span> <span class="params">( NodePosi p, NodePosi rc )</span> </span>&#123; p-&gt;rc = rc; <span class="keyword">if</span> ( rc ) rc-&gt;parent = p; &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//Splay树伸展算法：从节点v出发逐层伸展</span></span><br><span class="line">BinNodePosi(T) Splay&lt;T&gt;::splay ( BinNodePosi(T) v ) &#123; <span class="comment">//v为因最近访问而需伸展的节点位置</span></span><br><span class="line">   <span class="keyword">if</span> ( !v ) <span class="keyword">return</span> <span class="literal">NULL</span>; BinNodePosi(T) p; BinNodePosi(T) g; <span class="comment">//*v的父亲与祖父</span></span><br><span class="line">   <span class="keyword">while</span> ( ( p = v-&gt;parent ) &amp;&amp; ( g = p-&gt;parent ) ) &#123; <span class="comment">//自下而上，反复对*v做双层伸展</span></span><br><span class="line">      BinNodePosi(T) gg = g-&gt;parent; <span class="comment">//每轮之后*v都以原曾祖父（great-grand parent）为父</span></span><br><span class="line">      <span class="keyword">if</span> ( IsLChild ( *v ) )</span><br><span class="line">         <span class="keyword">if</span> ( IsLChild ( *p ) ) &#123; <span class="comment">//zig-zig</span></span><br><span class="line">            attachAsLChild ( g, p-&gt;rc ); attachAsLChild ( p, v-&gt;rc );</span><br><span class="line">            attachAsRChild ( p, g ); attachAsRChild ( v, p );</span><br><span class="line">         &#125; <span class="keyword">else</span> &#123; <span class="comment">//zig-zag</span></span><br><span class="line">            attachAsLChild ( p, v-&gt;rc ); attachAsRChild ( g, v-&gt;lc );</span><br><span class="line">            attachAsLChild ( v, g ); attachAsRChild ( v, p );</span><br><span class="line">         &#125;</span><br><span class="line">      <span class="keyword">else</span> <span class="keyword">if</span> ( IsRChild ( *p ) ) &#123; <span class="comment">//zag-zag</span></span><br><span class="line">         attachAsRChild ( g, p-&gt;lc ); attachAsRChild ( p, v-&gt;lc );</span><br><span class="line">         attachAsLChild ( p, g ); attachAsLChild ( v, p );</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123; <span class="comment">//zag-zig</span></span><br><span class="line">         attachAsRChild ( p, v-&gt;lc ); attachAsLChild ( g, v-&gt;rc );</span><br><span class="line">         attachAsRChild ( v, g ); attachAsLChild ( v, p );</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> ( !gg ) v-&gt;parent = <span class="literal">NULL</span>; <span class="comment">//若*v原先的曾祖父*gg不存在，则*v现在应为树根</span></span><br><span class="line">      <span class="keyword">else</span> <span class="comment">//否则，*gg此后应该以*v作为左或右孩子</span></span><br><span class="line">         ( g == gg-&gt;lc ) ? attachAsLChild ( gg, v ) : attachAsRChild ( gg, v );</span><br><span class="line">      updateHeight ( g ); updateHeight ( p ); updateHeight ( v );</span><br><span class="line">   &#125; <span class="comment">//双层伸展结束时，必有g == NULL，但p可能非空</span></span><br><span class="line">   <span class="keyword">if</span> ( p = v-&gt;parent ) &#123; <span class="comment">//若p果真非空，则额外再做一次单旋</span></span><br><span class="line">      <span class="keyword">if</span> ( IsLChild ( *v ) ) &#123; attachAsLChild ( p, v-&gt;rc ); attachAsRChild ( v, p ); &#125;</span><br><span class="line">      <span class="keyword">else</span>                   &#123; attachAsRChild ( p, v-&gt;lc ); attachAsLChild ( v, p ); &#125;</span><br><span class="line">      updateHeight ( p ); updateHeight ( v );</span><br><span class="line">   &#125;</span><br><span class="line">   v-&gt;parent = <span class="literal">NULL</span>; <span class="keyword">return</span> v;</span><br><span class="line">&#125; <span class="comment">//调整之后新树根应为被伸展的节点，故返回该节点的位置以便上层函数更新树根</span></span><br></pre></td></tr></table></figure>
+<p><strong>查找</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; BinNodePosi(T) &amp; Splay&lt;T&gt;::search ( <span class="keyword">const</span> T&amp; e ) &#123; <span class="comment">//在伸展树中查找e</span></span><br><span class="line">   BinNodePosi(T) p = searchIn ( _root, e, _hot = <span class="literal">NULL</span> );</span><br><span class="line">   _root = splay ( p ? p : _hot ); <span class="comment">//将最后一个被访问的节点伸展至根</span></span><br><span class="line">   <span class="keyword">return</span> _root;</span><br><span class="line">&#125; <span class="comment">//与其它BST不同，无论查找成功与否，_root都指向最后被访问的节点</span></span><br></pre></td></tr></table></figure>
+<p>首先调用二叉树的通用算法<code>searchIn()</code>尝试查找具有关键码$e$的节点。无论是否查找成功，都继而调用<code>splay()</code>算法，将查找终止处的节点伸展到树根，此时的查找操作不再为静态操作。</p>
+<p><strong>插入</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; BinNodePosi(T) Splay&lt;T&gt;::insert ( <span class="keyword">const</span> T&amp; e ) &#123; <span class="comment">//将关键码e插入伸展树中</span></span><br><span class="line">   <span class="keyword">if</span> ( !_root ) &#123; _size++; <span class="keyword">return</span> _root = <span class="keyword">new</span> BinNode&lt;T&gt; ( e ); &#125; <span class="comment">//处理原树为空的退化情况</span></span><br><span class="line">   <span class="keyword">if</span> ( e == search ( e )-&gt;data ) <span class="keyword">return</span> _root; <span class="comment">//确认目标节点不存在</span></span><br><span class="line">   _size++; BinNodePosi(T) t = _root; <span class="comment">//创建新节点。以下调整&lt;=7个指针以完成局部重构</span></span><br><span class="line">   <span class="keyword">if</span> ( _root-&gt;data &lt; e ) &#123; <span class="comment">//插入新根，以t和t-&gt;rc为左、右孩子</span></span><br><span class="line">      t-&gt;parent = _root = <span class="keyword">new</span> BinNode&lt;T&gt; ( e, <span class="literal">NULL</span>, t, t-&gt;rc ); <span class="comment">//2 + 3个</span></span><br><span class="line">      <span class="keyword">if</span> ( HasRChild ( *t ) ) &#123; t-&gt;rc-&gt;parent = _root; t-&gt;rc = <span class="literal">NULL</span>; &#125; <span class="comment">//&lt;= 2个</span></span><br><span class="line">   &#125; <span class="keyword">else</span> &#123; <span class="comment">//插入新根，以t-&gt;lc和t为左、右孩子</span></span><br><span class="line">      t-&gt;parent = _root = <span class="keyword">new</span> BinNode&lt;T&gt; ( e, <span class="literal">NULL</span>, t-&gt;lc, t ); <span class="comment">//2 + 3个</span></span><br><span class="line">      <span class="keyword">if</span> ( HasLChild ( *t ) ) &#123; t-&gt;lc-&gt;parent = _root; t-&gt;lc = <span class="literal">NULL</span>; &#125; <span class="comment">//&lt;= 2个</span></span><br><span class="line">   &#125;</span><br><span class="line">   updateHeightAbove ( t ); <span class="comment">//更新t及其祖先（实际上只有_root一个）的高度</span></span><br><span class="line">   <span class="keyword">return</span> _root; <span class="comment">//新节点必然置于树根，返回之</span></span><br><span class="line">&#125; <span class="comment">//无论e是否存在于原树中，返回时总有_root-&gt;data == e</span></span><br></pre></td></tr></table></figure>
+<p>为将关键码$e$插入至伸展树T中，首先调用伸展树查找接口<code>search(e)</code>查找该关键码，最后被访问的节点$t$通过伸展被提升为树根，其左、右子树分别记作$T_l$和$T_r$。</p>
+<p>接下来，根据$e$与$t$的大小关系，以$t$为界将$T$分为左右两棵子树。比如，不失一般性地，设$e$大于$t$,可切断$t$与其右孩子的关系，再将$e$为关键码的新节点作为树根，并以$t$为其左孩子，以$T_r$为右子树。</p>
+<p><strong>删除</strong></p>
+<p>为从伸展树$T$中删除关键码为$e$的节点，先调用<code>search()</code>定位目标节点，在成功返回后，树根节点恰好为待删除节点，其左、右子树分别记作$T_l$和$T_r$。接下来，将v摘除。再在$T_r$中查找关键码$e$，尽管这一查找必定失败，确可将$T_r$中的最小节点提升为该子树的根。</p>
+<p>得益于二叉搜索树的顺序性，此时$m$的左子树必然为空，此时只需将$T_l$作为左子树与$m$相互联接，即可得到一棵完整的二叉搜索树，如此不仅删除了节点$v$，还将$m$的后继提升为新的树根，数据局部性也得到了利用。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">bool</span> Splay&lt;T&gt;::remove ( <span class="keyword">const</span> T&amp; e ) &#123; <span class="comment">//从伸展树中删除关键码e</span></span><br><span class="line">   <span class="keyword">if</span> ( !_root || ( e != search ( e )-&gt;data ) ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//若树空或目标不存在，则无法删除</span></span><br><span class="line">   BinNodePosi(T) w = _root; <span class="comment">//assert: 经search()后节点e已被伸展至树根</span></span><br><span class="line">   <span class="keyword">if</span> ( !HasLChild ( *_root ) ) &#123; <span class="comment">//若无左子树，则直接删除</span></span><br><span class="line">      _root = _root-&gt;rc; <span class="keyword">if</span> ( _root ) _root-&gt;parent = <span class="literal">NULL</span>;</span><br><span class="line">   &#125; <span class="keyword">else</span> <span class="keyword">if</span> ( !HasRChild ( *_root ) ) &#123; <span class="comment">//若无右子树，也直接删除</span></span><br><span class="line">      _root = _root-&gt;lc; <span class="keyword">if</span> ( _root ) _root-&gt;parent = <span class="literal">NULL</span>;</span><br><span class="line">   &#125; <span class="keyword">else</span> &#123; <span class="comment">//若左右子树同时存在，则</span></span><br><span class="line">      BinNodePosi(T) lTree = _root-&gt;lc;</span><br><span class="line">      lTree-&gt;parent = <span class="literal">NULL</span>; _root-&gt;lc = <span class="literal">NULL</span>; <span class="comment">//暂时将左子树切除</span></span><br><span class="line">      _root = _root-&gt;rc; _root-&gt;parent = <span class="literal">NULL</span>; <span class="comment">//只保留右子树</span></span><br><span class="line">      search ( w-&gt;data ); <span class="comment">//以原树根为目标，做一次（必定失败的）查找</span></span><br><span class="line"><span class="comment">///// assert: 至此，右子树中最小节点必伸展至根，且（因无雷同节点）其左子树必空，于是</span></span><br><span class="line">      _root-&gt;lc = lTree; lTree-&gt;parent = _root; <span class="comment">//只需将原左子树接回原位即可</span></span><br><span class="line">   &#125;</span><br><span class="line">   release ( w-&gt;data ); release ( w ); _size--; <span class="comment">//释放节点，更新规模</span></span><br><span class="line">   <span class="keyword">if</span> ( _root ) updateHeight ( _root ); <span class="comment">//此后，若树非空，则树根的高度需要更新</span></span><br><span class="line">   <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">//返回成功标志</span></span><br><span class="line">&#125; <span class="comment">//若目标节点存在且被删除，返回true；否则返回false</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>试证明，伸展树所有基本接口的分摊时间复杂度，均为$O(log n)$</p>
+</blockquote>
+<p>事实上，伸展树单次操作所需的时间量T起伏很大，并不能始终保持控制在$O(logn)$以内。可从分摊分析的角度对此统一分析和评判。具体地，将总体所需计算时间分摊之其间的每一操作，如此即可得到单次操作的分摊复杂度A,并依据此评判伸展树的整体性能。借助势能分析法可知单次分摊复杂度为$O( logn)$。</p>
+<h1 id="B树"><a href="#B树" class="headerlink" title="B树"></a>B树</h1><p>在之前的计算模型中，RAM模型有无限可数个寄存器，而图灵机模型为无限长的纸带。然而从实际应用来看，问题规模的增长速度却远远快于存储能力的增长，随着时间的推移这一矛盾将日益凸显。鉴于在同等成本下，存储器的容量越大则访问速度越慢，因此一味提高存储器容量并非良策。</p>
+<p>实践证明，分级存储为行之有效的方法。不同容量的存储器，访问速度差异悬殊，所以在由内存和外存组成的二级存储系统中，数据全集往往存放于外存中，计算过程中可将内存作为外存的高速缓存，存放最常用数据项的复本。</p>
+<p>两个相邻存储器之间的数据传输统称I/O操作。各级存储器的访问速度相差悬殊，故因尽可能地减少I/O操作。</p>
+<h2 id="多路搜索树"><a href="#多路搜索树" class="headerlink" title="多路搜索树"></a>多路搜索树</h2><p>当数据规模大到内存已不足以容纳时，常规二叉搜索树地效率将大打折扣，其原因在于，查找过程对外存的访问次数过多。为此，需充分利用磁盘之类存储器的另一特性：读取物理地址连续的一千字节与读取单个字节几乎没有区别。因此不妨通过时间成极低的多次内存操作，将通常的二叉搜索树转变为多路搜索树，在中序遍历意义上，同样为等价变换。</p>
+<p>可通过适当合并得到超级节点，比如每$2$层合并，得到$4$路搜索树，每$3$层合并得到$8$路搜索树。一般地，以$k$ 层为间隔可将二叉搜索树转换为$2^k$路搜索树，统称多路搜索树。</p>
+<p>多路搜索树同样支持对二叉树的查找，效果与原二叉树相同，然而对外存的访问方式已发生本质变化。实际上，在此时的搜索每下降一层，都以大节点为单位从外存中读入一组关键码，这组关键码在逻辑上在物理上相邻，故可以批量从外存一次性读出，所需时间与读取单个关键码几乎一样。当然，每组关键码的最佳数目，取决于不同外存的批量访问特性。</p>
+<h2 id="多路平衡搜索树"><a href="#多路平衡搜索树" class="headerlink" title="多路平衡搜索树"></a>多路平衡搜索树</h2><p>所谓$m$阶B树，即$m$阶平衡搜索树($m\geq 2$)。</p>
+<p>所有外部节点均深度相等。同时，每个内部节点都存有不超过$m-1$个关键码，以及用以指示对应分支的不超过$m$个引用。具体地，存有$n\leq m-1$个关键码</p>
+<p>$K_1&lt;K_2&lt;K_3&lt;…&lt;K_n$的内部节点，</p>
+<p>同时还有$n+1\leq m$个引用：</p>
+<p>$A_0&lt;A_1&lt;A_2&lt;A_3&lt;A_4&lt;…&lt;A_n$</p>
+<p>反过来，除根以外的所有节点，都应满足$n+1 \geq \lceil m/2 \rceil$</p>
+<p>而在非空的B树中，根节点应满足$n+1\geq 2$,故亦称作$(\lceil m/2 \rceil,m)$树。</p>
+<p>B树的外部节点未必意味着查找失败，而可能目标关键码存在于更低层次的某一外部存储系统中，因此在计算B树树高时计入最底层的外部节点，树高即为外部节点的深度。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> BTNodePosi(T) BTNode<span class="meta-string">&lt;T&gt;* //B-树节点位置</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="class"><span class="keyword">struct</span> <span class="title">BTNode</span> &#123;</span> <span class="comment">//B-树节点模板类</span></span><br><span class="line"><span class="comment">// 成员（为简化描述起见统一开放，读者可根据需要进一步封装）</span></span><br><span class="line">   BTNodePosi(T) parent; <span class="comment">//父节点</span></span><br><span class="line">   Vector&lt;T&gt; key; <span class="comment">//关键码向量</span></span><br><span class="line">   Vector&lt;BTNodePosi(T)&gt; child; <span class="comment">//孩子向量（其长度总比key多一）</span></span><br><span class="line"><span class="comment">// 构造函数（注意：BTNode只能作为根节点创建，而且初始时有0个关键码和1个空孩子指针）</span></span><br><span class="line">   BTNode() &#123; parent = <span class="literal">NULL</span>; child.insert ( <span class="number">0</span>, <span class="literal">NULL</span> ); &#125;</span><br><span class="line">   BTNode ( T e, BTNodePosi(T) lc = <span class="literal">NULL</span>, BTNodePosi(T) rc = <span class="literal">NULL</span> ) &#123;</span><br><span class="line">      parent = <span class="literal">NULL</span>; <span class="comment">//作为根节点，而且初始时</span></span><br><span class="line">      key.insert ( <span class="number">0</span>, e ); <span class="comment">//只有一个关键码，以及</span></span><br><span class="line">      child.insert ( <span class="number">0</span>, lc ); child.insert ( <span class="number">1</span>, rc ); <span class="comment">//两个孩子</span></span><br><span class="line">      <span class="keyword">if</span> ( lc ) lc-&gt;parent = <span class="keyword">this</span>; <span class="keyword">if</span> ( rc ) rc-&gt;parent = <span class="keyword">this</span>;</span><br><span class="line">  </span><br></pre></td></tr></table></figure>
+<p>同一节点的所有孩子组成一个向量，各相邻孩子之间组成一个向量。按照B树的定义，孩子向量的实际长度总是比关键码向量多一。</p>
+<h2 id="查找"><a href="#查找" class="headerlink" title="查找"></a>查找</h2><p>B树结构非常适宜在相对更小的内存中，实现对大规模数据的高效操作。</p>
+<p>B树的查找过程和二叉搜索树的查找过程类似，首先将根节点作为当前节点，只要当前节点不是外部节点，就在当前节点中顺序查找，若找到目标关键码，则返回查找成功，否则沿着引用转至相应子树，将其根节点读入内存，并更新当前节点。若当前节点为外部节点，则返回查找失败。</p>
+<p>只有在切换和更新当前节点时才会涉及I/O操作，而在同一节点内部的查找则完全在内存中进行。因内存的访问效率远远高于内存，再考虑到各节点的关键码数量通常在128到512之间，所以直接采用顺序查找策略。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; BTNodePosi(T) BTree&lt;T&gt;::search ( <span class="keyword">const</span> T&amp; e ) &#123; <span class="comment">//在B-树中查找关键码e</span></span><br><span class="line">   BTNodePosi(T) v = _root; _hot = <span class="literal">NULL</span>; <span class="comment">//从根节点出发</span></span><br><span class="line">   <span class="keyword">while</span> ( v ) &#123; <span class="comment">//逐层查找</span></span><br><span class="line">      Rank r = v-&gt;key.search ( e ); <span class="comment">//在当前节点中，找到不大于e的最大关键码</span></span><br><span class="line">      <span class="keyword">if</span> ( ( <span class="number">0</span> &lt;= r ) &amp;&amp; ( e == v-&gt;key[r] ) ) <span class="keyword">return</span> v; <span class="comment">//成功：在当前节点中命中目标关键码</span></span><br><span class="line">      _hot = v; v = v-&gt;child[r + <span class="number">1</span>]; <span class="comment">//否则，转入对应子树（_hot指向其父）——需做I/O，最费时间</span></span><br><span class="line">   &#125; <span class="comment">//这里在向量内是二分查找，但对通常的_order可直接顺序查找</span></span><br><span class="line">   <span class="keyword">return</span> <span class="literal">NULL</span>; <span class="comment">//失败：最终抵达外部节点</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上算法直接调用了有序向量的<code>search()</code>接口。</p>
+<p><strong>性能分析</strong></p>
+<p>B树查找的过程主要消耗于：</p>
+<ul>
+<li>将某一节点载入内存</li>
+<li>在内存中对当前节点进行查找</li>
+</ul>
+<p>鉴于内存、外存在访问速度上的差异，相对于前一类时间消耗，后一时间消耗可忽略不计。B树查找操作的效率主要取决于查找过程中的外存访问次数。</p>
+<p>约定B树的树根节点常驻RAM，那么对于高度为$h$的子树，外存访问不超过$O(h-1)$次。</p>
+<p>每次查找过程中共需访问$O(log_mN)$个节点，相应地需要做$O(log_mN)$次外存读取操作。由此可知，存有$N$个关键码的$m$阶B树每次查找操作，耗时不过$O(log_mN)$。</p>
+<p><strong>树高</strong></p>
+<p>若存有$N$个关键码的$m$阶B树的高度为$h$，则必有：</p>
+<p>$log_m(N+1) \leq h \leq log_{\lceil m/2 \rceil} {\lfloor (N+1)/2 \rfloor} +1$</p>
+<p>首先证明$h \leq log_{\lceil m/2 \rceil} {\lfloor (N+1)/2 \rfloor} +1$ 。关键码总数固定时，为使B树更高，各内部节点都应包含尽可能少的关键码。于是按照B树的定义，各高度层次上节点数目至少是：</p>
+<p>$n_0=1$</p>
+<p>$n_1=2$</p>
+<p>$n_2=2 \lceil m/2 \rceil$</p>
+<p>$n_3=2 \lceil m/2 \rceil ^2$</p>
+<p>$n_4=2 \lceil m/2 \rceil ^3$</p>
+<p>…</p>
+<p>$n_{h-1}=2 \lceil m/2 \rceil ^{h-2}$</p>
+<p>$n_h=2 \lceil m/2 \rceil ^{h-1}$</p>
+<p>设向量节点个数为$n_m$,则除了根节点以外每个向量节点均有$\lceil m/2 \rceil$个分支，总的分支数目为$\lceil m/2 \rceil n_m$。</p>
+<p>考虑除了根节点以外的向量节点，</p>
+<p>根据树的性质有$n=n_m+n_0=\lceil m/2 \rceil n_m+1$</p>
+<p>则$n_0=(\lceil m/2 \rceil -1)n_m+1$</p>
+<p>叶节点，即是外部的向量节点，均只有一个关键码，而内部节点均有$\lceil m/2 \rceil -1$个关键码，则对应的节点有$(\lceil m/2 \rceil) -1n_m$个，设内部节点总数为$n_{sum}$，对应有$n_h=n_{sum}+1$</p>
+<p>现考查外部节点，这些节点对应于失败的查找,故其数量$n_h$应等于失败查找情形可能的总数$n_{sum}$，即应比成功查找可能情形的总数恰好多一，而后者等于关键码的总数$N$。</p>
+<p>于是有，</p>
+<p>$N+1=n_h \geq 2(\lceil m/2 \rceil)^{h-1} $</p>
+<p>即$h \leq log_{\lceil m/2 \rceil} {\lfloor (N+1)/2 \rfloor} +1$</p>
+<p>再来证明$log_m(N+1) \leq h$。同理，关键码总数一定时，为使B树更矮，每个内部节点都应该包含尽可能多的关键码。按照B树的定义，各高度节点上的节点数目至多是：</p>
+<p>$n_0=1$</p>
+<p>$n_1=m$</p>
+<p>$n_2=m^2$</p>
+<p>…</p>
+<p>$n_h=m^h$</p>
+<p>与上同理，有$N+1=n_h \leq m^h$</p>
+<p>即$\Omega (log_mN)=log_m(N+1) \leq h$ </p>
+<p>也就是说存有$N$个关键码的$m$阶B树的高度$h= \Theta(log_mN)$</p>
+<h2 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">bool</span> BTree&lt;T&gt;::insert ( <span class="keyword">const</span> T&amp; e ) &#123; <span class="comment">//将关键码e插入B树中</span></span><br><span class="line">   BTNodePosi(T) v = search ( e ); <span class="keyword">if</span> ( v ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//确认目标节点不存在</span></span><br><span class="line">   Rank r = _hot-&gt;key.search ( e ); <span class="comment">//在节点_hot的有序关键码向量中查找合适的插入位置</span></span><br><span class="line">   _hot-&gt;key.insert ( r + <span class="number">1</span>, e ); <span class="comment">//将新关键码插至对应的位置</span></span><br><span class="line">   _hot-&gt;child.insert ( r + <span class="number">2</span>, <span class="literal">NULL</span> ); <span class="comment">//创建一个空子树指针</span></span><br><span class="line">   _size++; <span class="comment">//更新全树规模</span></span><br><span class="line">   solveOverflow ( _hot ); <span class="comment">//如有必要，需做分裂</span></span><br><span class="line">   <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">//插入成功</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>为在B树中插入一个关键码$e$，首先调用<code>search(e)</code>在树中查找该关键码，若查找成功则按照禁止重复关键码的约定不予插入，操作即告完成并返回<code>false</code>。若查找终止于一外部节点v，且其父亲由变量hot指示。此时hot必然指向某一叶节点(当然也可能时根节点)。接下来，在该节点中再次查找关键码e,确定e在其中的插入位置r,只需将e插入至这一位置。</p>
+<p>在<code>hot</code>所指示的节点中增加了一个关键码。若该节点的关键码仍然合法，则插入操作随即完成。否则，则称该节点发生了一次上溢，此时需要经过适当的处理来使该节点以及整树满足B树的条件。</p>
+<p><strong>上溢和分裂</strong></p>
+<p>一般地，刚发生上溢的节点应恰好有$m$个关键码。若取$s=\lfloor m/2 \rfloor$ ,则它们依次为：</p>
+<p>${k_0,k_1,…,k_{s-1},k_s,k_{s+1},…,k_{m-1}}$</p>
+<p>可见，以$k_s$为界，可将该节点分为前、后两个子节点，二者大致等长。于是，可令关键码$k_s$上升一层，归入其父节点中的适当位置，并分别以这两个子节点作为左、右孩子。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//关键码插入后若节点上溢，则做节点分裂处理</span></span><br><span class="line"><span class="keyword">void</span> BTree&lt;T&gt;::solveOverflow ( BTNodePosi(T) v ) &#123;</span><br><span class="line">   <span class="keyword">if</span> ( _order &gt;= v-&gt;child.size() ) <span class="keyword">return</span>; <span class="comment">//递归基：当前节点并未上溢</span></span><br><span class="line">   Rank s = _order / <span class="number">2</span>; <span class="comment">//轴点（此时应有_order = key.size() = child.size() - 1）</span></span><br><span class="line">   BTNodePosi(T) u = <span class="keyword">new</span> BTNode&lt;T&gt;(); <span class="comment">//注意：新节点已有一个空孩子</span></span><br><span class="line">   <span class="keyword">for</span> ( Rank j = <span class="number">0</span>; j &lt; _order - s - <span class="number">1</span>; j++ ) &#123; <span class="comment">//v右侧_order-s-1个孩子及关键码分裂为右侧节点u</span></span><br><span class="line">      u-&gt;child.insert ( j, v-&gt;child.remove ( s + <span class="number">1</span> ) ); <span class="comment">//逐个移动效率低</span></span><br><span class="line">      u-&gt;key.insert ( j, v-&gt;key.remove ( s + <span class="number">1</span> ) ); <span class="comment">//此策略可改进</span></span><br><span class="line">   &#125;</span><br><span class="line">   u-&gt;child[_order - s - <span class="number">1</span>] = v-&gt;child.remove ( s + <span class="number">1</span> ); <span class="comment">//移动v最靠右的孩子</span></span><br><span class="line">   <span class="keyword">if</span> ( u-&gt;child[<span class="number">0</span>] ) <span class="comment">//若u的孩子们非空，则</span></span><br><span class="line">      <span class="keyword">for</span> ( Rank j = <span class="number">0</span>; j &lt; _order - s; j++ ) <span class="comment">//令它们的父节点统一</span></span><br><span class="line">         u-&gt;child[j]-&gt;parent = u; <span class="comment">//指向u</span></span><br><span class="line">   BTNodePosi(T) p = v-&gt;parent; <span class="comment">//v当前的父节点p</span></span><br><span class="line">   <span class="keyword">if</span> ( !p ) &#123; _root = p = <span class="keyword">new</span> BTNode&lt;T&gt;(); p-&gt;child[<span class="number">0</span>] = v; v-&gt;parent = p; &#125; <span class="comment">//若p空则创建之</span></span><br><span class="line">   Rank r = <span class="number">1</span> + p-&gt;key.search ( v-&gt;key[<span class="number">0</span>] ); <span class="comment">//p中指向u的指针的秩</span></span><br><span class="line">   p-&gt;key.insert ( r, v-&gt;key.remove ( s ) ); <span class="comment">//轴点关键码上升</span></span><br><span class="line">   p-&gt;child.insert ( r + <span class="number">1</span>, u );  u-&gt;parent = p; <span class="comment">//新节点u与父节点p互联</span></span><br><span class="line">   solveOverflow ( p ); <span class="comment">//上升一层，如有必要则继续分裂——至多递归O(logn)层</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>复杂度</strong></p>
+<p>若将B树的阶次$m$视为常数，则关键码的移动和复制操作的时间都可以忽略。至于<code>solveOverflow()</code>算法，每一递归实例均只需常数时间，递归层数不超过B树高度，由此可知，对于存有$n$个关键码的B树，每次插入操作可在$O(log_mn)$时间完成。</p>
+<p>实际上，因插入操作而导致$\Omega(log_mn)$次分裂的情况极为罕见，单次插入操作平均引发的分裂次数远远低于这一估计，故时间通常消耗于对目标关键码的查找。</p>
+<blockquote>
+<p>现拟将一组共$n$个互异的关键码，插入至一棵初始为空的$m$阶B树中，按照何种次序插入可使得到的B树高度最大？按照何种次序插入可使得到的B树高度最小</p>
+</blockquote>
+<p>按照单调次序插入所有关键码可使得B树高度达到最大，得到B树的高度为$h=log_{\lceil m/2 \rceil} {\lfloor (n+1)/2\rfloor}+1$。</p>
+<p>每$m$个关键码为一组，相邻两组为一个单位，设前者为$l$，后者为$r$,先插入$l$中的前$\lfloor (m-1)/2 \rfloor$个元素，再插入$r$中的前$\lfloor(m-1)/2 \rfloor$个元素，然后插入$l$和$r$中第$m$大的元素，若最后划分得到的元素剩余个数不满足一个单位的要求则可按照单调次序插入，如此插入可使得的$b$树高度最小。</p>
+<blockquote>
+<p>考查任意阶的B树，若T的初始高度为1，而经过若干次插入操作之后，高度增加至$h$，且共有$n$个内部节点，则再次过程中T的分裂操作有多少次</p>
+</blockquote>
+<p>考查因关键码插入而引起的任何一次分裂操作，</p>
+<p>被分裂的节点无非两种情况，</p>
+<ul>
+<li>若它不是根节点，则树中的节点增加一个，同时树高保持不变，故有$n+=1$和$h+=0$</li>
+<li>若是根节点，则除了原节点一分为二，还会新生成一个仅含单关键码的树根，同时树的高度也将相应的升高一层，故有:$n+=2$和$h+=1$</li>
+</ul>
+<p>可见，无论如何，$n$和$h$的差值均会恰好地增加一个单位，因此$n-h$可视为分裂操作的一个计数器。该计数器的初始值为$1-1=0$,故最终的$n-h$即是整个操作过程中所做分裂次数的总次数。</p>
+<p>推广，若初始节点数为$n_0$,高度为$h_0$,则经过若干次插入操作后，高度为$h$,节点数为$n$，则B树的分裂次数为$n-h-(n_0-h_0)$</p>
+<blockquote>
+<p>每次插入平均引发了多少次分裂操作</p>
+</blockquote>
+<p>累计发生的分裂次数，不仅取决于连续插入操作的次数，同时也取决于最终的树高。<br>若关键码固定为$N$,为使节点尽可能多，内部节点各自所含的关键码应尽可能少，根节点必定含有1个关键码，其余内部节点至少包含$\lceil m/2 \rceil -1$个关键码，故必有：</p>
+<p>$n \leq 1+(N-1)/(\lceil m/2 \rceil-1)$</p>
+<p>在如上连续的$N$次插入中，分裂操作的平均次数必然不超过：</p>
+<p>$(n-h)/N &lt; n/N &lt; 1/(\lceil m/2 \rceil -1)$</p>
+<p>平均而言，大致每经过$\lceil m/2 \rceil-1$ 次插入,才会引发一次分裂。</p>
+<p>某一节点的插入在最坏情况下可能引发多达$\Omega(log_mN)$次分裂操作，但是平均意义而言，这类最坏情况发生的概率极低。</p>
+<h2 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h2><p>为了从B树中删除关键码$e$，首先需要调用<code>search(e)</code>查找$e$所属的节点，若查找失败则说明关键码$e$不存在，删除操作随即完成。目标关键码所在的节点由$v$指示。此时通过顺序查找可进一步确定$e$在节点$v$中的秩$r$。</p>
+<p>不妨假定$v$是叶节点，否则$e$的直接前驱(后继)在左、右子树中必然存在，可在$O(height(v))$时间内确定它们的位置，其中$height(v)$为二者的高度。此处不妨选用直接后继，于是，$e$的直接后继关键码所属的节点$u$是叶节点。</p>
+<p>接下来可将$e$与$u[0]$互换位置，即可确保待删除的节点v就是叶节点。</p>
+<p>直接将$e$(以及其左侧的空节点)从$v$中删去，如此,节点$v$中所含的关键码以及空分支将减少一个。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">bool</span> BTree&lt;T&gt;::remove ( <span class="keyword">const</span> T&amp; e ) &#123; <span class="comment">//从BTree树中删除关键码e</span></span><br><span class="line">   BTNodePosi(T) v = search ( e ); <span class="keyword">if</span> ( !v ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//确认目标关键码存在</span></span><br><span class="line">   Rank r = v-&gt;key.search ( e ); <span class="comment">//确定目标关键码在节点v中的秩（由上，肯定合法）</span></span><br><span class="line">   <span class="keyword">if</span> ( v-&gt;child[<span class="number">0</span>] ) &#123; <span class="comment">//若v非叶子，则e的后继必属于某叶节点</span></span><br><span class="line">      BTNodePosi(T) u = v-&gt;child[r+<span class="number">1</span>]; <span class="comment">//在右子树中一直向左，即可</span></span><br><span class="line">      <span class="keyword">while</span> ( u-&gt;child[<span class="number">0</span>] ) u = u-&gt;child[<span class="number">0</span>]; <span class="comment">//找出e的后继</span></span><br><span class="line">      v-&gt;key[r] = u-&gt;key[<span class="number">0</span>]; v = u; r = <span class="number">0</span>; <span class="comment">//并与之交换位置</span></span><br><span class="line">   &#125; <span class="comment">//至此，v必然位于最底层，且其中第r个关键码就是待删除者</span></span><br><span class="line">   v-&gt;key.remove ( r ); v-&gt;child.remove ( r + <span class="number">1</span> ); _size--; <span class="comment">//删除e，以及其下两个外部节点之一</span></span><br><span class="line">   solveUnderflow ( v ); <span class="comment">//如有必要，需做旋转或合并</span></span><br><span class="line">   <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>此时，若该节点所含的关键码的总数依然合法(即不少于$\lceil m/2 \rceil-1$)，则删除操作随即完成，否则，称该节点发生了下溢，并需要经过适当的处理，将该节点以及整数重新满足B树的条件。</p>
+<p><strong>下溢和合并</strong></p>
+<p><img src="https://i.loli.net/2019/09/13/kqnsiNx6fF5LEQb.png"></p>
+<p><img src="https://i.loli.net/2019/09/13/RYFQBuN12a9jIm6.png"></p>
+<p>另外解释一下，$L$和$R$必有其一，根据B树的定义，所有外部节点均深度相等，$v$不为外部节点，所以必然存在与$v$同高度并不为空的节点。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//关键码删除后若节点下溢，则做节点旋转或合并处理</span></span><br><span class="line"><span class="keyword">void</span> BTree&lt;T&gt;::solveUnderflow ( BTNodePosi(T) v ) &#123;</span><br><span class="line">   <span class="keyword">if</span> ( ( _order + <span class="number">1</span> ) / <span class="number">2</span> &lt;= v-&gt;child.size() ) <span class="keyword">return</span>; <span class="comment">//递归基：当前节点并未下溢</span></span><br><span class="line">   BTNodePosi(T) p = v-&gt;parent;</span><br><span class="line">   <span class="keyword">if</span> ( !p ) &#123; <span class="comment">//递归基：已到根节点，没有孩子的下限</span></span><br><span class="line">      <span class="keyword">if</span> ( !v-&gt;key.size() &amp;&amp; v-&gt;child[<span class="number">0</span>] ) &#123;</span><br><span class="line">         <span class="comment">//但倘若作为树根的v已不含关键码，却有（唯一的）非空孩子，则</span></span><br><span class="line">         _root = v-&gt;child[<span class="number">0</span>]; _root-&gt;parent = <span class="literal">NULL</span>; <span class="comment">//这个节点可被跳过</span></span><br><span class="line">         v-&gt;child[<span class="number">0</span>] = <span class="literal">NULL</span>; release ( v ); <span class="comment">//并因不再有用而被销毁</span></span><br><span class="line">      &#125; <span class="comment">//整树高度降低一层</span></span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">   &#125;</span><br><span class="line">   Rank r = <span class="number">0</span>; <span class="keyword">while</span> ( p-&gt;child[r] != v ) r++;</span><br><span class="line">   <span class="comment">//确定v是p的第r个孩子——此时v可能不含关键码，故不能通过关键码查找</span></span><br><span class="line">   <span class="comment">//另外，在实现了孩子指针的判等器之后，也可直接调用Vector::find()定位</span></span><br><span class="line"><span class="comment">// 情况1：向左兄弟借关键码</span></span><br><span class="line">   <span class="keyword">if</span> ( <span class="number">0</span> &lt; r ) &#123; <span class="comment">//若v不是p的第一个孩子，则</span></span><br><span class="line">      BTNodePosi(T) ls = p-&gt;child[r - <span class="number">1</span>]; <span class="comment">//左兄弟必存在</span></span><br><span class="line">      <span class="keyword">if</span> ( ( _order + <span class="number">1</span> ) / <span class="number">2</span> &lt; ls-&gt;child.size() ) &#123; <span class="comment">//若该兄弟足够“胖”，则</span></span><br><span class="line">         v-&gt;key.insert ( <span class="number">0</span>, p-&gt;key[r - <span class="number">1</span>] ); <span class="comment">//p借出一个关键码给v（作为最小关键码）</span></span><br><span class="line">         p-&gt;key[r - <span class="number">1</span>] = ls-&gt;key.remove ( ls-&gt;key.size() - <span class="number">1</span> ); <span class="comment">//ls的最大关键码转入p</span></span><br><span class="line">         v-&gt;child.insert ( <span class="number">0</span>, ls-&gt;child.remove ( ls-&gt;child.size() - <span class="number">1</span> ) );</span><br><span class="line">         <span class="comment">//同时ls的最右侧孩子过继给v</span></span><br><span class="line">         <span class="keyword">if</span> ( v-&gt;child[<span class="number">0</span>] ) v-&gt;child[<span class="number">0</span>]-&gt;parent = v; <span class="comment">//作为v的最左侧孩子</span></span><br><span class="line">         <span class="keyword">return</span>; <span class="comment">//至此，通过右旋已完成当前层（以及所有层）的下溢处理</span></span><br><span class="line">      &#125;</span><br><span class="line">   &#125; <span class="comment">//至此，左兄弟要么为空，要么太“瘦”</span></span><br><span class="line"><span class="comment">// 情况2：向右兄弟借关键码</span></span><br><span class="line">   <span class="keyword">if</span> ( p-&gt;child.size() - <span class="number">1</span> &gt; r ) &#123; <span class="comment">//若v不是p的最后一个孩子，则</span></span><br><span class="line">      BTNodePosi(T) rs = p-&gt;child[r + <span class="number">1</span>]; <span class="comment">//右兄弟必存在</span></span><br><span class="line">      <span class="keyword">if</span> ( ( _order + <span class="number">1</span> ) / <span class="number">2</span> &lt; rs-&gt;child.size() ) &#123; <span class="comment">//若该兄弟足够“胖”，则</span></span><br><span class="line">         <span class="comment">/*DSA*/</span><span class="built_in">printf</span> ( <span class="string">&quot; ... case 2\n&quot;</span> );</span><br><span class="line">         v-&gt;key.insert ( v-&gt;key.size(), p-&gt;key[r] ); <span class="comment">//p借出一个关键码给v（作为最大关键码）</span></span><br><span class="line">         p-&gt;key[r] = rs-&gt;key.remove ( <span class="number">0</span> ); <span class="comment">//ls的最小关键码转入p</span></span><br><span class="line">         v-&gt;child.insert ( v-&gt;child.size(), rs-&gt;child.remove ( <span class="number">0</span> ) );</span><br><span class="line">         <span class="comment">//同时rs的最左侧孩子过继给v</span></span><br><span class="line">         <span class="keyword">if</span> ( v-&gt;child[v-&gt;child.size() - <span class="number">1</span>] ) <span class="comment">//作为v的最右侧孩子</span></span><br><span class="line">            v-&gt;child[v-&gt;child.size() - <span class="number">1</span>]-&gt;parent = v;</span><br><span class="line">         <span class="keyword">return</span>; <span class="comment">//至此，通过左旋已完成当前层（以及所有层）的下溢处理</span></span><br><span class="line">      &#125;</span><br><span class="line">   &#125; <span class="comment">//至此，右兄弟要么为空，要么太“瘦”</span></span><br><span class="line"><span class="comment">// 情况3：左、右兄弟要么为空（但不可能同时），要么都太“瘦”——合并</span></span><br><span class="line">   <span class="keyword">if</span> ( <span class="number">0</span> &lt; r ) &#123; <span class="comment">//与左兄弟合并</span></span><br><span class="line">      BTNodePosi(T) ls = p-&gt;child[r - <span class="number">1</span>]; <span class="comment">//左兄弟必存在</span></span><br><span class="line">      ls-&gt;key.insert ( ls-&gt;key.size(), p-&gt;key.remove ( r - <span class="number">1</span> ) ); p-&gt;child.remove ( r );</span><br><span class="line">      <span class="comment">//p的第r - 1个关键码转入ls，v不再是p的第r个孩子</span></span><br><span class="line">      ls-&gt;child.insert ( ls-&gt;child.size(), v-&gt;child.remove ( <span class="number">0</span> ) );</span><br><span class="line">      <span class="keyword">if</span> ( ls-&gt;child[ls-&gt;child.size() - <span class="number">1</span>] ) <span class="comment">//v的最左侧孩子过继给ls做最右侧孩子</span></span><br><span class="line">         ls-&gt;child[ls-&gt;child.size() - <span class="number">1</span>]-&gt;parent = ls;</span><br><span class="line">      <span class="keyword">while</span> ( !v-&gt;key.empty() ) &#123; <span class="comment">//v剩余的关键码和孩子，依次转入ls</span></span><br><span class="line">         ls-&gt;key.insert ( ls-&gt;key.size(), v-&gt;key.remove ( <span class="number">0</span> ) );</span><br><span class="line">         ls-&gt;child.insert ( ls-&gt;child.size(), v-&gt;child.remove ( <span class="number">0</span> ) );</span><br><span class="line">         <span class="keyword">if</span> ( ls-&gt;child[ls-&gt;child.size() - <span class="number">1</span>] ) ls-&gt;child[ls-&gt;child.size() - <span class="number">1</span>]-&gt;parent = ls;</span><br><span class="line">      &#125;</span><br><span class="line">      release ( v ); <span class="comment">//释放v</span></span><br><span class="line">   &#125; <span class="keyword">else</span> &#123; <span class="comment">//与右兄弟合并</span></span><br><span class="line">      BTNodePosi(T) rs = p-&gt;child[r + <span class="number">1</span>]; <span class="comment">//右兄度必存在</span></span><br><span class="line">      rs-&gt;key.insert ( <span class="number">0</span>, p-&gt;key.remove ( r ) ); p-&gt;child.remove ( r );</span><br><span class="line">      <span class="comment">//p的第r个关键码转入rs，v不再是p的第r个孩子</span></span><br><span class="line">      rs-&gt;child.insert ( <span class="number">0</span>, v-&gt;child.remove ( v-&gt;child.size() - <span class="number">1</span> ) );</span><br><span class="line">      <span class="keyword">if</span> ( rs-&gt;child[<span class="number">0</span>] ) rs-&gt;child[<span class="number">0</span>]-&gt;parent = rs; <span class="comment">//v的最左侧孩子过继给ls做最右侧孩子</span></span><br><span class="line">      <span class="keyword">while</span> ( !v-&gt;key.empty() ) &#123; <span class="comment">//v剩余的关键码和孩子，依次转入rs</span></span><br><span class="line">         rs-&gt;key.insert ( <span class="number">0</span>, v-&gt;key.remove ( v-&gt;key.size() - <span class="number">1</span> ) );</span><br><span class="line">         rs-&gt;child.insert ( <span class="number">0</span>, v-&gt;child.remove ( v-&gt;child.size() - <span class="number">1</span> ) );</span><br><span class="line">         <span class="keyword">if</span> ( rs-&gt;child[<span class="number">0</span>] ) rs-&gt;child[<span class="number">0</span>]-&gt;parent = rs;</span><br><span class="line">      &#125;</span><br><span class="line">      release ( v ); <span class="comment">//释放v</span></span><br><span class="line">   &#125;</span><br><span class="line">   solveUnderflow ( p ); <span class="comment">//上升一层，如有必要则继续分裂——至多递归O(logn)层</span></span><br><span class="line">   <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>若T的初始高度为$h$且含有$n$个内部节点，而在经过连续的若干次操作之后高度下降至1，则在此过程中T总计合并过多少次</p>
+</blockquote>
+<p>被合并的节点无非两种情况</p>
+<ul>
+<li>若它不是根节点，则树中的节点减少一个，同时树高保持不变，故有$n-=1$和$h-=0$</li>
+<li>若是根节点，则除了原节点一分为二，还会新生成一个仅含单关键码的树根，同时树的高度也将相应的升高一层，故有:$n-=2$和$h-=1$</li>
+</ul>
+<p>因此，无论如何，$n$与$h$的差值$n-h$均会恰好减少一个单位。既然最终有：</p>
+<p>$n=h=1$</p>
+<p>故其间发生合并操作的次数等于$n-h$的初值。</p>
+<p>以上结论和各关键码的数值大小以及具体的删除过程无关，仅取决于B树的最初和最终状态。</p>
+<blockquote>
+<p>设T的初始高度为1,在随后经过若干次插入和删除操作(次序任意，可能相间)，若在此其间做过S次分裂和M次合并，则必定有$S-M=n-h$</p>
+</blockquote>
+<p>在B树整个生命期内，$n-h$始终忠实地反应了分裂操作次数和合并操作次数之差。</p>
+<p>推广，若初始节点数为$n_0$,高度为$h_0$,则经过若干次$S$次插入和$M$次删除操作后，高度为$h$,节点数为$n$，则B树的分裂次数为$S-M=n-h-(n_0-h_0)$</p>
+<p>以上B树的插入和删除算法并不对称，比如，删除关键码时若发生下溢，则可能采用旋转(通过父节点间接地从兄弟借得一个关键码)或者合并两种手段加以恢复，然而在插入关键码时却只是统一地通过分裂来进行修复。</p>
+<p>实际上理论来讲，也可优先通过旋转来修复上溢:只要某个兄弟仍处于非饱和状态，即可通过父亲间接地从该兄弟借出一个关键码。</p>
+<p>表面上看，B树的插入操作和删除操作方向相反、过程互逆，但二者并非简单的对称关系。在删除操作的过程中，若当前节点下溢，未必能通过合并予以修复，除非其兄弟节点也出于下溢的临界状态。在插入过程中，若当前节点发生上溢，则无论其兄弟节点的状态和规模如何，总是可以立即对其实施分裂操作。</p>
+<p>实际上就算法控制逻辑而言，优先进行分裂更为明了，在B树生命周期内，分裂操作通常不至于频繁发生，因此不妨采用优先分裂的策略。</p>
+<p>另外，优先分裂也不至于导致空间利用率的显著下降。实际上，无论分裂出多少个节点，根据B树的定义，其空间利用率最差也不至于低于50%。</p>
+<p>最后，优先分裂策略也不至于导致树高的明显增加，树高决定I/O负担以及访问效率的主要因素。B树高度主要取决于所存关键码的总数，和其中节点的数目几乎没有关系。</p>
+<h1 id="红黑树"><a href="#红黑树" class="headerlink" title="红黑树"></a>红黑树</h1><p>伸展树实现简便、无需修改节点结构、分摊复杂度低，但可惜最坏情况下单次操作需要$\Omega(n)$时间，故难以应用核电站、医院等可靠性和稳定性要求极高的场合。AVL树尽管可以保证最坏情况下的单次操作速度，但需在节点中嵌入平衡因子等标识，删除之后的重平衡可能需多达$\Omega(logn)$次旋转，从而频繁地导致全树拓扑结构地大幅变化。</p>
+<p>红黑树通过为节点指定颜色，并巧妙地动态调整，可在每次插入或删除之后仅需常数个节点。尽管最坏情况下需对$\Omega(logn)$个节点重染色，但是分摊意义而言仅为$O(1)$个。</p>
+<p>与之前类似，便于分析，红黑树同样引入外部节点。</p>
+<p>红黑树的规则</p>
+<ul>
+<li>树根必定为黑色</li>
+<li>外部节点必定为黑色</li>
+<li>红之子、父必为黑</li>
+<li>从任一外部节点到根节点的沿途，黑节点的数目相等</li>
+</ul>
+<h2 id="4阶B树"><a href="#4阶B树" class="headerlink" title="4阶B树"></a>4阶B树</h2><p>在红黑树和4阶B树之间，存在即为密切的联系：经适当转换之后，二者相互等价。</p>
+<p>具体地，自顶而下考查红黑树各节点。每遇到一个红节点，都将对应的子树整体提升一层，从而与其父节点(必定为黑)水平对齐，二者之间的联边相应地调整为横向。如此转换以后，横向边向左或者向右，但由红黑树的条件，同向边必然不相邻，即便不考虑联边的左、右方向，沿水平方向相邻的边至多两条(向左、右)各一条，涉及的节点最多(一个节点加上零到两个红节点)。此时，若将红黑树中的节点视为关键码，则沿水平方向相邻的每一组节点恰好构成4阶B树的一个节点。</p>
+<p>所有的可能情况有四种，相应的转换过程：</p>
+<p><img src="https://i.loli.net/2019/09/14/AoJOaW2veMipu1K.png"></p>
+<h2 id="插入-1"><a href="#插入-1" class="headerlink" title="插入"></a>插入</h2><p>不妨假定经调用接口<code>search()</code>查找之后，确认目标节点尚不存在。在查找失败处的位置$x$创建节点，并随即将其染成红色(除非全树仅含一个节点)。</p>
+<p>此时可能不满足红之父、子必黑的条件，此时x的父亲科恩那个也是红色。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; BinNodePosi(T) RedBlack&lt;T&gt;::insert ( <span class="keyword">const</span> T&amp; e ) &#123; <span class="comment">//将e插入红黑树</span></span><br><span class="line">   BinNodePosi(T) &amp; x = search ( e ); <span class="keyword">if</span> ( x ) <span class="keyword">return</span> x; <span class="comment">//确认目标不存在（留意对_hot的设置）</span></span><br><span class="line">   x = <span class="keyword">new</span> BinNode&lt;T&gt; ( e, _hot, <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="number">-1</span> ); _size++; <span class="comment">//创建红节点x：以_hot为父，黑高度-1</span></span><br><span class="line">   solveDoubleRed ( x ); <span class="keyword">return</span> x ? x : _hot-&gt;parent; <span class="comment">//经双红修正后，即可返回</span></span><br><span class="line">&#125; <span class="comment">//无论e是否存在于原树中，返回时总有x-&gt;data == e</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>因新节点的引入而导致父子节点同为红色的情况，称为双红。为修正双红缺陷，可调用<code>solveDoubleRed(x)</code>。每引入一个关键码，该接口都可能调用多次。在此过程中，当前节点$x$的兄弟以及两个孩子始终均为黑色。</p>
+<p>将$x$的父亲与祖父分别记作$p$和$g$。既然此前的红黑树合法，那么作为红节点的父亲，$g$必然存在，且为黑色。$g$作为内部节点，其另一孩子(即$p$的孩子，$x$的叔父)也必然存在，记作$u$。以下将视节点$u$的颜色不同，分两类情况处理。</p>
+<p><strong>双红修正(RR-1)</strong></p>
+<p>首先，考查$u$为黑色的情况。此时，$x$的兄弟、两个孩子的黑高度均与$u$相等。以下为其中的两种可能：</p>
+<p><img src="https://i.loli.net/2019/09/14/USMY7jIRwepvfE1.png"></p>
+<p>此时红黑树条件的违反，从B树等效来看，同一节点不应包含紧邻的红色关键码。只需令黑色关键码和相邻紧邻的红色关键码互换颜色，从红黑树的角度来看，等效于按照中序遍历序列，对节点$x$、$p$和$g$及其四棵子树做一次局部3+4重构。调整之后，局部子树的黑高度将复原，全树的平衡必然得以恢复。同时，新子树的根节点为黑色，也不致于引发新的双红现象。至此，整个插入操作遂告完成。</p>
+<p><strong>双红修正(RR-2)</strong></p>
+<p>再考查节点$u$为红色的情况，此时，$u$的左、右孩子非空且均为黑色，其黑高度必与x的兄弟以及两个孩子相等。以下为其中的两种可能：</p>
+<p><img src="https://i.loli.net/2019/09/14/pF3Y1nMVKxT9SDQ.png"></p>
+<p>从B树的角度来看，亦该节点超过4度而发生上溢。从红黑树的角度来看，只需将红节点$p$和$u$转为黑色，黑节点g转为红色，$x$保持红色，等效于在B树中的节点分裂操作，关键码$g$上升一层。</p>
+<p>如此调整之后局部的黑高度复原，然而子树根节点转为红色后，可能再次引发双红现象，等效于B树在关键码被移出并归入上层节点后进而引发上层节点的上溢，即上溢的向上传播。</p>
+<p>等效地将g视为刚插入的节点，分以上两类情况如法处置。每经过这样一次迭代，节点$g$都将在B树中上升一层，而在红黑树中存在双红缺陷的位置也将相应地上升两层，故累计至多迭代$O(logn)$次。</p>
+<p>若最后一步迭代导致树根的分裂，并由$g$独立地构成新的树根节点，则应强行转为黑色，如此，全树的黑高度随即增加一层。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">void</span> RedBlack&lt;T&gt;::solveDoubleRed ( BinNodePosi(T) x ) &#123; <span class="comment">//x当前必为红</span></span><br><span class="line">   <span class="keyword">if</span> ( IsRoot ( *x ) ) <span class="comment">//若已（递归）转至树根，则将其转黑，整树黑高度也随之递增</span></span><br><span class="line">      &#123;  _root-&gt;color = RB_BLACK; _root-&gt;height++; <span class="keyword">return</span>;  &#125; <span class="comment">//否则，x的父亲p必存在</span></span><br><span class="line">   BinNodePosi(T) p = x-&gt;parent; <span class="keyword">if</span> ( IsBlack ( p ) ) <span class="keyword">return</span>; <span class="comment">//若p为黑，则可终止调整。否则</span></span><br><span class="line">   BinNodePosi(T) g = p-&gt;parent; <span class="comment">//既然p为红，则x的祖父必存在，且必为黑色</span></span><br><span class="line">   BinNodePosi(T) u = uncle ( x ); <span class="comment">//以下，视x叔父u的颜色分别处理</span></span><br><span class="line">   <span class="keyword">if</span> ( IsBlack ( u ) ) &#123; <span class="comment">//u为黑色（含NULL）时 //*DSA*/printf(&quot;  case RR-1:\n&quot;);</span></span><br><span class="line">      <span class="keyword">if</span> ( IsLChild ( *x ) == IsLChild ( *p ) ) <span class="comment">//若x与p同侧（即zIg-zIg或zAg-zAg），则</span></span><br><span class="line">         p-&gt;color = RB_BLACK; <span class="comment">//p由红转黑，x保持红</span></span><br><span class="line">      <span class="keyword">else</span> <span class="comment">//若x与p异侧（即zIg-zAg或zAg-zIg），则</span></span><br><span class="line">         x-&gt;color = RB_BLACK; <span class="comment">//x由红转黑，p保持红</span></span><br><span class="line">      g-&gt;color = RB_RED; <span class="comment">//g必定由黑转红</span></span><br><span class="line"><span class="comment">///// 以上虽保证总共两次染色，但因增加了判断而得不偿失</span></span><br><span class="line"><span class="comment">///// 在旋转后将根置黑、孩子置红，虽需三次染色但效率更高</span></span><br><span class="line">      BinNodePosi(T) gg = g-&gt;parent; <span class="comment">//曾祖父（great-grand parent）</span></span><br><span class="line">      BinNodePosi(T) r = FromParentTo ( *g ) = rotateAt ( x ); <span class="comment">//调整后的子树根节点</span></span><br><span class="line">      r-&gt;parent = gg; <span class="comment">//与原曾祖父联接</span></span><br><span class="line">   &#125; <span class="keyword">else</span> &#123; <span class="comment">//若u为红色 </span></span><br><span class="line">      p-&gt;color = RB_BLACK; p-&gt;height++; <span class="comment">//p由红转黑</span></span><br><span class="line">      u-&gt;color = RB_BLACK; u-&gt;height++; <span class="comment">//u由红转黑</span></span><br><span class="line">      <span class="keyword">if</span> ( !IsRoot ( *g ) ) g-&gt;color = RB_RED; <span class="comment">//g若非根，则转红</span></span><br><span class="line">      solveDoubleRed ( g ); <span class="comment">//继续调整g（类似于尾递归，可优化为迭代形式）</span></span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>复杂度</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>旋转次数</th>
+<th>染色次数</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>u为黑</td>
+<td>1~2</td>
+<td>2</td>
+<td>调整随即完成</td>
+</tr>
+<tr>
+<td>u为红</td>
+<td>0</td>
+<td>3</td>
+<td>或再次双红，但必上升两层</td>
+</tr>
+</tbody></table>
+<p>对第一种情况，只需做一轮修正，后一种情况虽有可能需要反复修正，但由于修正位置的高度会严格单调上升，故总共不过$O(logn)$轮。每一轮只涉及常数次节点旋转或染色操作。</p>
+<p>因此，在节点插入后的双红修正，累计耗时不会超过$O(logn)$。即便计入此前的关键码查找操作，红黑树的每次节点插入操作都可在$O(logn)$时间内完成。</p>
+<h2 id="删除-1"><a href="#删除-1" class="headerlink" title="删除"></a>删除</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">bool</span> RedBlack&lt;T&gt;::remove ( <span class="keyword">const</span> T&amp; e ) &#123; <span class="comment">//从红黑树中删除关键码e</span></span><br><span class="line">   BinNodePosi(T) &amp; x = search ( e ); <span class="keyword">if</span> ( !x ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//确认目标存在（留意_hot的设置）</span></span><br><span class="line">   BinNodePosi(T) r = removeAt ( x, _hot ); <span class="keyword">if</span> ( ! ( --_size ) ) <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">//实施删除</span></span><br><span class="line"><span class="comment">// assert: _hot某一孩子刚被删除，且被r所指节点（可能是NULL）接替。以下检查是否失衡，并做必要调整</span></span><br><span class="line">   <span class="keyword">if</span> ( ! _hot ) <span class="comment">//若刚被删除的是根节点，则将其置黑，并更新黑高度</span></span><br><span class="line">      &#123; _root-&gt;color = RB_BLACK; updateHeight ( _root ); <span class="keyword">return</span> <span class="literal">true</span>; &#125;</span><br><span class="line"><span class="comment">// assert: 以下，原x（现r）必非根，_hot必非空</span></span><br><span class="line">   <span class="keyword">if</span> ( BlackHeightUpdated ( *_hot ) ) <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">//若所有祖先的黑深度依然平衡，则无需调整</span></span><br><span class="line">   <span class="keyword">if</span> ( IsRed ( r ) ) <span class="comment">//否则，若r为红，则只需令其转黑</span></span><br><span class="line">      &#123; r-&gt;color = RB_BLACK; r-&gt;height++; <span class="keyword">return</span> <span class="literal">true</span>; &#125;</span><br><span class="line"><span class="comment">// assert: 以下，原x（现r）均为黑色</span></span><br><span class="line">   solveDoubleBlack ( r ); <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">//经双黑调整后返回</span></span><br><span class="line">&#125; <span class="comment">//若目标节点存在且被删除，返回true；否则返回false</span></span><br></pre></td></tr></table></figure>
+<p>为删除关键码e，首先调用<code>BST::search(e)</code>进行查找，若查找成功，则调用内部接口<code>removeAt(x)</code>删除。$x$为实际被摘除者，其父亲为$r$，而$r$的兄弟首次必然为NULL。根据红黑树的定义，关键码$e$必然有左、右子树，$x$为关键码$e$的后继，即为关键码$e$的右子树中最左者，必定左孩子为空。</p>
+<p>因随后的复衡位置可能逐层上升，可等效理解为:$w$为一棵与$r$等高的红黑子树，随x一并摘除。</p>
+<p>此时红之子、父必黑和全树黑高度相同条件未必满足。</p>
+<p>若$x$为原树根，则无论$r$颜色如何，只需将其置为黑色并更新黑高度即可。不妨假定，$x$的父亲$p$存在。</p>
+<p><img src="https://i.loli.net/2019/09/14/fY3hx9C2E1doqr6.png"></p>
+<p>$x$为红色，则在摘除子树$w$之后，并将$x$替换为$r$之后，局部子树的黑高度即可复原。即便$x$为黑色，只需在删除之后将$r$翻转为黑色，亦可使局部子树的高度复原。若$x$和$r$均为黑色，则在删除操作之后，局部子树的黑高度将上升一个单位。</p>
+<p>被删除节点$x$及其替代者同为黑色的情况，称为双黑，此时，需调用<code>solveDoubleBlack(x)</code>予以修正。为此，需考查原黑节点$x$的兄弟$s$(必然存在，但可能是外部节点)，按照$s$和$p$的不同颜色，按四种情况分别处理。</p>
+<p><strong>双黑修正(BB-1)</strong></p>
+<p>若$s$至少有一个红孩子$t$，既然节点$x$的另一孩子<code>w=NULL</code>,节点x删除后可等效为B树中关键码$x$原属的节点发生下溢，此时，$t$和$s$必然属于B树的同一节点，该节点就是下溢节点的兄弟。参照B树的调整方法，下溢节点从父节点借出一个关键码，然后父节点从下溢节点的兄弟节点借出一个关键码。</p>
+<p><img src="https://i.loli.net/2019/09/14/bmKkAOzeqQ78p2l.png"></p>
+<p>其中六边形节点的颜色不确定，可为红色也可为黑色。若$p$为红，则问号之一为黑，若$p$为黑，则自成一个节点。</p>
+<p>从红黑树的角度来看，上述调整过程等效于对节点$t$、$s$、$p$实施3+4重构。若这三个节点按照中序遍历序列重命名为$a$、$b$、$c$,则还需将$a$和$c$染成黑色，$b$则继承此前的颜色。整个过程中节点$r$保持黑色不变。</p>
+<p><strong>双黑修正(BB-2-A)</strong></p>
+<p>若$s$为黑，且两个孩子均为黑，根据$p$的颜色不同，又存在两种情况，先讨论$p$为红的情况</p>
+<p><img src="https://i.loli.net/2019/09/14/F9lHps87O24BI6i.png"></p>
+<p>在对应的B树中，关键码$x$的删除导致其所属的节点下溢，但因此时关键码$s$所在的节点只有两个分支，所以下溢节点无法从父节点借出关键码。按照B树平衡算法，应该将关键码$p$取出并下降一层，并将原左、右孩子合并为一个节点。从红黑树的角度来看，这等效于$s$和$p$颜色互换。</p>
+<p>经过以上处理，红黑树所有条件均在此局部得以恢复。另外，关键码$p$原为红色，在p的左侧或右侧必然还有一个黑色关键码(当然，不可能左、右兼有)，在关键码$p$从其中取出之后，不致引发新的下溢。至此，红黑树的条件亦必在全局得以恢复，删除操作即告完成。</p>
+<p><strong>双黑修正(BB-2-B)</strong></p>
+<p>同样，在对应的B树中，因关键码$x$的删除，导致其所属节点发生下溢。可将下溢节点与其兄弟合并，从红黑树来看，这等效于节点$s$由黑转红。</p>
+<p>经过以上处理后，红黑树所有的条件都将在此局部得以恢复。</p>
+<p>既然$s$和$x$在此前均为黑色，故$p$原所属的B树节点必然仅含$p$这一个关键码，于是在$p$被借出后，该节点必将发生下溢，从而有待于后续的进一步修正。从红黑树的角度看，此时的状态等效于节点$p$的(黑色父亲)刚被删除。</p>
+<p><img src="https://i.loli.net/2019/09/14/ELKZVwIXD9CoghB.png"></p>
+<p>这也是在双黑修正过程中唯一需要再次迭代的可能，但下溢的位置不断上升，故至多迭代$O(logn)$次必然终止。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">void</span> RedBlack&lt;T&gt;::solveDoubleBlack ( BinNodePosi(T) r ) &#123;</span><br><span class="line">   BinNodePosi(T) p = r ? r-&gt;parent : _hot; <span class="keyword">if</span> ( !p ) <span class="keyword">return</span>; <span class="comment">//r的父亲</span></span><br><span class="line">   BinNodePosi(T) s = ( r == p-&gt;lc ) ? p-&gt;rc : p-&gt;lc; <span class="comment">//r的兄弟</span></span><br><span class="line">   <span class="keyword">if</span> ( IsBlack ( s ) ) &#123; <span class="comment">//兄弟s为黑</span></span><br><span class="line">      BinNodePosi(T) t = <span class="literal">NULL</span>; <span class="comment">//s的红孩子（若左、右孩子皆红，左者优先；皆黑时为NULL）</span></span><br><span class="line">      <span class="keyword">if</span> ( IsRed ( s-&gt;rc ) ) t = s-&gt;rc; <span class="comment">//右子</span></span><br><span class="line">      <span class="keyword">if</span> ( IsRed ( s-&gt;lc ) ) t = s-&gt;lc; <span class="comment">//左子</span></span><br><span class="line">      <span class="keyword">if</span> ( t ) &#123; <span class="comment">//黑s有红孩子：BB-1</span></span><br><span class="line">         RBColor oldColor = p-&gt;color; <span class="comment">//备份原子树根节点p颜色，并对t及其父亲、祖父</span></span><br><span class="line">      <span class="comment">// 以下，通过旋转重平衡，并将新子树的左、右孩子染黑</span></span><br><span class="line">         BinNodePosi(T) b = FromParentTo ( *p ) = rotateAt ( t ); <span class="comment">//旋转</span></span><br><span class="line">         <span class="keyword">if</span> ( HasLChild ( *b ) ) &#123; b-&gt;lc-&gt;color = RB_BLACK; updateHeight ( b-&gt;lc ); &#125; <span class="comment">//左子</span></span><br><span class="line">         <span class="keyword">if</span> ( HasRChild ( *b ) ) &#123; b-&gt;rc-&gt;color = RB_BLACK; updateHeight ( b-&gt;rc ); &#125; <span class="comment">//右子</span></span><br><span class="line">         b-&gt;color = oldColor; updateHeight ( b ); <span class="comment">//新子树根节点继承原根节点的颜色</span></span><br><span class="line">      &#125; <span class="keyword">else</span> &#123; <span class="comment">//黑s无红孩子</span></span><br><span class="line">         s-&gt;color = RB_RED; s-&gt;height--; <span class="comment">//s转红</span></span><br><span class="line">         <span class="keyword">if</span> ( IsRed ( p ) ) &#123; <span class="comment">//BB-2R</span></span><br><span class="line">            p-&gt;color = RB_BLACK; <span class="comment">//p转黑，但黑高度不变</span></span><br><span class="line">         &#125; <span class="keyword">else</span> &#123; <span class="comment">//BB-2B</span></span><br><span class="line">            p-&gt;height--; <span class="comment">//p保持黑，但黑高度下降</span></span><br><span class="line">            solveDoubleBlack ( p ); <span class="comment">//递归上溯</span></span><br><span class="line">         &#125;</span><br><span class="line">      &#125;</span><br><span class="line">   &#125; <span class="keyword">else</span> &#123; <span class="comment">//兄弟s为红：BB-3</span></span><br><span class="line">      s-&gt;color = RB_BLACK; p-&gt;color = RB_RED; <span class="comment">//s转黑，p转红</span></span><br><span class="line">      BinNodePosi(T) t = IsLChild ( *s ) ? s-&gt;lc : s-&gt;rc; <span class="comment">//取t与其父s同侧</span></span><br><span class="line">      _hot = p; FromParentTo ( *p ) = rotateAt ( t ); <span class="comment">//对t及其父亲、祖父做平衡调整</span></span><br><span class="line">      solveDoubleBlack ( r ); <span class="comment">//继续修正r处双黑——此时的p已转红，故后续只能是BB-1或BB-2R</span></span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>双黑修正(BB-3)</strong></p>
+<p>最后，考虑$s$为红的情况</p>
+<p>此时作为红节点$s$的父亲，节点$p$必定为黑色，同时,$s$的两个孩子也为黑色。</p>
+<p>从B树的角度来看，只需令关键码$s$与$p$互换颜色，即可得到一棵与之完全等价的B树。从红黑树的角度来看，这一转换对应于以节点$p$为轴做一次旋转，并交换节点$s$和$p$的颜色。</p>
+<p>经如此处理之后，子树$r$的黑高度并未恢复，缺陷位置也并未上升。</p>
+<p><img src="https://i.loli.net/2019/09/14/OJHFB9piry1g8dl.png"></p>
+<p>此时r有了一个新的黑兄弟，故转化为前面的情况，由于$p$为红色，所以取决于$S$的孩子颜色，若有一为红，则BB-1,若均为黑，则BB-2R。</p>
+<p>再经过一轮调整后，红黑树性质必然全局恢复。</p>
+<p><strong>复杂度</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>旋转次数</th>
+<th>染色次数</th>
+<th>此后</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>黑$s$有红子$t$</td>
+<td>1~2</td>
+<td>3</td>
+<td>调整随即完成</td>
+</tr>
+<tr>
+<td>黑$s$无红子，$p$红</td>
+<td>0</td>
+<td>2</td>
+<td>调整随即完成</td>
+</tr>
+<tr>
+<td>黑$s$无红子，$p$黑</td>
+<td>0</td>
+<td>1</td>
+<td>必然再次双黑，但将上升一层</td>
+</tr>
+<tr>
+<td>红$s$</td>
+<td>1</td>
+<td>2</td>
+<td>转化为1或者2R</td>
+</tr>
+</tbody></table>
+<p>红黑树的每一删除操作都将在$O(logn)$时间内完成，其中至多做$O(logn)$,一次3+4重构，一次单旋。</p>
+<p>就分摊意义而言，红黑树重平衡过程中所做的重染色操作不过常数次。</p>
+<h1 id="kd树"><a href="#kd树" class="headerlink" title="kd树"></a>kd树</h1><h2 id="一维"><a href="#一维" class="headerlink" title="一维"></a>一维</h2><p>给定直线上$l$上的点集$P={p_{0},p_{1},p_{2},p_{3},…,p_{n-1}}$,对于任一区间$[x_1,x_2]$，</p>
+<ul>
+<li>计数：有多少点落在其中？</li>
+<li>报告：枚举所有落在其中的点</li>
+</ul>
+<p>很多实际问题可归结为以上问题，比如在校友数据库中查找1970到2000级的学生，或者查询IP介于166.111.68.1至168.111.68.255之间的在线节点等。</p>
+<p><strong>蛮力算法</strong></p>
+<p>表面看来，一维范围查询只需遍历点集$P$,并逐个花费$O(1)$时间判断各点是否落在区间内，如此总体运行时间为$O(n)$。</p>
+<p>当点集规模大到需要借助外部存储器时，遍历整个点集必然引发大量I/O操作。</p>
+<p>另外，当数据点的坐标分布范围较大时，通常所查询的点在整个输入点集中仅占比较大甚至极低的比例。</p>
+<p>在典型的范围查询应用中，输入点集数据和查询区域特点迥异。一方面，输入点集$P$通常会在相当长的时间内保持相对固定，即以批处理或离线形式给出的数据。同时，往往需要针对大量随机定义的区间$R$，即以在线方式给出地数据，反复地进行查询。可通过适当的预处理将输入点集提前整理和组织为某种适当的数据结构，来有效提高此后各次查询的效率。</p>
+<p><strong>有序向量</strong></p>
+<p>最为简便易行的预处理方法，就是在$O(nlogn)$时间内将点集$P$组织为一个有序向量。</p>
+<p>此后，对于任何$R=[x_1,x_2]$,首先利用有序向量的查找算法，在$O(logn)$时间内找到不大于$x2$的最大点$p_t$，自右向左地遍历向量中各点，直至第一个离开查询范围的$p_s$。其间经过的所有点均属于区间范围，故可以直接输出。</p>
+<p>如此，在每一次查询中,$p_t$的定位需要$O(log n)$。若接下来的遍历总共报告出$r$个点，则总体查询成本为$O(r+logn)$。</p>
+<h2 id="二维"><a href="#二维" class="headerlink" title="二维"></a>二维</h2><p>在实际应用中往往需要同时对多个维度做范围查找。以人事数据库查询为例，诸如”年龄介于某个区间且工资介于某个区间”之类的组合查询非常普遍。若将年龄和工资分别表示为两个正交维度，则人事数据库中的记录将对应于二维平面上的点。针对某一相对固定点集的范围查询，其查询范围可描述为矩形$R=[x_1,x_2][y_1,y_2]$。</p>
+<p>这时候，以上基于二分查找的方法并不能直接推广至二维情况。</p>
+<p>不妨在$O(nlogn)$时间内将输出点集组织并转化为二叉搜索树。尽管其中各节点的关键码可能重复，但是每个关键码至多重复一次，总体依然只需$O(n)$时间。尽管相对常规的二叉搜索树多出一层，但树高依然是$O(logn)$。</p>
+<p><strong>查询算法</strong></p>
+<p><img src="https://i.loli.net/2019/11/15/u6mtMnZhkaFCWJ7.png"></p>
+<p>例如，设查询区间为$[1,23]$</p>
+<p>首先，在树中查找这一区间的左、右端点$1$和$23$，分别终止与叶节点$3$和$24$。</p>
+<p>接下来，考查这两个叶节点共同祖先中的最低者，即所谓的最低共同祖先(lowest common ancestor,LCA)，具体地亦即</p>
+<p>$lca(3,24)=15$</p>
+<p>然后，沿着这一共同祖先节点出发，分别重走一遍通往$3$和$24$的路径。在沿着$path(3)/path(24)$下行的过程中，忽略所有的左/右转，而对于每一次左/右转都需要遍历对应的右子树/左子树，并将其中的叶节点悉数报告出来。沿着$path(3)$被报告出来的叶节点子集，依次为：</p>
+<p>$9,12,14,15$ 、$4,7$、$3$</p>
+<p>沿着$path(24)$报告出来的叶节点子集依次为${17,20}$、${22}$</p>
+<p>在每一次查询过程中，针对左、右端点的两次查找以及其路径的重走，各自不过$O(logn)$时间。在树的每一层次上，两条路径各自至多报告一棵子树，故累计不过$O(logn)$棵。为枚举这些子树中的点，对它们的遍历累计不超过$O(r)$时间，其中$r$为实际报告的点数。</p>
+<p>每次查询可在$O(r+logn)$时间内完成。该查询算法的运行时间也与输出规模相关，故同样属于输出敏感的算法。</p>
+<p><strong>kd树</strong></p>
+<p>循着用二叉平衡搜索树实现一维查询的构思，可将待查询的二维点集组织为所谓的kd树结构。在任何的维度下，kd树都是一棵递归定义的二叉树。</p>
+<p>以二维为例，就2d树的原理以及构造和查询算法做一介绍。</p>
+<p>2d树中的每一个节点都对应于二维平面上的某一矩形区域，且其边界斗鱼坐标轴平行。</p>
+<p>同层节点对应的矩形区域经合并之后恰好可覆盖整个平面，同时其间又不得有任何交叠。统一约定，每个矩形区域的左边和底边开放，右边和底边封闭。</p>
+<h2 id="构造算法"><a href="#构造算法" class="headerlink" title="构造算法"></a>构造算法</h2><p>树根必然对应于整个平面，若$P$为输入点集与树中当前节点所对应的矩形区域的交集(即落在其中的所有点)，则可递归地将该矩形区域切分为两个矩形子区域，且各包含$P$中一半点。</p>
+<p>若当前节点深度为偶(奇)树，则沿垂直(水平)方向切分，所得子区域随同包含的输入点分别构成左、右孩子，如此不断直到子区域仅含单个输入点。每次切分都在中位点(按照对应坐标排序中居中者)处进行，以保证全树高度不超过$O(logn)$。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">KdTree* <span class="title">buildKdTree</span><span class="params">(P,d)</span></span>&#123;<span class="comment">//在深度为d的层次，构造一棵对应于(子)集合P的2d树</span></span><br><span class="line">  <span class="keyword">if</span>(p==&#123;p&#125;) <span class="keyword">return</span> CreateLeaf(p);<span class="comment">//递归基</span></span><br><span class="line">  root=CreateKdNode();<span class="comment">//创建(子)树根</span></span><br><span class="line">  root-&gt;splitDirection=Even(d)?VERTICAQL:HORITIZAL;<span class="comment">//确定划分方向</span></span><br><span class="line">  root-&gt;splitLine=FindMedian(root-&gt;SplitDirection,P);<span class="comment">//确定中位点</span></span><br><span class="line">  (P1,P2)=Divide(P,root-&gt;splitDirection,root-&gt;splitLine);<span class="comment">//子集划分</span></span><br><span class="line">  root-&gt;lc=buildKdTree(P1,d+<span class="number">1</span>);<span class="comment">//在深度为d+1的层次，递归构造左子树</span></span><br><span class="line">  root-&gt;rc=buildKdTree(p2,d+<span class="number">1</span>);<span class="comment">//在深度为d+1的层次，递归构造右子树</span></span><br><span class="line">  <span class="keyword">return</span> root;<span class="comment">//返回子树的树根</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>例如</p>
+<p><img src="https://i.loli.net/2019/11/15/vAWzLa3b2KCUOYX.png"></p>
+<p>第一轮切分以水平方向的中位点$C$为界，将整个平面分为左、右两半，点集$P$也相应地划分为子集${A,B,C,G}$和${D,E,F}$，随同对应的半平面，被指派给深度为1的两个节点。</p>
+<p>第二轮切分对于左半平面以及对应的子集${A,B,C,G}$,以垂直方向的中位点$B$为界，将其分为上下两半，并分别随同子集${B,G}$和${A,C}$,指派给深度为2的一对节点；对于右半平面及其对应的子集${D,E,F}$,以垂直方向的中位点$F$为界，将其分为上、下两半，并随同子集${E,F}$和${D}$,指派给深度为2的另一对节点。</p>
+<p>最后一轮切分对树中含有至少两个输入点的三个深度为2的节点，分别沿水平方向的中位点，将他们分为左、右两半，并随同对应的子集分配给三对深度为3的节点。至此，所有叶节点均只包含单个输入点，对平面的划分遂告完成，同时与原输入点集$P$对应的一棵2d树也构造完毕。</p>
+<blockquote>
+<p>若中位点可在线性时间内确定，则kd树构造算法buildKdTree()的总体执行时间可改进至$O(nlogn)$，其中$n$为点集输入规模</p>
+</blockquote>
+<p>在该分治问题中，每个问题(kd树的构造)都可在线性时间内均衡地划分为两个子问题，而且每个子问题地解都能在常数时间内合并原问题的解，于是，其时间复杂度$T(n)$对应的递推式：</p>
+<p>$T(n)=T(n/2)+O(n)$</p>
+<p>$T(n)=O(nlogn)$</p>
+<blockquote>
+<p>基于2d树的范围查询</p>
+</blockquote>
+<p>经过如上预处理，将待处理点集$P$转化为一棵2树之后，对于任一矩形查询区域$R$,范围查询的过程均从树根节点出发，按如下方式递归进行。</p>
+<p>在任一节点$v$处，若子树$v$仅含单个节点，则意味着矩形区域$v$中仅覆盖单个输入点，此时可直接判断该点是否落在$R$内。否则，不妨假设矩形区域$v$含有多个输入点。</p>
+<p>此时，视矩形区域$v$与查询区域$R$的相对位置，分为三种情况</p>
+<ul>
+<li>若矩形区域$v$完全包含于$R$内，则其中所有的输入点均落在$R$内，于是只需遍历一趟子树$v$，即可报告这部分输入点</li>
+<li>若二者相交，则有必要深入到$v$的左、右子树中，继续递归地查询</li>
+<li>若二者彼此分离，则子集$v$中的点不可能落在$R$内，对应的递归分支至此即可终止</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">kdSearch&#123;</span><br><span class="line">  <span class="keyword">if</span>(isLeaf(v))</span><br><span class="line">    &#123;<span class="keyword">if</span>(inside(v,R) report(v),<span class="keyword">return</span>;)&#125;</span><br><span class="line">    </span><br><span class="line">  <span class="keyword">if</span>(region(v-&gt;lc) in R )</span><br><span class="line">    reportSubtree(v-&gt;lc);</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span>(region(v-&gt;lc) intersect R != emptyset)</span><br><span class="line">    KdSearch(v-&gt;lc,R);</span><br><span class="line">    </span><br><span class="line">  <span class="keyword">if</span>(region(v-&gt;rc) in R)</span><br><span class="line">    reportSubTree(v-&gt;rc);</span><br><span class="line">   <span class="keyword">else</span> <span class="keyword">if</span>(region(v-&gt;rc) intersect R!=emptyset)</span><br><span class="line">    Kdsearch(v-rc,R);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>在树中某一节点发生递归，当且仅当与该节点对应的子区域，与查询边界相交</p>
+</blockquote>
+<p>按照该算法的控制逻辑，只要当前子区域与$R$的边界相交时，即会发生递归；反之，无论是当前子区域是完全处于$R$之内(直接遍历当前子树并枚举其中的点)还是完全处于$R$之外(当前递归实例直接返回)，都不会发生递归。</p>
+<blockquote>
+<p>若令$Q(n)=$规模为$n$的子树中与查询边界相交的子区域(节点总数)，则有$Q(n)=2+2Q(n/4)=O(\sqrt n)$</p>
+</blockquote>
+<p>设$R$为任一查询区域，根据其对应子区域与$R$边界的相交情况，kd树中的所有节点可划分为以下几类：</p>
+<ul>
+<li>与$R$的边界不相交</li>
+<li>只与$R$的一条边相交</li>
+<li>同时与$R$的多条边相交</li>
+</ul>
+<p>根据定义，kd树自顶而下地经过$k$层，切分的维度方向即循环一轮。因此，不妨考查与$R$边界相交的任一节点，以及该节点起向下的$k$代子孙节点。对于2d树而言，也就是考查与R边相交的任一节点，以及它的$2$个子辈节点(各自大致包含$n/2$个点)和4个孙辈节点(各自大致包含n/4个点)。</p>
+<p>无论这四个孙辈节点的相对位置和大小如何，该直线至多与其中的$2$个相交;反过来，至少有两个节点(子区域)不再发生递归。于是，可得到以下递归关系：</p>
+<p>$Q(n) \leq 2+2Q(n/4)$</p>
+<p>再结合边界条件</p>
+<p>$Q(1)=1$</p>
+<p>$Q(n)=\sqrt n$</p>
+<p>以上未统计第二类节点，这一类节点只占少数，渐进意义而言并不影响总体的上界。</p>
+<blockquote>
+<p>kdSearch()的实际运行时间为$O(r+logn)$</p>
+</blockquote>
+<p>从递归的角度来看，若忽略对<code>reportSubtree()</code>的调用，kd树范围查询算法的每一递归实例本身仅需$O(1)$时间。查询需要$O(\sqrt n)$时间。</p>
+<p><code>reportSubtree()</code>是通过遍历子树$v$，在线性时间内枚举其中的命中点。整个算法对该例程的调用累计时间应线性正比于输出规模$ O(r)$。</p>
+<p>kd树中节点$v$所对应的矩形区域即便与查询范围$R$相交，其中所含输入点也不见得会落在$R$内。比如在极端的情况下，$v$中可能包含大量的输入点，但却没有一个落在$R$内，在此类情况下所做的递归都是不必进行的。</p>
+<p>可在依然保持各边平行于坐标轴，同时包含输入点子集不变的前提下，尽可能地收缩各矩形子区域，等效于将原来的矩形替换为仍然覆盖其中所有输入点的最小矩形。</p>
+<p><strong>四叉树</strong></p>
+<p>四叉树是2d树的简化形式，其简化策略为：</p>
+<ol>
+<li>直接沿区域的(水平或区域平分)，从而省略了中位点的计算</li>
+<li>沿垂直方向切处的每一对节点(各自再沿着水平方向切分)都经合并后归入其父节点</li>
+<li>被合并的节点即便原先(因所含的输入点不足两个)而为继续切分，在此也需强行(沿水平方向)切分一次</li>
+</ol>
+<p>与kd树不同，四叉树可能包含大量的空节点，此类节点的规模无法由输入规模$n$界定。</p>
+<p>对于任一输入点集，若将其中所有点对中的最长距离、最短距离分别记作$D$和$d$，则$\lambda=D/d$称作$P$的散布度，$P$所对应的四叉树高度为$O(log\lambda)$。</p>
+<p>与kd树一样，四叉树中的节点也唯一地对应于某个矩形子区域；同一深度上各节点所对应的子区域面积相等，彼此无交，且它们的并覆盖整个空间。</p>
+<p>其中，根节点对应的子区域边长为$D$,其下$4$个子节点所对应的子区域为$D/2$,再下一层的$16$个孙辈节点对应的子区域边长为$D/4$,…最底层节点对应的子区域边长为$d$。</p>
+<p>由上可知，整个四叉树的高度不超过$O(log \lambda)$。</p>
+<p>基于四叉树的范围查询算法和基于kd树的查询算法基本相同，从递归的角度来看，对于任一节点的查询任务都可分解为对$4$个子节点(细分子区域)的查询子任务。其中，有些子任务需要继续递归(子区域与查询区域的边界相交)，有些子任务则立即以失败返回(子区域与查询的边界相交)，有些子任务则立即以成功返回(子区域完全落在查询范围以内)。</p>
+<blockquote>
+<p>针对范围查询这一应用，分别从时间、空间角度将四叉树和2d树比较</p>
+</blockquote>
+<p>尽管四叉树与kd树的算法基本相同，但是却有着本质区别，从而导致其时间、空间性能远不如kd树。主要的原因体现在以下方面：</p>
+<p>首先，四叉树中存在大量的空节点，因此在查找过程中即便能够确定某一结点完全落在查询区域内部，也不能在线性时间内枚举出其中有效的各点，通常情况下会远远超过$O(r)$。</p>
+<p>另外，四叉树的高度取决于点集的散布度$\lambda$，而不是点集的规模。因此树高没有明确的上限，递归深度和查找长度也难以有效控制，在各点分布极其不均匀的场合，树高往往会远远超过$O(logn)$。</p>
+<p>以下对平均情况做一估计：</p>
+<p>不妨假定所有点均取自单位正方形$[0,1][0,1]$,对应四叉树高度为$h$。查询矩形区域$R$的长度和宽度分别为$x$和$y$。</p>
+<p>在深度为$k$的任一层($0 \leq k\leq h$),共有$4^k$个节点，分别对应于$4^k$个互不相交的子正方形(有些不含任何点)，面积统一为$4^{-k}$。故节点总数为：</p>
+<p>$\displaystyle N=\sum_{k=0}^{h}=(4^{h+1}/3) \approx 4^{h+1}/3 $</p>
+<p>在深度为$k$的每一层，与查询区域$R$相交(并因此需要耗费时间)的节点总数大致为：</p>
+<p>$\displaystyle (x2^k+1)(x2^k+1)=xy4^k+(x+y)2^k+1$</p>
+<p>故所有各层与$R$相交者的总数大致为：</p>
+<p>$\sum_{k=0}^{h}[xy4^k+(x+y)2^k+1]$</p>
+<p>$\approx xy4^{h+1}/3+(x+y)2^{h+1}+(h+1)$</p>
+<p>$=xyN+(x+y)\sqrt{3N}+log_4{3N}$</p>
+<p>$=O(xyN)$</p>
+<p>主要取决于查询区域$R$的面积$xy$,以及四叉树的划分粒度$N$。</p>
+<p>将2d树推广至kd树，kd树即k维度上，类似2d树，递归地从${1,2,3,…,k}$对空间进行划分。</p>
+<p>针对kd树的范围查询可在$O(r+n^{1-1/d})$时间内完成,kd树的空间复杂度为$O(n)$,在$O(nlogn)$时间内构造一棵kd树。</p>
+<h1 id="多层搜索树"><a href="#多层搜索树" class="headerlink" title="多层搜索树"></a>多层搜索树</h1><p>范围查询的另一解法需要借助范围树，首先按照$x$坐标将平面上所有点组织为一棵二叉平衡搜索树，称为主树。该树每个节点各自对应于一个竖直的条带区域：左右孩子所对应的条带互不重叠，均由父节点所对应的条带垂直平分而得；同一深度上所有节点所对应的条带也互相不重叠，而且它们合并后恰好覆盖整个平面。</p>
+<p>接下来，分别对于主树中的每一节点，将落在其所对应条带的输入点视为一个输入子集，并同样采用以上方法，按照y坐标将各个子集组织为一棵平衡二叉搜索树，称为关联树，每个关联树所对应的数值条带都会进一步细分为多个矩形区域，这些矩形区域也同样有以上主树各节点所对应的性质。至此，主树与这$O(n)$棵子树构成了一个两层的嵌套结构，即所谓的范围树。</p>
+<p>对于任一范围查询$R=[x_1,x_2][y_1,y_2]$,首先按照$[x_1,x_2]$对主树做一次$x$方向上的查询，可得到$O(logn)$个节点，所对应的竖直条带互不重叠，合并后恰好覆盖$x$坐标落在$[x_1,x_2]$范围内的所有输入点。</p>
+<p>深入这些节点各自对应的关联树，分别按照$[y_1,y_2]$做一次$y$方向的范围查询。如此从每棵关联树中取出的一系列节点也具有与以上取自主树节点类似的性质，这些节点所对应的矩形区域互不重叠，且它们合并之后恰好覆盖了当前竖直条带内$y$坐标落在$[y_1,y_2]$范围内的所有输入点，这些点合并后将给出所有落在$R$中的输入点，不重也不漏。</p>
+<blockquote>
+<p>范围树的空间复杂度为$O(nlogn)$</p>
+</blockquote>
+<p>主树自身仅需$O(n)$空间，对于每一点，统计它可能存在于多少棵关联树中</p>
+<p>任一点$p$出现在关联树中，当且仅当在主树中，该关联树对应的节点是$p$所对应叶节点的祖先。在平衡二叉搜索树中，每个节点的祖先均不超过$O(logn)$个。</p>
+<p>与kd树的查询算法类似，范围树的查询算法首先沿$x$方向做一次范围查找，并在主树中挑选出不超过$O(logn)$个节点。</p>
+<p>然后，对于其中的每个节点，在与之对应的关联树种，沿$y$方向各做一次范围查询。关联树中每一棵命中的子树都可通过遍历在线性时间内枚举其中节点。</p>
+<p>以上范围查询算法的时间复杂度为$O(r+logn)$。</p>
+<ol>
+<li><p>对主树的查找耗时$O(logn)$</p>
+</li>
+<li><p>对$O(logn)$棵关联树的查找分别耗时$O(logn)$，累计即耗时$O(log^2n)$</p>
+<p>再计入枚举所需的$O(r)$时间。</p>
+</li>
+</ol>
+<p>拓展到$d$维范围查找，使用$d$级搜索树，构造时间和空间复杂度为$O(nlog^{d-1}n)$,查找时间复杂度为$O(log^d{n}+r)$</p>
+<p>在每一次范围查询中，所涉及关联树的查找具有极其强的关联性质,入口参数均为$ [y_1,y_2]$</p>
+<p>参考<a target="_blank" rel="noopener" href="https://dsa.cs.tsinghua.edu.cn/~deng/cg/cgaa/cgaa.3rd-edn.cn.pdf">计算几何</a>,可借助分散层叠来加速查找。</p>
+<p>为此需要在主树中每一父子节点所对应的关联树种添加一系列的索引。</p>
+<p><img src="https://i.loli.net/2019/11/16/Rnp8H3196dbYezZ.png"></p>
+<p>设主树种的节点$V_l$和$V_r$是$V$的左右孩子，它们各自对应的关联书可简化地表示为有序向量(等效于关联树的中序遍历序列)，于是，在$V$关联树中查找结果可以直接为其孩子节点所利用，相应的查找成本由$O(logn)$降低至$O(1)$。当然，对于最低公共祖先的那棵树，还是需要做一次$O(logn)$的查找。</p>
+<p>综上所述，范围树可在$O(logn+logn)=O(logn)$时间内完成查找，并在$O(r)$时间内报告查询结果。</p>
+<p>推广至更高维度的情况，分散层叠只针对查找的最后一层有效，其余层上的树仍然需要$O(logn)$的时间来查找。</p>
+<p>给定$d$维空间的$n$个点，范围查询可在$O(r+log^{d-1}n)$时间内完成。</p>
+<p>对应的范围树需要$O(nlog^{d-1}n)$空间，构造时间复杂度为$O(nlog^{d-1}n)$。</p>
+<p>以下对输入点集规模为$n$时$d$($d&gt;2$)维范围查询时各种树的性能对比，可以看出范围树较多层搜索树更优，与kd树的关系是空间换时间。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>空间复杂度</th>
+<th>构造时间复杂度</th>
+<th>查询时间复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>kd树</td>
+<td>$ O(n)$</td>
+<td>$O(nlogn)$</td>
+<td>$O(n^{1-1/k}+r)$</td>
+</tr>
+<tr>
+<td>多层搜索树</td>
+<td>$O( nlog^{d-1}n)$</td>
+<td>$O(nlog^{d-1}n)$</td>
+<td>$O(log^{d}n+r)$</td>
+</tr>
+<tr>
+<td>范围树</td>
+<td>$O(nlog^{d-1}n)$</td>
+<td>$O(nlog^{d-1}n)$</td>
+<td>$O(log^{d}n+r)$</td>
+</tr>
+</tbody></table>
+<h1 id="区间树"><a href="#区间树" class="headerlink" title="区间树"></a>区间树</h1><p>kd树、多层搜索树、范围树旨在解决输入点集$P$中哪些点落在给定区间$S$中的问题，而区间树、线段树旨在解决输入区间$S$中哪些区间包含给定点$q$的问题。其中线段树是一个静态结构，用于数据存储查询，不能进行修改；而区间树是支持动态修改和查询的数据结构。</p>
+<h2 id="构造算法-1"><a href="#构造算法-1" class="headerlink" title="构造算法"></a>构造算法</h2><p>在所有点线段的端点中($n$条线段有$2n$个端点)中选取中位数，所有区间可分为三个子集</p>
+<p>$S_{left}={S_i|x_{i’}&lt;x_{mid}}$</p>
+<p>$S_{right}={S_i|x_{mif}&lt;x_{i}}$</p>
+<p>$S_{mid}={x_i\leq x_{mid}\leq x_{i’}}$</p>
+<p>前两种情况均可递归解决，第三种情况则将第$3$个子集所有端点按序保存在当前层的节点中，如此构造一棵区间树。每个节点中存储$S_{mid}$中的线段，$S_{left}$和$S_{right}$则分别在左、右子树中。</p>
+<p>每个端点在树中仅出现一次，共$2n$个端点，故空间复杂度位$O(n)$。按照中点来划分区间，树是哦ing哼的，树高为$O(logn)$，构造算法避免了重复的排序，时间复杂度为$O(nlogn)$。</p>
+<p>查询过程中只需判断当前搜索点是否在当前节点$S_{mid}$的每个区间中，然后根据待搜索点与$S_{mid}$中位点的大小关系，决定分支转向，总体时间复杂度为$O(logn)$。</p>
+<p>查询时间复杂度为$O(r+logn)$。</p>
+<h1 id="线段树"><a href="#线段树" class="headerlink" title="线段树"></a>线段树</h1><p>$n$个输入区间至多有$2n$个不同的端点，将$x$轴分成至多$2n+1$个首尾相接的小区间，根据区间排序结果构造二叉平衡搜索树，每个叶节点对应一个小区间，为每个小区间维护对应输入区间的集合可能需要$O(n^2)$空间复杂度。</p>
+<h2 id="构造算法-2"><a href="#构造算法-2" class="headerlink" title="构造算法"></a>构造算法</h2><p>若某个输入区间$a$覆盖了一个节点$b$所有的叶节点，同时不可覆盖节点$b$的父节点，则将该输入区间$a$加入节点$b$对应输入区间的集合，则不必在$b$的子树的每个叶节点都存储$a$的信息，每个区间最多在每层存储两次，至多消耗$O(logn)$，于是$n$个节点空间复杂度为$O(nlogn)$。构造时间复杂度为$O(nlogn)$，查询时间复杂度为$O(r+logn)$。</p>
+<p>输入区间规模为$n$区间树和线段性能对比</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>空间复杂度</th>
+<th>构造时间复杂度</th>
+<th>查询时间复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>区间树</td>
+<td>$O(n)$</td>
+<td>$O(n logn)$</td>
+<td>$O(logn+r)$</td>
+</tr>
+<tr>
+<td>线段树</td>
+<td>$O(n)$</td>
+<td>$O(n logn)$</td>
+<td>$O(logn+r)$</td>
+</tr>
+</tbody></table>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/algorithm/bbst/" title="平衡二叉搜索树">http://example.com/algorithm/bbst/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Data-structure/" rel="tag"><i class="fa fa-tag"></i> Data structure</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/algorithm/sorting/" rel="prev" title="排序算法">
+                  <i class="fa fa-chevron-left"></i> 排序算法
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/algorithm/vector/" rel="next" title="向量">
+                  向量 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  <script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'none'
+      },
+      options: {
+        renderActions: {
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              const target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.typesetClear();
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+
+
+</body>
+</html>

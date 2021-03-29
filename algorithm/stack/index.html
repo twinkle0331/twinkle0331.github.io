@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="相对于一般序列结构，栈和队列的操作仅限于逻辑上特定的某端，二者元素接受操作的次序不同，简而言之，栈是先进后出，而队列为先进先出。在信息处理领域，栈和队列的身影随处可见，不少程序设计语言即建立在栈结构之上，我们日常生活中对自然资源和社会资源分配、调度银行和医院服务窗口可借助队列实现合理和优化的分配。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="栈和队列">
+<meta property="og:url" content="http://example.com/algorithm/stack/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="相对于一般序列结构，栈和队列的操作仅限于逻辑上特定的某端，二者元素接受操作的次序不同，简而言之，栈是先进后出，而队列为先进先出。在信息处理领域，栈和队列的身影随处可见，不少程序设计语言即建立在栈结构之上，我们日常生活中对自然资源和社会资源分配、调度银行和医院服务窗口可借助队列实现合理和优化的分配。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-08-31T06:14:34.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="Data structure">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/algorithm/stack/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>栈和队列 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/algorithm/stack/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          栈和队列
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-08-31 14:14:34" itemprop="dateCreated datePublished" datetime="2019-08-31T14:14:34+08:00">2019-08-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>相对于一般序列结构，栈和队列的操作仅限于逻辑上特定的某端，二者元素接受操作的次序不同，简而言之，栈是先进后出，而队列为先进先出。在信息处理领域，栈和队列的身影随处可见，不少程序设计语言即建立在栈结构之上，我们日常生活中对自然资源和社会资源分配、调度银行和医院服务窗口可借助队列实现合理和优化的分配。</p>
+<a id="more"></a>
+
+<h1 id="栈"><a href="#栈" class="headerlink" title="栈"></a>栈</h1><p>栈是存放数据对象的一种特殊容器，其中的数据元素按线性的逻辑次序排列，但是插入操作仅限于栈的某一特定端，只能在栈顶插入和删除。栈中元素接受操作的次序必然遵循所谓的后进先出规律：从栈的整个生命周期来看，更晚出栈的元素应为更早入栈者。</p>
+<p><strong>栈和递归</strong></p>
+<p>调用栈的基本单位是帧，每次函数调用时都会相应地创建一帧，记录该函数在二进制程序中的返回地址，以及局部变量、传入参数等，并将该帧压入调用栈。在任一时刻，调用栈中的各帧依次对应于那些尚未返回的调用的实例，即当时的活跃函数实例</p>
+<h1 id="栈的应用"><a href="#栈的应用" class="headerlink" title="栈的应用"></a>栈的应用</h1><h2 id="逆序输出"><a href="#逆序输出" class="headerlink" title="逆序输出"></a>逆序输出</h2><p>输出次序和处理过程颠倒，递归深度和输出长度不易预知</p>
+<p><strong>进制转换</strong></p>
+<blockquote>
+<p>给定任意10进制非负整数，将其转换为d进制表示形式</p>
+</blockquote>
+<p>迭代模式</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">convert</span> <span class="params">( Stack&lt;<span class="keyword">char</span>&gt;&amp; S, __int64 n, <span class="keyword">int</span> base )</span> </span>&#123; <span class="comment">//十进制数n到base进制的转换（迭代版）</span></span><br><span class="line">   <span class="keyword">static</span> <span class="keyword">char</span> digit[] <span class="comment">//0 &lt; n, 1 &lt; base &lt;= 16，新进制下的数位符号，可视base取值范围适当扩充</span></span><br><span class="line">   = &#123; <span class="string">&#x27;0&#x27;</span>, <span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;3&#x27;</span>, <span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>, <span class="string">&#x27;6&#x27;</span>, <span class="string">&#x27;7&#x27;</span>, <span class="string">&#x27;8&#x27;</span>, <span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;A&#x27;</span>, <span class="string">&#x27;B&#x27;</span>, <span class="string">&#x27;C&#x27;</span>, <span class="string">&#x27;D&#x27;</span>, <span class="string">&#x27;E&#x27;</span>, <span class="string">&#x27;F&#x27;</span> &#125;;</span><br><span class="line">   <span class="keyword">while</span> ( n &gt; <span class="number">0</span> ) &#123; <span class="comment">//由低到高，逐一计算出新进制下的各数位</span></span><br><span class="line">      <span class="keyword">int</span> remainder = ( <span class="keyword">int</span> ) ( n % base ); S.push ( digit[remainder] ); <span class="comment">//余数（当前位）入栈</span></span><br><span class="line">      n /= base; <span class="comment">//n更新为其对base的除商</span></span><br><span class="line">   &#125;</span><br><span class="line">&#125; <span class="comment">//新进制下由高到低的各数位，自顶而下保存于栈S中</span></span><br></pre></td></tr></table></figure>
+<p>递归模式</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">convert</span> <span class="params">( Stack&lt;<span class="keyword">char</span>&gt;&amp; S, __int64 n, <span class="keyword">int</span> base )</span> </span>&#123; <span class="comment">//十进制正整数n到base进制的转换（递归版）</span></span><br><span class="line">   <span class="keyword">static</span> <span class="keyword">char</span> digit[] <span class="comment">//0 &lt; n, 1 &lt; base &lt;= 16，新进制下的数位符号，可视base取值范围适当扩充</span></span><br><span class="line">   = &#123; <span class="string">&#x27;0&#x27;</span>, <span class="string">&#x27;1&#x27;</span>, <span class="string">&#x27;2&#x27;</span>, <span class="string">&#x27;3&#x27;</span>, <span class="string">&#x27;4&#x27;</span>, <span class="string">&#x27;5&#x27;</span>, <span class="string">&#x27;6&#x27;</span>, <span class="string">&#x27;7&#x27;</span>, <span class="string">&#x27;8&#x27;</span>, <span class="string">&#x27;9&#x27;</span>, <span class="string">&#x27;A&#x27;</span>, <span class="string">&#x27;B&#x27;</span>, <span class="string">&#x27;C&#x27;</span>, <span class="string">&#x27;D&#x27;</span>, <span class="string">&#x27;E&#x27;</span>, <span class="string">&#x27;F&#x27;</span> &#125;;</span><br><span class="line">   <span class="keyword">if</span> ( <span class="number">0</span> &lt; n ) &#123; <span class="comment">//在尚有余数之前，反复地</span></span><br><span class="line">      S.push ( digit[n % base] ); <span class="comment">//逆向记录当前最低位，再</span></span><br><span class="line">      convert ( S, n / base, base ); <span class="comment">//通过递归得到所有更高位</span></span><br><span class="line">   &#125;</span><br><span class="line">&#125; <span class="comment">//新进制下由高到低的各数位，自顶而下保存于栈S中</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span> <span class="params">( <span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[] )</span> </span>&#123;</span><br><span class="line">      Stack&lt;<span class="keyword">char</span>&gt; S; <span class="comment">//用栈记录转换得到的各数位</span></span><br><span class="line">      convert ( S, n, base ); <span class="comment">//进制转换</span></span><br><span class="line">      <span class="keyword">while</span> ( !S.empty() ) <span class="built_in">printf</span> ( <span class="string">&quot;%c&quot;</span>, ( S.pop() ) ); <span class="comment">//逆序输出栈内数位，即正确结果</span></span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="递归嵌套"><a href="#递归嵌套" class="headerlink" title="递归嵌套"></a>递归嵌套</h2><p>具有自相似性的问题可递归描述，但分支位置和嵌套深度不固定</p>
+<p><strong>括号匹配</strong></p>
+<blockquote>
+<p>检查表达式括号是否匹配</p>
+</blockquote>
+<p>递归实现</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">trim</span> <span class="params">( <span class="keyword">const</span> <span class="keyword">char</span> <span class="built_in">exp</span>[], <span class="keyword">int</span>&amp; lo, <span class="keyword">int</span>&amp; hi )</span> </span>&#123; <span class="comment">//删除exp[lo, hi]不含括号的最长前缀、后缀</span></span><br><span class="line">   <span class="keyword">while</span> ( ( lo &lt;= hi ) &amp;&amp; ( <span class="built_in">exp</span>[lo] != <span class="string">&#x27;(&#x27;</span> ) &amp;&amp; ( <span class="built_in">exp</span>[lo] != <span class="string">&#x27;)&#x27;</span> ) ) lo++; <span class="comment">//查找第一个和</span></span><br><span class="line">   <span class="keyword">while</span> ( ( lo &lt;= hi ) &amp;&amp; ( <span class="built_in">exp</span>[hi] != <span class="string">&#x27;(&#x27;</span> ) &amp;&amp; ( <span class="built_in">exp</span>[hi] != <span class="string">&#x27;)&#x27;</span> ) ) hi--; <span class="comment">//最后一个括号</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">divide</span> <span class="params">( <span class="keyword">const</span> <span class="keyword">char</span> <span class="built_in">exp</span>[], <span class="keyword">int</span> lo, <span class="keyword">int</span> hi )</span> </span>&#123; <span class="comment">//切分exp[lo, hi]，使exp匹配仅当子表达式匹配</span></span><br><span class="line">   <span class="keyword">int</span> mi = lo; <span class="keyword">int</span> crc = <span class="number">1</span>; <span class="comment">//crc为[lo, mi]范围内左、右括号数目之差</span></span><br><span class="line">   <span class="keyword">while</span> ( ( <span class="number">0</span> &lt; crc ) &amp;&amp; ( ++mi &lt; hi ) ) <span class="comment">//逐个检查各字符，直到左、右括号数目相等，或者越界</span></span><br><span class="line">      &#123;  <span class="keyword">if</span> ( <span class="built_in">exp</span>[mi] == <span class="string">&#x27;)&#x27;</span> )  crc--; <span class="keyword">if</span> ( <span class="built_in">exp</span>[mi] == <span class="string">&#x27;(&#x27;</span> )  crc++;  &#125; <span class="comment">//左、右括号分别计数</span></span><br><span class="line">   <span class="keyword">return</span> mi; <span class="comment">//若mi &lt;= hi，则为合法切分点；否则，意味着局部不可能匹配</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">paren</span> <span class="params">( <span class="keyword">const</span> <span class="keyword">char</span> <span class="built_in">exp</span>[], <span class="keyword">int</span> lo, <span class="keyword">int</span> hi )</span> </span>&#123; <span class="comment">//检查表达式exp[lo, hi]是否括号匹配（递归版）</span></span><br><span class="line">   trim ( <span class="built_in">exp</span>, lo, hi ); <span class="keyword">if</span> ( lo &gt; hi ) <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">//清除不含括号的前缀、后缀</span></span><br><span class="line">   <span class="keyword">if</span> ( <span class="built_in">exp</span>[lo] != <span class="string">&#x27;(&#x27;</span> ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//首字符非左括号，则必不匹配</span></span><br><span class="line">   <span class="keyword">if</span> ( <span class="built_in">exp</span>[hi] != <span class="string">&#x27;)&#x27;</span> ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//末字符非右括号，则必不匹配</span></span><br><span class="line">   <span class="keyword">int</span> mi = divide ( <span class="built_in">exp</span>, lo, hi ); <span class="comment">//确定适当的切分点</span></span><br><span class="line">   <span class="keyword">if</span> ( mi &gt; hi ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//切分点不合法，意味着局部以至整体不匹配</span></span><br><span class="line">   <span class="keyword">return</span> paren ( <span class="built_in">exp</span>, lo + <span class="number">1</span>, mi - <span class="number">1</span> ) &amp;&amp; paren ( <span class="built_in">exp</span>, mi + <span class="number">1</span>, hi ); <span class="comment">//分别检查左、右子表达式</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>迭代实现</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">paren</span> <span class="params">( <span class="keyword">const</span> <span class="keyword">char</span> <span class="built_in">exp</span>[], <span class="keyword">int</span> lo, <span class="keyword">int</span> hi )</span> </span>&#123; <span class="comment">//表达式括号匹配检查，可兼顾三种括号</span></span><br><span class="line">   Stack&lt;<span class="keyword">char</span>&gt; S; <span class="comment">//使用栈记录已发现但尚未匹配的左括号</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> i = lo; i &lt;= hi; i++ ) <span class="comment">/* 逐一检查当前字符 */</span> <span class="comment">/*DSA*/</span>&#123;</span><br><span class="line">      <span class="keyword">switch</span> ( <span class="built_in">exp</span>[i] ) &#123; <span class="comment">//左括号直接进栈；右括号若与栈顶失配，则表达式必不匹配</span></span><br><span class="line">         <span class="keyword">case</span> <span class="string">&#x27;(&#x27;</span>: <span class="keyword">case</span> <span class="string">&#x27;[&#x27;</span>: <span class="keyword">case</span> <span class="string">&#x27;&#123;&#x27;</span>: S.push ( <span class="built_in">exp</span>[i] ); <span class="keyword">break</span>;</span><br><span class="line">         <span class="keyword">case</span> <span class="string">&#x27;)&#x27;</span>: <span class="keyword">if</span> ( ( S.empty() ) || ( <span class="string">&#x27;(&#x27;</span> != S.pop() ) ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="keyword">break</span>;</span><br><span class="line">         <span class="keyword">case</span> <span class="string">&#x27;]&#x27;</span>: <span class="keyword">if</span> ( ( S.empty() ) || ( <span class="string">&#x27;[&#x27;</span> != S.pop() ) ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="keyword">break</span>;</span><br><span class="line">         <span class="keyword">case</span> <span class="string">&#x27;&#125;&#x27;</span>: <span class="keyword">if</span> ( ( S.empty() ) || ( <span class="string">&#x27;&#123;&#x27;</span> != S.pop() ) ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="keyword">break</span>;</span><br><span class="line">         <span class="keyword">default</span>: <span class="keyword">break</span>; <span class="comment">//非括号字符一律忽略</span></span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> S.empty(); <span class="comment">//整个表达式扫描过后，栈中若仍残留（左）括号，则不匹配；否则（栈空）匹配</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>栈混洗</strong></p>
+<p>考察栈$A=&lt;a_1,a_2,…,a_n]$,$B$为空栈,A左端为栈顶</p>
+<p>只允许将A的顶元素弹出并压入S,或将S的顶元素弹出并压入B</p>
+<p>经过上述一系列操作后，A中元素全部转入B中，</p>
+<p>$B=[a_{k1},a_{k2},…,a_{kn} &gt;$，B右端为栈顶</p>
+<p>同一输入序列，可有多种栈混洗</p>
+<p>$[1,2,3,4&gt;,[4,3,2,1&gt;,[3,2,4,1&gt;$</p>
+<p>长度为$n$的栈混洗，可能的栈混洗个数<br>$$<br>SP(n)=\frac{(2n)!}{n!(n+1)!}<br>$$<br>设s在$k$次pop之后首次重新变空，则$k$无非$n$种情况</p>
+<p>$SP(n)=\sum_{k=1}^{n}SP(k-1)SP(n-k)=catalan(n)$</p>
+<blockquote>
+<p>设B为A的任意排列，则B为A的一个栈混洗，当且仅当对于任意的1&lt;=i&lt;j&lt;k&lt;=n,不存在{…,k,…,i,…,j…} </p>
+</blockquote>
+<p>先证明仅当，首先，对于输入序列中的任意三个元素，其在输出序列中是否存在一个可行的相对排列次序与其它元素无关。不妨只关注这三个元素${i,j,k}$</p>
+<p>无论如何,元素$i,j$必然先于$k$(弹出A并随即压入B中)压入中转栈S,若输出序列${k,i,j}$存在，则意味着这三个元素中，k必然首先从栈S中弹出，并且根据先进后出的规律，此时$i,j$存在于栈S中，且顺序只能为$j,i$，三者的次序必然是${k,j,i}$则$k$率先从栈S弹出，则三者压入输出栈B的次序必然是${k,j,i}$,而不是${k,i,j}$。</p>
+<p>再证明当，对于任何不含禁形的输出序列，都可给出对应的栈混洗过程。</p>
+<blockquote>
+<p>对任意1&lt;=i&lt;j&lt;=n,B中都不含模式{…,j+1,…,i,…,j…},则B必定为A的一个栈混洗</p>
+</blockquote>
+<p>将${j+1,i,j}$视作新一类的禁形，称为615禁形，${k,i,j}$称为915禁形。</p>
+<p>接下来证明，只要B中含有915禁形，必然也含有615禁形，当然，两者中的$i,j$未必一致</p>
+<p>假定对于任何的$k-i&lt;d$,以上命题均成立，接下来考虑$k-i=d$的情况</p>
+<p>不妨设$i&lt;j&lt;k-1$,于是元素$k-1$在B中的相对于$i$的位置无非两种可能</p>
+<ol>
+<li><strong>k-1位于i的左方(前方)</strong>  此时${k-1,i,j}$即915禁形，$k-1-i&lt;d$，所以必然含有615禁形</li>
+<li><strong>k-1位于i的右侧</strong> ${k,i,k-1}$即构成一个615禁形</li>
+</ol>
+<blockquote>
+<p>若对任意1&lt;j&lt;k&lt;=n，B中都不含模式{…,k,…,j-1,…,j…},则B未必为A的栈混洗</p>
+</blockquote>
+<p>945特征${k,j-1,j}$不称作禁形，915禁形未必含有945模式。</p>
+<p>例如，B={2,4,1,3}</p>
+<p>其中{3,1,2},{4,1,2},{4,2,3}，不含有任何945模式，但是却含有915模式{4,2,3},同时也是615模式。</p>
+<h2 id="延迟缓冲"><a href="#延迟缓冲" class="headerlink" title="延迟缓冲"></a>延迟缓冲</h2><p>在一些应用问题中，输入可分解为多个单元并通过迭代依次扫描处理，但过程中的各步计算往往滞后于扫描的进度，需要待到必要信息已完整到一定程度时才能做出判断。在这类场合，栈结构可以扮演缓冲区的角色。</p>
+<p><strong>表达式求值</strong></p>
+<p>自左向右扫描表达式，用栈记录已经扫描的部分(含执行计算的结果)</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> N_OPTR 9 <span class="comment">//运算符总数</span></span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">enum</span> &#123;</span> ADD, SUB, MUL, DIV, POW, FAC, L_P, R_P, EOE &#125; Operator; <span class="comment">//运算符集合</span></span><br><span class="line"><span class="comment">//加、减、乘、除、乘方、阶乘、左括号、右括号、起始符与终止符</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">char</span> pri[N_OPTR][N_OPTR] = &#123; <span class="comment">//运算符优先等级 [栈顶] [当前]</span></span><br><span class="line">   <span class="comment">/*              |-------------------- 当 前 运 算 符 --------------------| */</span></span><br><span class="line">   <span class="comment">/*              +      -      *      /      ^      !      (      )      \0 */</span></span><br><span class="line">   <span class="comment">/* --  + */</span>    <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,</span><br><span class="line">   <span class="comment">/* |   - */</span>    <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,</span><br><span class="line">   <span class="comment">/* 栈  * */</span>    <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,</span><br><span class="line">   <span class="comment">/* 顶  / */</span>    <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,</span><br><span class="line">   <span class="comment">/* 运  ^ */</span>    <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,</span><br><span class="line">   <span class="comment">/* 算  ! */</span>    <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27; &#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,   <span class="string">&#x27;&gt;&#x27;</span>,</span><br><span class="line">   <span class="comment">/* 符  ( */</span>    <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;=&#x27;</span>,   <span class="string">&#x27; &#x27;</span>,</span><br><span class="line">   <span class="comment">/* |   ) */</span>    <span class="string">&#x27; &#x27;</span>,   <span class="string">&#x27; &#x27;</span>,   <span class="string">&#x27; &#x27;</span>,   <span class="string">&#x27; &#x27;</span>,   <span class="string">&#x27; &#x27;</span>,   <span class="string">&#x27; &#x27;</span>,   <span class="string">&#x27; &#x27;</span>,   <span class="string">&#x27; &#x27;</span>,   <span class="string">&#x27; &#x27;</span>,</span><br><span class="line">   <span class="comment">/* -- \0 */</span>    <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27;&lt;&#x27;</span>,   <span class="string">&#x27; &#x27;</span>,   <span class="string">&#x27;=&#x27;</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">float</span> <span class="title">evaluate</span> <span class="params">( <span class="keyword">char</span>* S, <span class="keyword">char</span>*&amp; RPN )</span> </span>&#123; <span class="comment">//对（已剔除白空格的）表达式S求值，并转换为逆波兰式RPN</span></span><br><span class="line">   Stack&lt;<span class="keyword">float</span>&gt; opnd; Stack&lt;<span class="keyword">char</span>&gt; optr; <span class="comment">//运算数栈、运算符栈 任何时刻，其中每对相邻元素之间均大小一致</span></span><br><span class="line">   <span class="keyword">char</span>* expr = S;</span><br><span class="line">   optr.push ( <span class="string">&#x27;\0&#x27;</span> ); <span class="comment">//尾哨兵&#x27;\0&#x27;也作为头哨兵首先入栈</span></span><br><span class="line">   <span class="keyword">while</span> ( !optr.empty() ) &#123; <span class="comment">//在运算符栈非空之前，逐个处理表达式中各字符</span></span><br><span class="line">      <span class="keyword">if</span> ( <span class="built_in">isdigit</span> ( *S ) ) &#123; <span class="comment">//若当前字符为操作数，则</span></span><br><span class="line">         readNumber ( S, opnd ); append ( RPN, opnd.top() ); <span class="comment">//读入操作数，并将其接至RPN末尾</span></span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="comment">//若当前字符为运算符，则</span></span><br><span class="line">         <span class="keyword">switch</span> ( orderBetween ( optr.top(), *S ) ) &#123; <span class="comment">//视其与栈顶运算符之间优先级高低分别处理</span></span><br><span class="line">            <span class="keyword">case</span> <span class="string">&#x27;&lt;&#x27;</span>: <span class="comment">//栈顶运算符优先级更低时</span></span><br><span class="line">               optr.push ( *S ); S++; <span class="comment">//计算推迟，当前运算符进栈</span></span><br><span class="line">               <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">&#x27;=&#x27;</span>: <span class="comment">//优先级相等（当前运算符为右括号或者尾部哨兵&#x27;\0&#x27;）时</span></span><br><span class="line">               optr.pop(); S++; <span class="comment">//脱括号并接收下一个字符</span></span><br><span class="line">               <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">&#x27;&gt;&#x27;</span>: &#123; <span class="comment">//栈顶运算符优先级更高时，可实施相应的计算，并将结果重新入栈</span></span><br><span class="line">               <span class="keyword">char</span> op = optr.pop(); append ( RPN, op ); <span class="comment">//栈顶运算符出栈并续接至RPN末尾</span></span><br><span class="line">               <span class="keyword">if</span> ( <span class="string">&#x27;!&#x27;</span> == op ) &#123; <span class="comment">//若属于一元运算符</span></span><br><span class="line">                  <span class="keyword">float</span> pOpnd = opnd.pop(); <span class="comment">//只需取出一个操作数，并</span></span><br><span class="line">                  opnd.push ( calcu ( op, pOpnd ) ); <span class="comment">//实施一元计算，结果入栈</span></span><br><span class="line">               &#125; <span class="keyword">else</span> &#123; <span class="comment">//对于其它（二元）运算符</span></span><br><span class="line">                  <span class="keyword">float</span> pOpnd2 = opnd.pop(), pOpnd1 = opnd.pop(); <span class="comment">//取出后、前操作数</span></span><br><span class="line">                  opnd.push ( calcu ( pOpnd1, op, pOpnd2 ) ); <span class="comment">//实施二元计算，结果入栈</span></span><br><span class="line">               &#125;</span><br><span class="line">               <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">default</span> : <span class="built_in">exit</span> ( <span class="number">-1</span> ); <span class="comment">//逢语法错误，不做处理直接退出</span></span><br><span class="line">         &#125;<span class="comment">//switch</span></span><br><span class="line">   &#125;<span class="comment">//while</span></span><br><span class="line">   <span class="keyword">return</span> opnd.pop(); <span class="comment">//弹出并返回最后的计算结果</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>试改进evaluate()算法，检查表达式的语法是否正确</p>
+</blockquote>
+<p>确认每个操作符与其所对应操作数之间的相对位置符合中缀表达式的语法，在每个操作数入栈时，操作数的规模应该刚好比操作符栈的规模大一。注意，这里的操作符不包括括号和头尾标识符。</p>
+<p><strong>逆波兰表达式</strong></p>
+<p>逆波兰表达式在由运算符和操作数组成的表达式中，不使用括号即可表达带优先级的运算关系。</p>
+<p>RPN转换</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">append</span> <span class="params">( <span class="keyword">char</span>*&amp; rpn, <span class="keyword">float</span> opnd )</span> </span>&#123; <span class="comment">//将操作数接至RPN末尾</span></span><br><span class="line">   <span class="keyword">int</span> n = <span class="built_in">strlen</span> ( rpn ); <span class="comment">//RPN当前长度（以&#x27;\0&#x27;结尾，长度n + 1）</span></span><br><span class="line">   <span class="keyword">char</span> buf[<span class="number">64</span>];</span><br><span class="line">   <span class="keyword">if</span> ( opnd != ( <span class="keyword">float</span> ) ( <span class="keyword">int</span> ) opnd ) <span class="built_in">sprintf</span> ( buf, <span class="string">&quot;%.2f \0&quot;</span>, opnd ); <span class="comment">//浮点格式，或</span></span><br><span class="line">   <span class="keyword">else</span>                          <span class="built_in">sprintf</span> ( buf, <span class="string">&quot;%d \0&quot;</span>, ( <span class="keyword">int</span> ) opnd ); <span class="comment">//整数格式</span></span><br><span class="line">   rpn = ( <span class="keyword">char</span>* ) <span class="built_in">realloc</span> ( rpn, <span class="keyword">sizeof</span> ( <span class="keyword">char</span> ) * ( n + <span class="built_in">strlen</span> ( buf ) + <span class="number">1</span> ) ); <span class="comment">//扩展空间</span></span><br><span class="line">   <span class="built_in">strcat</span> ( rpn, buf ); <span class="comment">//RPN加长</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">append</span> <span class="params">( <span class="keyword">char</span>*&amp; rpn, <span class="keyword">char</span> optr )</span> </span>&#123; <span class="comment">//将运算符接至RPN末尾</span></span><br><span class="line">   <span class="keyword">int</span> n = <span class="built_in">strlen</span> ( rpn ); <span class="comment">//RPN当前长度（以&#x27;\0&#x27;结尾，长度n + 1）</span></span><br><span class="line">   rpn = ( <span class="keyword">char</span>* ) <span class="built_in">realloc</span> ( rpn, <span class="keyword">sizeof</span> ( <span class="keyword">char</span> ) * ( n + <span class="number">3</span> ) ); <span class="comment">//扩展空间</span></span><br><span class="line">   <span class="built_in">sprintf</span> ( rpn + n, <span class="string">&quot;%c &quot;</span>, optr ); rpn[n + <span class="number">2</span>] = <span class="string">&#x27;\0&#x27;</span>; <span class="comment">//接入指定的运算符</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>RPN表达式无需括号即可确定运算优先级，是否意味着所占空间必少于常规表达式</p>
+</blockquote>
+<p>未必，尽管RPN表达式可省去括号，但是必须在相邻的操作数、操作符之间插入特定的分隔符(通常为空格)。这种分隔符必须事先约定，且不能用以表示操作符和操作数，故称为元字符。引入元字符的数目与操作数和操作符的数目相当，故所占空间未必少于原表达式。</p>
+<blockquote>
+<p>既然evaluate()算法已经可以求值，同时完成RPN转换有何意义</p>
+</blockquote>
+<p>同样长度（指同样多操作数）的 RPN 比中缀表达式算得快。</p>
+<p>若每个操作数都是一个具体的数，把中缀表达式转成 RPN 的过程已经足以得到中缀表达式的值，这种情况下转成 RPN 再计算得不偿失。</p>
+<p>但是，操作数可能是一个未知数。例如中缀表达式 <code>(a + b) * c</code> 分别代入 n 组具体数字计算表达式值，例如代入 <code>(a=1,b=2,c=3)</code> 、 <code>(a=4,b=5,c=6)</code> 、 <code>(a=10,b=11,c=12)</code> 求值。不转就要算 n 次中缀表达式，转就只要转 1 次 + 算 n 次 RPN 。</p>
+<blockquote>
+<p>逆波兰表达式的优点</p>
+</blockquote>
+<ul>
+<li>当有操作符时就计算，因此，表达式并不是从右至左整体计算而是每次由中心向外计算一部分，这样在复杂运算中就很少导致操作符错误。</li>
+<li>堆栈自动记录中间结果，这就是为什么逆波兰计算器能容易对任意复杂的表达式求值。与普通科学计算器不同，它对表达式的复杂性没有限制。</li>
+<li>逆波兰表达式中不需要括号，用户只需按照表达式顺序求值，让堆栈自动记录中间结果；同样的，也不需要指定操作符的优先级。</li>
+<li>机器状态永远是一个堆栈状态，堆栈里是需要运算的操作数，栈内不会有操作符。</li>
+</ul>
+<h2 id="试探回溯法"><a href="#试探回溯法" class="headerlink" title="试探回溯法"></a>试探回溯法</h2><p>根据候选解的某些局部特征，即可判断其是否合理，以候选解的子集为单位批量地删除称为剪枝。</p>
+<p><strong>试探回溯模式</strong></p>
+<p>从0开始，逐渐增加候选解长度，一旦发现注定要失败，则收缩至前以长度，并继续试探。</p>
+<p><strong>N皇后问题</strong></p>
+<blockquote>
+<p>在n*n的棋盘上放置n个皇后，使得她们互不攻击</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">placeQueens</span> <span class="params">( <span class="keyword">int</span> N )</span> </span>&#123; <span class="comment">//N皇后算法（迭代版）：采用试探/回溯的策略，借助栈记录查找的结果</span></span><br><span class="line">   Stack&lt;Queen&gt; solu; <span class="comment">//存放（部分）解的栈</span></span><br><span class="line">   <span class="function">Queen <span class="title">q</span> <span class="params">( <span class="number">0</span>, <span class="number">0</span> )</span></span>; <span class="comment">//从原点位置出发</span></span><br><span class="line">   <span class="keyword">do</span> &#123; <span class="comment">//反复试探、回溯</span></span><br><span class="line">      <span class="keyword">if</span> ( N &lt;= solu.size() || N &lt;= q.y ) &#123; <span class="comment">//若已出界，则</span></span><br><span class="line">         q = solu.pop(); q.y++; <span class="comment">//回溯一行，并继续试探下一列</span></span><br><span class="line">      &#125; <span class="keyword">else</span> &#123; <span class="comment">//否则，试探下一行</span></span><br><span class="line">         <span class="keyword">while</span> ( ( q.y &lt; N ) &amp;&amp; ( <span class="number">0</span> &lt;= solu.find ( q ) ) ) <span class="comment">//通过与已有皇后的比对</span></span><br><span class="line">            <span class="comment">/*DSA*/</span><span class="comment">//while ((q.y &lt; N) &amp;&amp; (solu.find(q))) //（若基于List实现Stack，则find()返回值的语义有所不同）</span></span><br><span class="line">            &#123; q.y++; nCheck++; &#125; <span class="comment">//尝试找到可摆放下一皇后的列</span></span><br><span class="line">         <span class="keyword">if</span> ( N &gt; q.y ) &#123; <span class="comment">//若存在可摆放的列，则</span></span><br><span class="line">            solu.push ( q ); <span class="comment">//摆上当前皇后，并</span></span><br><span class="line">            <span class="keyword">if</span> ( N &lt;= solu.size() ) nSolu++; <span class="comment">//若部分解已成为全局解，则通过全局变量nSolu计数</span></span><br><span class="line">            q.x++; q.y = <span class="number">0</span>; <span class="comment">//转入下一行，从第0列开始，试探下一皇后</span></span><br><span class="line">         &#125;</span><br><span class="line">      &#125;</span><br><span class="line">   &#125; <span class="keyword">while</span> ( ( <span class="number">0</span> &lt; q.x ) || ( q.y &lt; N ) ); <span class="comment">//所有分支均已或穷举或剪枝之后，算法结束</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>迷宫寻径</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">labyrinth</span> <span class="params">( Cell Laby[LABY_MAX][LABY_MAX], Cell* s, Cell* t )</span> </span>&#123;</span><br><span class="line">   <span class="keyword">if</span> ( ( AVAILABLE != s-&gt;status ) || ( AVAILABLE != t-&gt;status ) ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//退化情况</span></span><br><span class="line">   Stack&lt;Cell*&gt; path; <span class="comment">//用栈记录通路（Theseus的线绳）</span></span><br><span class="line">   s-&gt;incoming = UNKNOWN; s-&gt;status = ROUTE; path.push ( s ); <span class="comment">//起点</span></span><br><span class="line">   <span class="keyword">do</span> &#123; <span class="comment">//从起点出发不断试探、回溯，直到抵达终点，或者穷尽所有可能</span></span><br><span class="line">      <span class="comment">/*DSA*/</span>displayLaby(); <span class="comment">/*path.traverse(printLabyCell); printLabyCell(path.top());*/</span> getchar();</span><br><span class="line">      Cell* c = path.top(); <span class="comment">//检查当前位置（栈顶）</span></span><br><span class="line">      <span class="keyword">if</span> ( c == t ) <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">//若已抵达终点，则找到了一条通路；否则，沿尚未试探的方向继续试探</span></span><br><span class="line">      <span class="keyword">while</span> ( NO_WAY &gt; ( c-&gt;outgoing = nextESWN ( c-&gt;outgoing ) ) ) <span class="comment">//逐一检查所有方向</span></span><br><span class="line">         <span class="keyword">if</span> ( AVAILABLE == neighbor ( c )-&gt;status ) <span class="keyword">break</span>; <span class="comment">//试图找到尚未试探的方向</span></span><br><span class="line">      <span class="keyword">if</span> ( NO_WAY &lt;= c-&gt;outgoing ) <span class="comment">//若所有方向都已尝试过</span></span><br><span class="line">         &#123; c-&gt;status = BACKTRACKED; c = path.pop(); &#125;<span class="comment">//则向后回溯一步</span></span><br><span class="line">      <span class="keyword">else</span> <span class="comment">//否则，向前试探一步</span></span><br><span class="line">         &#123; path.push ( c = advance ( c ) ); c-&gt;outgoing = UNKNOWN; c-&gt;status = ROUTE; &#125;</span><br><span class="line">   &#125; <span class="keyword">while</span> ( !path.empty() );</span><br><span class="line">   <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="队列"><a href="#队列" class="headerlink" title="队列"></a>队列</h1><p>与栈一样，队列也是存放数据对象的一种容器，其中的数据对象也按线性逻辑次序排列。同样只允许在队列两端进行操作，若插入对象只能从其中某一端，而删除只能从另外一端，将允许取出元素的一头称为队首，另外一端称为队尾。队列中各对象的操作次序遵循先进先出的规律：更早出队的元素应为更早入队者。</p>
+<h1 id="队列的应用"><a href="#队列的应用" class="headerlink" title="队列的应用"></a>队列的应用</h1><h2 id="循环分配器"><a href="#循环分配器" class="headerlink" title="循环分配器"></a>循环分配器</h2><p>一群客户共享同一资源时，按照先来后到的顺序分配资源，例如多个应用程序共享cpu，实验室成员共享打印机</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">RoundRobin&#123;</span><br><span class="line">     <span class="function">Queue <span class="title">Q</span><span class="params">(clients)</span></span>;</span><br><span class="line">     <span class="keyword">while</span>(!ServiceClosed())&#123;</span><br><span class="line">         e=	Q.enqueue();</span><br><span class="line">         serve(e);</span><br><span class="line">         Q.enqueue(e);</span><br><span class="line">     &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="银行服务模拟"><a href="#银行服务模拟" class="headerlink" title="银行服务模拟"></a>银行服务模拟</h2><p>以银行这一典型场景为例，利用队列结构实现队顾客服务的调度和优化。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">simulate</span> <span class="params">( <span class="keyword">int</span> nWin, <span class="keyword">int</span> servTime )</span> </span>&#123; <span class="comment">//按指定窗口数、服务总时间模拟银行业务</span></span><br><span class="line">   Queue&lt;Customer&gt;* windows = <span class="keyword">new</span> Queue&lt;Customer&gt;[nWin]; <span class="comment">//为每一窗口创建一个队列</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> now = <span class="number">0</span>; now &lt; servTime; now++ ) &#123; <span class="comment">//在下班之前，每隔一个单位时间</span></span><br><span class="line">      <span class="keyword">if</span> ( rand() % ( <span class="number">1</span> + nWin ) ) &#123; <span class="comment">//新顾客以nWin/(nWin + 1)的概率到达</span></span><br><span class="line">         Customer c ; c.time = <span class="number">1</span> + rand() % <span class="number">98</span>; <span class="comment">//新顾客到达，服务时长随机确定</span></span><br><span class="line">         c.window = bestWindow ( windows, nWin ); <span class="comment">//找出最佳（最短）的服务窗口/*DSA*/ToDo: 更精细的策略</span></span><br><span class="line">         windows[c.window].enqueue ( c ); <span class="comment">//新顾客加入对应的队列</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">for</span> ( <span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nWin; i++ ) <span class="comment">//分别检查</span></span><br><span class="line">         <span class="keyword">if</span> ( !windows[i].empty() ) <span class="comment">//各非空队列</span></span><br><span class="line">            <span class="keyword">if</span> ( -- windows[i].front().time &lt;= <span class="number">0</span> ) <span class="comment">//队首顾客的服务时长减少一个单位</span></span><br><span class="line">               windows[i].dequeue(); <span class="comment">//服务完毕的顾客出列，由后继顾客接替</span></span><br><span class="line">   &#125; <span class="comment">//for</span></span><br><span class="line">   <span class="keyword">delete</span> [] windows; <span class="comment">//释放所有队列（此前，~List()会自动清空队列）</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">bestWindow</span> <span class="params">( Queue&lt;Customer&gt; windows[], <span class="keyword">int</span> nWin )</span> </span>&#123; <span class="comment">//为新到顾客确定最佳队列</span></span><br><span class="line">   <span class="keyword">int</span> minSize = windows[<span class="number">0</span>].size(), optiWin = <span class="number">0</span>; <span class="comment">//最优队列（窗口）</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> i = <span class="number">1</span>; i &lt; nWin; i++ ) <span class="comment">//在所有窗口中</span></span><br><span class="line">      <span class="keyword">if</span> ( minSize &gt; windows[i].size() ) <span class="comment">//挑选出</span></span><br><span class="line">         &#123; minSize = windows[i].size(); optiWin = i; &#125; <span class="comment">//队列最短者</span></span><br><span class="line">   <span class="keyword">return</span> optiWin; <span class="comment">//返回</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/algorithm/stack/" title="栈和队列">http://example.com/algorithm/stack/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Data-structure/" rel="tag"><i class="fa fa-tag"></i> Data structure</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/algorithm/list/" rel="prev" title="列表">
+                  <i class="fa fa-chevron-left"></i> 列表
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/algorithm/bin-tree/" rel="next" title="二叉树">
+                  二叉树 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  <script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'none'
+      },
+      options: {
+        renderActions: {
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              const target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.typesetClear();
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+
+
+</body>
+</html>

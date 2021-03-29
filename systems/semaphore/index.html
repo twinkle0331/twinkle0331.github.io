@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="在之前我们讨论了并发问题，多线程并发导致资源竞争，可能会引发意想不到的错误所以引入同步来协调多线程对共享数据的访问，任何时刻只能由一个线程执行临界区代码。确保同步正确可以通过底层硬件支持，也可以通过高层次抽象。高层次抽象中比较典型的两种则为信号量和管程。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="信号量">
+<meta property="og:url" content="http://example.com/systems/semaphore/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="在之前我们讨论了并发问题，多线程并发导致资源竞争，可能会引发意想不到的错误所以引入同步来协调多线程对共享数据的访问，任何时刻只能由一个线程执行临界区代码。确保同步正确可以通过底层硬件支持，也可以通过高层次抽象。高层次抽象中比较典型的两种则为信号量和管程。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2019/07/29/5d3e3ee87632a83741.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/29/5d3e43870555679689.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/29/5d3e47605ec4920590.png">
+<meta property="og:image" content="https://i.loli.net/2019/11/02/ZuadODiK8nB59c2.png">
+<meta property="og:image" content="https://i.loli.net/2019/11/02/JyZQrmG4gUEodNz.png">
+<meta property="og:image" content="https://i.loli.net/2019/11/02/OfhW5TxbPKEDmu6.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/29/5d3e507177ae590470.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/29/5d3e44458b63730406.png">
+<meta property="og:image" content="https://i.loli.net/2019/11/02/gKpQGk2jhlL9VCw.png">
+<meta property="og:image" content="https://i.loli.net/2019/07/29/5d3e5fa34325a89183.png">
+<meta property="article:published_time" content="2019-07-06T00:37:58.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="Operating Systems">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2019/07/29/5d3e3ee87632a83741.png">
+
+
+<link rel="canonical" href="http://example.com/systems/semaphore/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>信号量 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/systems/semaphore/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          信号量
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-07-06 08:37:58" itemprop="dateCreated datePublished" datetime="2019-07-06T08:37:58+08:00">2019-07-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Systems/" itemprop="url" rel="index"><span itemprop="name">Systems</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>在之前我们讨论了并发问题，多线程并发导致资源竞争，可能会引发意想不到的错误所以引入同步来协调多线程对共享数据的访问，任何时刻只能由一个线程执行临界区代码。确保同步正确可以通过底层硬件支持，也可以通过高层次抽象。高层次抽象中比较典型的两种则为信号量和管程。</p>
+<a id="more"></a>
+
+<h1 id="基本同步方法"><a href="#基本同步方法" class="headerlink" title="基本同步方法"></a>基本同步方法</h1><p><img src="https://i.loli.net/2019/07/29/5d3e3ee87632a83741.png"></p>
+<blockquote>
+<p>自旋锁为什么无法按先来先服务方式使用资源？</p>
+</blockquote>
+<p>原因：自旋锁是由TS指令实现的临界区申请操作，第一个检测到临界区空闲的申请者而不是第一个开始检测的申请者进入。也就是说，访问顺序是由硬件随机决定的。如果要实现FIFO方式，一般都需要一个队列。</p>
+<h1 id="信号量"><a href="#信号量" class="headerlink" title="信号量"></a>信号量</h1><p>信号量是操作系统提供的一种协调共享资源访问的方法</p>
+<ul>
+<li>软件同步是平等线程间的一种同步协商机制</li>
+<li>OS是管理者，由操作系统仲裁谁来使用资源，地位高于进程</li>
+<li>用信号量来表示系统资源的数量</li>
+</ul>
+<blockquote>
+<p>信号量与软件同步区别</p>
+</blockquote>
+<p>软件同步是平等线程间的一种同步协商机制；</p>
+<p>信号量是由地位高于进程的管理者OS协调的同步机制</p>
+<h2 id="信号量组成"><a href="#信号量组成" class="headerlink" title="信号量组成"></a>信号量组成</h2><p>由一个整形（sem）变量和两个原子操作组成</p>
+<p><code>P()</code>：sem减1</p>
+<ul>
+<li>若sem &lt; 0, 进入等待，否则继续</li>
+</ul>
+<p><code>V()</code>：sem加1</p>
+<ul>
+<li>sem &lt;= 0，唤醒一个等待进程</li>
+</ul>
+<h2 id="信号量的特性"><a href="#信号量的特性" class="headerlink" title="信号量的特性"></a>信号量的特性</h2><p>信号量是被保护的整数变量</p>
+<ul>
+<li>初始化完成后，只能通过<code>P()</code>和<code>V()</code> 操作修改</li>
+<li>由操作系统保证PV操作是原子操作</li>
+<li>P() 可能阻塞(没有资源，处于等待状态)</li>
+<li>V() 不会阻塞(释放资源，唤醒等待状态的进程)</li>
+</ul>
+<p>通常假定信号量是公平的</p>
+<ul>
+<li>线程不会被无限期阻塞在 P() 操作（实际系统中有一个最长时限的参数，超时之后错误返回）</li>
+<li>假定信号量等待先进先出（但是在实际系统中公平有所偏差）</li>
+</ul>
+<p><strong>信号量的实现</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">class Semaphore &#123;</span><br><span class="line">    int sem;</span><br><span class="line">    WaitQueue q;</span><br><span class="line">&#125;</span><br><span class="line">Semaphore::P() &#123;</span><br><span class="line">   sem--;</span><br><span class="line">   if (sem &lt; 0) &#123;</span><br><span class="line">        Add this thread t to q;</span><br><span class="line">        block(p);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">Semaphore::V() &#123;</span><br><span class="line">    sem++; </span><br><span class="line">    if (sem &lt;&#x3D; 0) &#123;</span><br><span class="line">        Remove a thread t from q;</span><br><span class="line">        wakeup(t);        </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>若将程序修改为以下形式，即互换P操作的sem修改与sem条件判断的顺序，则无法确保互斥访问。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">P()&#123; </span><br><span class="line">    <span class="keyword">if</span> (sem &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">        q. enqueue(t);</span><br><span class="line">        block(t);</span><br><span class="line">    &#125;</span><br><span class="line">    sem--;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">V() &#123;</span><br><span class="line">    sem++;</span><br><span class="line">    <span class="keyword">if</span> (!q.empty()) &#123;</span><br><span class="line">        t = q.dequeue();</span><br><span class="line">        wakeup(t);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>比如，一个例子：以下以Pn表示进程n执行P操作，Vn表示进程n执行V操作</p>
+<p>P1,sem=0,q=[]，1进入临界区</p>
+<p>P2,sem=0,q=[2]，2被阻塞，不能执行sem–</p>
+<p>V1,sem=1,q=[]，2被唤醒，此时2处于就绪态，当进程调度时，如果没有马上调度2，比如调度了3，执行P3，3发现sem=1，于是直接跳到sem–并且进入临界区；而3在临界区的过程中，若发生进程切换，切到2时，2执行sem–，sem=-1，并且2也进入临界区。这就导致会有多个进程进入临界区的情况。因此这种做法是不可取的。</p>
+<p>若将if修改为while则可解决互斥访问的问题，但是无法保证按照FIFO方式申请信号量。</p>
+<ul>
+<li>一个线程A调用P()原语时，由于线程B正在使用该信号量而进入阻塞状态；注意，这时value的值为0。</li>
+<li>线程B放弃信号量的使用，线程A被唤醒而进入就绪状态，但没有立即进入运行状态；注意，这里value为1。<br>在线程A处于就绪状态时，处理机正在执行线程C的代码；线程C这时也正好调用P()原语访问同一个信号量，并得到使用权。注意，这时value又变回0。</li>
+<li>线程A进入运行状态后，重新检查value的值，条件不成立，又一次进入阻塞状态。</li>
+<li>至此，线程C比线程A后调用P原语，但线程C比线程A先得到信号量。</li>
+</ul>
+<h2 id="信号量的分类"><a href="#信号量的分类" class="headerlink" title="信号量的分类"></a>信号量的分类</h2><ul>
+<li>二进制信号量，资源数目为 0 或 1</li>
+<li>资源信号量，可为任何非负值</li>
+</ul>
+<p>两者等价，基于一个可以实现另一个</p>
+<h2 id="信号量的使用"><a href="#信号量的使用" class="headerlink" title="信号量的使用"></a>信号量的使用</h2><p>互斥访问</p>
+<ul>
+<li>临界区的互斥访问控制</li>
+</ul>
+<p>条件同步</p>
+<ul>
+<li>线程间事件等待</li>
+</ul>
+<h2 id="互斥访问"><a href="#互斥访问" class="headerlink" title="互斥访问"></a>互斥访问</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mutex &#x3D; new Semaphore(1);</span><br></pre></td></tr></table></figure>
+<p>每类资源设置一个信号量，初值为 1</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mutex-&gt;P();</span><br><span class="line">Critical Section;</span><br><span class="line">mutex-&gt;V();</span><br></pre></td></tr></table></figure>
+<p>必须成对使用 <code>P()</code> 和 <code>V()</code> 操作</p>
+<p>不申请直接释放，多个线程进入缓冲区</p>
+<p>申请不释放，缓冲区无线程，但谁也进不去</p>
+<ul>
+<li><code>P()</code> 保证互斥访问临界资源</li>
+<li><code>V()</code> 在使用后释放临界资源</li>
+<li>PV操作不能次序错误、重复 、遗漏</li>
+</ul>
+<h2 id="条件同步"><a href="#条件同步" class="headerlink" title="条件同步"></a>条件同步</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">condition &#x3D; new Semaphore(0);</span><br></pre></td></tr></table></figure>
+<p>条件同步设置一个信号量，初值为 0</p>
+<p><img src="https://i.loli.net/2019/07/29/5d3e43870555679689.png"></p>
+<p>线程a执行P操作后信号量为负值，进入等待状态，线程B执行V操作后，信号量又回到0，此时线程a可以继续往下执行，通过这种方式实现条件同步。</p>
+<blockquote>
+<p>什么是信号量？它与软件同步方法的区别在什么地方？</p>
+</blockquote>
+<p>信号量是由操作系统提供的一种协调共享资源访问的方法。信号量是一种抽象数据类，由一个被保护的整形变量（sem）和P()、V()两个原子操作组成，表示系统资源的数量。</p>
+<p>区别：</p>
+<ul>
+<li>软件同步是平等线程间的一种同步协商机制；</li>
+<li>信号量是由地位高于进程的管理者OS协调的同步机制。</li>
+</ul>
+<h1 id="管程"><a href="#管程" class="headerlink" title="管程"></a>管程</h1><p>用于多线程互斥访问共享资源的程序结构</p>
+<ul>
+<li>采用面向对象方法，简化了线程间的同步控制</li>
+<li>任一时刻最多只有一个线程执行管程代码</li>
+<li>正在管程中的线程可临时放弃管程的互斥访问，等待事件出现时恢复</li>
+</ul>
+<blockquote>
+<p>管程与临界区有什么异同？</p>
+</blockquote>
+<p>相同点：在任一时刻最多只有一个线程执行管程代码或临界区代码；</p>
+<p>不同：正在管程中的线程可临时放弃管程的互斥访问，等待事件出现时恢复；而临界区不支持临时退出；</p>
+<p><strong>管程的使用</strong></p>
+<ul>
+<li>在对象/模块中收集相关共享数据</li>
+<li>定义访问共享数据的方法</li>
+</ul>
+<h2 id="管程组成"><a href="#管程组成" class="headerlink" title="管程组成"></a>管程组成</h2><ul>
+<li>一个锁<ul>
+<li>控制管程代码的互斥访问(入口)</li>
+</ul>
+</li>
+<li>0或者多个条件变量<ul>
+<li>管理共享数据的并发访问</li>
+</ul>
+</li>
+<li><strong>局部数据变量只能被管程的过程访问</strong></li>
+<li><strong>一个进程通过调用管程的一个过程进入管程</strong></li>
+<li> <strong>在任何时候，只能有一个进程在管程中执行</strong> </li>
+</ul>
+<p><img src="https://i.loli.net/2019/07/29/5d3e47605ec4920590.png"></p>
+<h2 id="条件变量"><a href="#条件变量" class="headerlink" title="条件变量"></a>条件变量</h2><p>条件变量为管程内的等待机制</p>
+<ul>
+<li>进入管程的线程因资源被占用而进入等待状态</li>
+<li>每个条件变量表示一种等待原因，对应一个等待队列</li>
+<li><code>Wait()</code>操作<ul>
+<li>将自己阻塞在等待队列中</li>
+<li>唤醒一个等待者或释放管程的互斥访问</li>
+</ul>
+</li>
+<li><code>Signal()</code>操作<ul>
+<li>将等待队列中的一个线程唤醒</li>
+<li>如果等待队列为空则等同于空操作</li>
+</ul>
+</li>
+</ul>
+<h2 id="条件变量实现"><a href="#条件变量实现" class="headerlink" title="条件变量实现"></a>条件变量实现</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Class Condition &#123;</span><br><span class="line">    <span class="keyword">int</span> numWaiting = <span class="number">0</span>; <span class="comment">// 等待线程数</span></span><br><span class="line">    WaitQueue q;</span><br><span class="line">&#125;</span><br><span class="line">Condition::Wait(lock)&#123;</span><br><span class="line">    numWaiting++; <span class="comment">// 有线程处于等待状态</span></span><br><span class="line">    Add <span class="keyword">this</span> thread t  to q;</span><br><span class="line">    release(lock); <span class="comment">// 释放管程的访问权</span></span><br><span class="line">    schedule(); <span class="comment">//need mutex，执行调度</span></span><br><span class="line">    require(lock); <span class="comment">// 请求管程访问权</span></span><br><span class="line">&#125;</span><br><span class="line">Condition::Signal()&#123;</span><br><span class="line">    <span class="keyword">if</span> (numWaiting &gt; <span class="number">0</span>) &#123; </span><br><span class="line">    <span class="comment">// 如果等待队列为空，则为空操作</span></span><br><span class="line">        Remove a thread t from q;</span><br><span class="line">        wakeup(t); <span class="comment">//need mutex</span></span><br><span class="line">        numWaiting--;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>信号量初值与资源数相同，而条件变量初值为0。</p>
+<p>条件变量的实现和信号量类似，但是有些区别，参考<a target="_blank" rel="noopener" href="https://pages.mtu.edu/~shene/NSF-3/e-Book/MONITOR/sema-vs-monitor.html">mtu课件</a>，<a target="_blank" rel="noopener" href="https://courses.engr.illinois.edu/cs241/sp2012/lectures/25-condition.pdf">cs241</a>,<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E7%9B%A3%E8%A6%96%E5%99%A8_%28%E7%A8%8B%E5%BA%8F%E5%90%8C%E6%AD%A5%E5%8C%96%29">wiki</a>，总结如下</p>
+<ul>
+<li>对管程的互斥锁的释放和获得</li>
+<li>signal和V语义的不同：PV操作必须是成对的，但signal/wait操作完全不需要保证这一点</li>
+<li>wait和P语义的不同：V操作后线程可能会继续执行，但wait操作后，线程必然进入等待队列并阻塞</li>
+<li>执行signal/wait时，都默认已经获得了互斥锁</li>
+</ul>
+<p>信号量和条件变量是并发问题的两种处理模型。</p>
+<p>信号量将并发的问题抽象为有限的资源，用计数器表示，资源足够时往下走，不够时等待。</p>
+<p>条件变量则将并发的问题抽象为事件，当满足某种事件的时候，往下走，不满足某种事件的时候暂时放弃锁。</p>
+<h2 id="管程语义"><a href="#管程语义" class="headerlink" title="管程语义"></a>管程语义</h2><p>参考<a target="_blank" rel="noopener" href="https://www.andrew.cmu.edu/course/15-440-kesden/applications/ln/lecture6.html">cmu课件</a> 和<a target="_blank" rel="noopener" href="https://piazza.com/class/i5j09fnsl7k5x0?cid=894">piazza</a>,考虑以下情况：线程A在条件变量的等待队列中等待资源，此时线程B在该条件变量上执行<code>signal()</code>操作，根据处理方式分为：</p>
+<ol>
+<li>mesa管程</li>
+<li>hansen管程</li>
+<li>hoare管程</li>
+</ol>
+<p><strong>mesa管程</strong></p>
+<p><img src="https://i.loli.net/2019/11/02/ZuadODiK8nB59c2.png"></p>
+<ul>
+<li>线程B执行signal之后，不会立刻退出管程，而是执行到lock.release()之后才进入就绪态</li>
+<li>线程A会被移动到入口等待队列中</li>
+<li>在wait后被唤醒的进程不一定会被立刻调度，因此需要用<code>while</code>来检查条件</li>
+<li>大部分实际实现的管程采用的是这一语义</li>
+</ul>
+<p><strong>hoare管程</strong></p>
+<ul>
+<li>线程B执行signal之后，迅速唤醒等待中的线程A，自己进入signal队列中（这个队列是此语义特有的）</li>
+<li>每次有线程退出时，先到signal队列中调度线程，如果signal队列空，才到入口等待队列调度线程</li>
+<li>实际实现中一般不采用，因为需要多一个队列，代价增大了</li>
+</ul>
+<p><img src="https://i.loli.net/2019/11/02/JyZQrmG4gUEodNz.png"></p>
+<p><strong>hansen管程</strong></p>
+<p> 线程B退出的同时才执行signal操作 </p>
+<p><img src="https://i.loli.net/2019/11/02/OfhW5TxbPKEDmu6.png"></p>
+<p>Mesa管程：占用管程的当前进程可在任何时刻释放占用资源并唤醒相应的等待进程，当前进程继续执行，被唤醒放回入口队列队首等待当前进程释放管程访问权；</p>
+<p>Hoare管程：占用管程的当前进程可在任何时刻释放占用资源并唤醒相应的等待进程，当前进程进入唤醒队列等待，被唤醒进程继续执行直到释放管程访问权；管程空闲时，优先查看唤醒队列中的等待进程，唤醒队列中没有等待进程时再查看入口队列；</p>
+<p>Hansen管程：占用管程的当前进程只在退出管程时释放占用资源并唤醒相应的等待进程，被唤醒进程继续执行直到释放管程访问权；</p>
+<p>条件判断中while和if对释放处理中的执行顺序影响：<br>在Hansen和Mesa管程中，由于条件变量释放操作signal时并没有立即放弃管程访问权，资源的可用状态可能变化，需使用while()进行重新检查；<br>在Hoare管程中，由于条件变量释放操作signal同时表示立即放弃管程访问权，资源的可用状态保持不变，可使用if判断，不需要再次检查。</p>
+<p>依据目前的理解，Hansen和Mesa管程在程序行为效果上来看，它们是一致的。</p>
+<h1 id="哲学家就餐问题"><a href="#哲学家就餐问题" class="headerlink" title="哲学家就餐问题"></a>哲学家就餐问题</h1><p><img src="https://i.loli.net/2019/07/29/5d3e507177ae590470.png"></p>
+<blockquote>
+<p>方案一</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> N 5 <span class="comment">// 哲学家个数</span></span></span><br><span class="line">semaphore fork[<span class="number">5</span>]; <span class="comment">// 互斥操作，信号量初值为1</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">philosopher</span><span class="params">(<span class="keyword">int</span> i)</span> </span>&#123; </span><br><span class="line">    <span class="comment">// 哲学家编号：0 － 4</span></span><br><span class="line">    <span class="keyword">while</span> (ture) &#123;</span><br><span class="line">        think();</span><br><span class="line">        P(fork[i]); <span class="comment">// 拿左边的叉子</span></span><br><span class="line">        P(fork[(i + <span class="number">1</span>) % N]); <span class="comment">// 拿右边的叉子</span></span><br><span class="line">        eat();</span><br><span class="line">        V(fork[i]); <span class="comment">// 放下左边的叉子</span></span><br><span class="line">        V(fork[(i + <span class="number">1</span>) % N]); <span class="comment">// 放下右边的叉子</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>不正确，有可能5个人同时拿左边叉子，都拿不到右边叉子，形成死锁。</p>
+<blockquote>
+<p>方案二</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> N 5 <span class="comment">// 哲学家个数</span></span></span><br><span class="line">semaphore fork[<span class="number">5</span>]; <span class="comment">// 信号量初值为1</span></span><br><span class="line">semaphore mutex; <span class="comment">// 互斥信号量，初值1</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">philosopher</span><span class="params">(<span class="keyword">int</span> i)</span></span></span><br><span class="line"><span class="function"><span class="comment">// 哲学家编号：0 － 4</span></span></span><br><span class="line"><span class="function">    <span class="title">while</span><span class="params">(TRUE)</span> </span>&#123;</span><br><span class="line">        think();</span><br><span class="line">        P(mutex); <span class="comment">// 进入临界区	 只有一个哲学家能就餐</span></span><br><span class="line"></span><br><span class="line">        P(fork[i]); <span class="comment">// 去拿左边的叉子</span></span><br><span class="line">        P(fork[(i + <span class="number">1</span>) % N]);<span class="comment">// 去拿右边的叉子</span></span><br><span class="line">        eat();	</span><br><span class="line">        V(fork[i]); <span class="comment">// 放下左边的叉子</span></span><br><span class="line">        V(fork[(i + <span class="number">1</span>) % N]); <span class="comment">// 放下右边的叉子</span></span><br><span class="line"></span><br><span class="line">        V(mutex); <span class="comment">// 退出临界区	</span></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>互斥访问正确，但任何时间只有一个哲学家就餐，叉子可满足两位哲学家同时就餐，性能差。</p>
+<blockquote>
+<p>方案三</p>
+</blockquote>
+<ul>
+<li>和方案1一样，使用5个信号量表示筷子</li>
+<li>哲学家根据编号不同，拿取筷子的顺序不同,从而避免都拿到左边刀叉而等待右边刀叉形成循环等待的情况</li>
+<li>此时没有死锁，且允许两个人同时就餐</li>
+</ul>
+<h2 id="信号量-1"><a href="#信号量-1" class="headerlink" title="信号量"></a>信号量</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> N 5 <span class="comment">// 哲学家个数</span></span></span><br><span class="line">semaphore fork[<span class="number">5</span>]; <span class="comment">// 信号量初值为1</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">philosopher</span><span class="params">(<span class="keyword">int</span> i)</span> <span class="comment">// 哲学家编号：0 － 4</span></span></span><br><span class="line"><span class="function">    <span class="title">while</span><span class="params">(TRUE)</span> </span>&#123;</span><br><span class="line">        think();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (i % <span class="number">2</span> == <span class="number">0</span>) &#123; </span><br><span class="line">            <span class="comment">// 偶数 先拿左 后拿右 奇数 先拿右 后拿左</span></span><br><span class="line">            P(fork[i]); <span class="comment">// 去拿左边的叉子</span></span><br><span class="line">            P(fork[(i + <span class="number">1</span>) % N]); <span class="comment">// 去拿右边的叉子</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            P(fork[(i + <span class="number">1</span>) % N]); <span class="comment">// 去拿右边的叉子</span></span><br><span class="line">            P(fork[i]); <span class="comment">// 去拿左边的叉子 </span></span><br><span class="line">        &#125;</span><br><span class="line">        eat();</span><br><span class="line"></span><br><span class="line">        V(fork[i]); <span class="comment">// 放下左边的叉子</span></span><br><span class="line">        V(fork[(i + <span class="number">1</span>) % N]); <span class="comment">// 放下右边的叉子</span></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<h1 id="读者写者问题"><a href="#读者写者问题" class="headerlink" title="读者写者问题"></a>读者写者问题</h1><p>共享资源的两类使用者</p>
+<ul>
+<li><strong>读者</strong> 只读取数据，不修改</li>
+<li><strong>写者</strong> 读取和修改数据</li>
+<li>读读允许<ul>
+<li>同一时刻允许有多个读者同时读</li>
+</ul>
+</li>
+<li>读写互斥<ul>
+<li>没有写者时，读者才能读</li>
+<li>没有读者时，写者才能写</li>
+</ul>
+</li>
+<li>写写互斥<ul>
+<li>没有其他写者时，写者才能写</li>
+</ul>
+</li>
+</ul>
+<h2 id="信号量-2"><a href="#信号量-2" class="headerlink" title="信号量"></a>信号量</h2><ul>
+<li>信号量WriteMutex<ul>
+<li>控制读写操作互斥</li>
+<li>初始化为 1</li>
+</ul>
+</li>
+<li>读者计数Rcount<ul>
+<li>正在进行读操作的读者数目</li>
+<li>初始化为 0</li>
+</ul>
+</li>
+<li>信号量CountMutex<ul>
+<li>控制对读者计数的互斥修改(保护读者计数)</li>
+<li>初始化为 1</li>
+</ul>
+</li>
+</ul>
+<p><strong>writer</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">P(WriteMutex);</span><br><span class="line">    write();</span><br><span class="line">V(WriteMutex);</span><br></pre></td></tr></table></figure>
+<p><strong>reader</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">P(CountMutex); &#x2F;&#x2F; 保护 Rcount</span><br><span class="line">if (Rcount &#x3D;&#x3D; 0)</span><br><span class="line">    P(WriteMutex); </span><br><span class="line">&#x2F;&#x2F;若为当前第一个读者，开启读写互斥</span><br><span class="line">++Rcount; </span><br><span class="line">V(CountMutex);</span><br><span class="line">read();</span><br><span class="line">P(CountMutex);</span><br><span class="line">--Rcount;</span><br><span class="line">&#x2F;&#x2F;若为当前最后一个读者，释放互斥访问权限</span><br><span class="line">if (Rcount &#x3D;&#x3D; 0)</span><br><span class="line">    V(WriteMutex); </span><br><span class="line">V(CountMutex);</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>读者写者问题的优先策略</p>
+</blockquote>
+<ul>
+<li>读者优先策略<ul>
+<li>只要有读者正在读状态，后来的读者都能直接进入</li>
+<li>若读者持续不断进入，则写者就处于饥饿</li>
+</ul>
+</li>
+<li>写者优先策略<ul>
+<li>只要有写者就绪，写者应尽快执行写操作</li>
+<li>若写者持续不断就绪，则读者就处于饥饿</li>
+</ul>
+</li>
+</ul>
+<h2 id="管程-1"><a href="#管程-1" class="headerlink" title="管程"></a>管程</h2><p><strong>管程的状态变量</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">AR &#x3D; 0; &#x2F;&#x2F; 正在读的读者</span><br><span class="line">AW &#x3D; 0; &#x2F;&#x2F; 正在写的写者</span><br><span class="line">WR &#x3D; 0; &#x2F;&#x2F; 等待读的读者</span><br><span class="line">WW &#x3D; 0; &#x2F;&#x2F; 等待写的写者</span><br><span class="line">Lock lock;</span><br><span class="line">Condition okToRead;</span><br><span class="line">Condition okToWrite;</span><br></pre></td></tr></table></figure>
+<p>reader</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">Database::Read() &#123;</span><br><span class="line">    <span class="comment">// Wait until no writers;</span></span><br><span class="line">    StartRead(); </span><br><span class="line">    read database;</span><br><span class="line">    <span class="comment">// check out – wake up waiting writers; </span></span><br><span class="line">    DoneRead();</span><br><span class="line">&#125;</span><br><span class="line">Database::StartRead() &#123;</span><br><span class="line">    lock.Acquire();</span><br><span class="line">    <span class="keyword">while</span> ((AW+WW) &gt; <span class="number">0</span>) &#123; </span><br><span class="line">    <span class="comment">//写者优先，只要有写者就等待</span></span><br><span class="line">        WR++;</span><br><span class="line">        okToRead.wait(&amp;lock);</span><br><span class="line">        WR--;</span><br><span class="line">    &#125;</span><br><span class="line">    AR++;</span><br><span class="line">    lock.Release();</span><br><span class="line">&#125;</span><br><span class="line">Database::DoneRead() &#123;</span><br><span class="line">    lock.Acquire();</span><br><span class="line">    AR--;</span><br><span class="line">    <span class="keyword">if</span> (AR == <span class="number">0</span> &amp;&amp; WW &gt; <span class="number">0</span>) &#123; </span><br><span class="line">    <span class="comment">// 当前没有读者并有等待写的写者 则唤醒写者</span></span><br><span class="line">        okToWrite.signal();</span><br><span class="line">    &#125;</span><br><span class="line">    lock.Release();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>writer</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">Database::Write() &#123;</span><br><span class="line">    <span class="comment">// Wait until no readers/writers;</span></span><br><span class="line"></span><br><span class="line">    StartWrite(); </span><br><span class="line">    write database;</span><br><span class="line">    <span class="comment">// check out-wake up waiting readers/writers; </span></span><br><span class="line">    DoneWrite(); </span><br><span class="line">&#125;</span><br><span class="line">Database::StartWrite() &#123;</span><br><span class="line">    lock.Acquire();</span><br><span class="line">    <span class="keyword">while</span> ((AW+AR) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="comment">//写者优先，有正在写的写着或正在读的读者则等待</span></span><br><span class="line">        WW++;</span><br><span class="line">        okToWrite.wait(&amp;lock);</span><br><span class="line">        WW--;</span><br><span class="line">    &#125;</span><br><span class="line">    AW++;</span><br><span class="line">    lock.Release();</span><br><span class="line">&#125;</span><br><span class="line">Database::DoneWrite() &#123;</span><br><span class="line">    lock.Acquire();</span><br><span class="line">    AW--;</span><br><span class="line">    <span class="keyword">if</span> (WW &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="comment">// 优先唤醒等待写的写者</span></span><br><span class="line">        okToWrite.signal();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (WR &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="comment">// 如果没有等待写的写者 才唤醒等待读的读者</span></span><br><span class="line">        okToRead.broadcast();</span><br><span class="line">    &#125;</span><br><span class="line">    lock.Release();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>while中的判断条件可根据优先策略进行调整，例子采取了写者优先策略。</p>
+<p>以上管程在读/写操作时并没有申请互斥信号量，因为在之前申请互斥信号量时将正在/等待读/写的计数等设置完成，此时可确保读写正常进行。</p>
+<h1 id="生产者消费者问题"><a href="#生产者消费者问题" class="headerlink" title="生产者消费者问题"></a>生产者消费者问题</h1><p><img src="https://i.loli.net/2019/07/29/5d3e44458b63730406.png"></p>
+<h2 id="信号量-3"><a href="#信号量-3" class="headerlink" title="信号量"></a>信号量</h2><p><strong>问题分析</strong></p>
+<ul>
+<li>任何时刻只能有一个线程操作缓冲区 (互斥访问)</li>
+<li>缓冲区空时，消费者必须等待生产者 (条件同步)</li>
+<li>缓冲区满时，生产者必须等待消费者 (条件同步)</li>
+</ul>
+<p><strong>用信号量描述每个约束</strong></p>
+<p><img src="https://i.loli.net/2019/11/02/gKpQGk2jhlL9VCw.png"></p>
+<ul>
+<li><strong>二进制信号量(mutex)</strong> 描述互斥访问</li>
+<li><strong>资源信号量(fullBuffers)</strong> 描述缓冲区是否有数据</li>
+<li><strong>资源信号量(emptyBuffers)</strong> 描述缓冲区是否有空余区域</li>
+</ul>
+<p>其中P操作之间的顺序不可颠倒，会引起线程阻塞，V操作不会阻塞，顺序无所谓。</p>
+<p><strong>信号量不足</strong></p>
+<ul>
+<li>读/开发代码比较困难<ul>
+<li>程序员需要掌握信号量机制</li>
+</ul>
+</li>
+<li>容易出错<ul>
+<li>使用的信号量已被另一个线程占用</li>
+<li>PV操作必须成对出现</li>
+</ul>
+</li>
+<li>不能处理死锁问题</li>
+</ul>
+<blockquote>
+<p>为什么在生产者-消费者问题中先申请互斥信号量会导致死锁？</p>
+</blockquote>
+<p>如果先申请互斥信号量，后申请资源信号量，则在两种情况下可能会出现循环等待：</p>
+<ul>
+<li>生产者获得互斥信号量后检查<code>emptyBuffers</code>资源信号量，发现缓冲区满了，于是进入睡眠状态；此时消费者无法获得互斥信号量，于是无法消耗缓冲区内的资源</li>
+<li>消费者获得互斥信号量后检查<code>fullBuffers</code>资源信号量，发现缓冲区空了，于是进入睡眠状态；此时生产者无法获得互斥信号量，于是无法将资源放入缓冲区内</li>
+</ul>
+<h2 id="管程-2"><a href="#管程-2" class="headerlink" title="管程"></a>管程</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">class BoundedBuffer &#123;</span><br><span class="line">    Lock lock;</span><br><span class="line">    &#x2F;&#x2F; 管程入口的锁</span><br><span class="line">    int count &#x3D; 0;</span><br><span class="line">    &#x2F;&#x2F; 缓冲区数据计数</span><br><span class="line">    Condition notFull, notEmpty;</span><br><span class="line">    &#x2F;&#x2F; 条件变量</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://i.loli.net/2019/07/29/5d3e5fa34325a89183.png"></p>
+<p>先申请锁再检查条件不存在问题，因为管程不成功时可以放弃互斥访问权限，而信号量则会引起死锁。</p>
+<p>管程将PV操作集中到一个模块中，简化和降低同步机制的实现难度。</p>
+<h2 id="信号量和管程实现的对比"><a href="#信号量和管程实现的对比" class="headerlink" title="信号量和管程实现的对比"></a>信号量和管程实现的对比</h2><p>信号量中存有<code>int</code>变量<code>sem</code>以及<code>WaitQueue</code>变量<code>q</code>，根据信号量的实现代码，我们可以得出<code>sem</code>和<code>q</code>的含义：</p>
+<ul>
+<li><code>q</code>代表当前正在等待资源的线程组成的等待队列，若当前资源足够所有进程使用，<code>q</code>为空；</li>
+<li><code>sem</code>代表【到目前为止，若所有请求该资源的线程都能够获取该资源，那么资源还剩下多少（这里我们假设资源个数可以为负）】；</li>
+<li>对<code>sem</code>也可以有另一种理解：当<code>sem</code>非负时，<code>sem</code>代表剩余资源的个数；当<code>sem</code>为负数时，<code>sem</code>的绝对值代表等待队列<code>q</code>的长度。</li>
+</ul>
+<p>而当我们使用条件变量解决有限资源问题时，我们通常会在条件变量之外，管程之中加入整型变量<code>count</code>，来帮助条件变量记录当前剩余多少资源（非负）。查看条件变量的实现代码，我们可以得出条件变量中整型变量<code>numWaiting</code>以及<code>WaitQueue</code>变量<code>q</code>的含义：</p>
+<ul>
+<li><code>q</code>代表当前正在等待资源的线程组成的等待队列，若当前资源足够所有进程使用，<code>q</code>为空；</li>
+<li><code>numWaiting</code>代表等待队列<code>q</code>的长度（非负）。</li>
+</ul>
+<p>结合使用信号量以及条件变量解决有限资源问题的实例，以及以上我们对信号量和条件变量的分析，我们可以得出以下结论：</p>
+<ul>
+<li>在任一状态，信号量中的<code>q</code>和条件变量中的<code>q</code>完全相同；</li>
+<li>当<code>sem</code>非负时，含义与管程中的<code>count</code>相同，此时<code>numWaiting</code>为0；</li>
+<li>当<code>sem</code>为负数时，<code>sem</code>的绝对值等于<code>numWaiting</code>，此时<code>count</code>为0。</li>
+</ul>
+<p>在生产者-消费者这个问题实例中：</p>
+<ul>
+<li>信号量<code>emptyBuffers</code>与条件变量<code>notFull</code>是匹配的，满足上面3个条件，此时<code>count</code>在代码中以<code>n - count</code>的形式出现；</li>
+<li>信号量<code>fullBuffers</code>与条件变量<code>notEmpty</code>是匹配的，满足上面3个条件，此时<code>count</code>在代码中以<code>count</code>的形式出现；</li>
+</ul>
+<p>综上所述，两种解决方法是完全等价的，至于为什么用管程实现更加安全方便，个人认为老师在视频中并没有解释得很清楚，和老师讨论后得出结论如下：</p>
+<ul>
+<li>用信号量的时候，所有信号量都要自己维护，并配对好PV；使用条件变量也要根据条件配对好Wait和Signal函数，但是信号量机制允许把PV操作放在任何代码中，而管程只允许把PV操作放在管程内部。</li>
+<li>用管程的时候，我们可以理解为<code>BoundedBuffer</code>继承了一个管程类，因此操作系统会给<code>BoundedBuffer</code>中每一个方法自动加上锁（即<code>lock-&gt;Acquire()</code>和<code>lock-&gt;Release()</code>函数并不用自己写，是系统加上的），因此更加安全可控，容易查错。</li>
+</ul>
+<p>ucore lab7中实现信号量的<code>sem</code>值非负，这样看来ucore中信号量的<code>sem</code>值和条件变量中的<code>count</code>值应该是完全相等的。</p>
+<p>同时piazza上另一解释为：</p>
+<p>信号量将并发的问题抽象为有限的资源，用计数器表示，资源足够时往下走，不够时等待。</p>
+<p>条件变量则将并发的问题抽象为事件，当满足某种事件的时候，往下走，不满足某种事件的时候暂时放弃锁。</p>
+<p>生产者消费者问题中，可将条件变量的事件设置为“队列满”、“队列空”，那么就如同信号量那样处理了，所以让人看起来觉得没有区别。 </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/systems/semaphore/" title="信号量">http://example.com/systems/semaphore/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Operating-Systems/" rel="tag"><i class="fa fa-tag"></i> Operating Systems</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/systems/sync/" rel="prev" title="同步互斥">
+                  <i class="fa fa-chevron-left"></i> 同步互斥
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/systems/ucore-lab7/" rel="next" title="ucore lab7">
+                  ucore lab7 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  
+
+
+</body>
+</html>

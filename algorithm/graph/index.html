@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="在城市交通图中联接于各公交站之间的街道，或者在互联网中联接于IP之间的二元关系，这类信息往往可表述为定义于一组对象之间的二元关系。相互之间均可能存在二元关系的一组对象，属于非线性结构。图结构是描述这类信息的典型结构，通过遍历将其转化为半线性结构，进而借助树的相关算法解决问题。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="图">
+<meta property="og:url" content="http://example.com/algorithm/graph/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="在城市交通图中联接于各公交站之间的街道，或者在互联网中联接于IP之间的二元关系，这类信息往往可表述为定义于一组对象之间的二元关系。相互之间均可能存在二元关系的一组对象，属于非线性结构。图结构是描述这类信息的典型结构，通过遍历将其转化为半线性结构，进而借助树的相关算法解决问题。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-09-03T01:00:25.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="Data structure">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/algorithm/graph/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>图 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/algorithm/graph/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          图
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-09-03 09:00:25" itemprop="dateCreated datePublished" datetime="2019-09-03T09:00:25+08:00">2019-09-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>在城市交通图中联接于各公交站之间的街道，或者在互联网中联接于IP之间的二元关系，这类信息往往可表述为定义于一组对象之间的二元关系。相互之间均可能存在二元关系的一组对象，属于非线性结构。图结构是描述这类信息的典型结构，通过遍历将其转化为半线性结构，进而借助树的相关算法解决问题。</p>
+<a id="more"></a>
+
+<p>所谓的图，可定义为$G=(V;E)$,其中，集合V中的元素称作顶点，集合E中的元素分别对应于$V$中的某一对顶点，表示它们之间存在某种关系，故亦称作边。同一条边的两个顶点彼此邻接，同一顶点自我邻接，构成自环，不含自环即为简单图。</p>
+<p>若邻接顶点$u$和$v$的次序无所谓，则$(u,v)$为无向边。所有边均无方向的图称为无向图。</p>
+<p>有向边$(u,v)$从$u$指向$v$，其中$u$称作该边的起点，而v称作该边的终点。</p>
+<p>图$G(V;E)$的子图$T=(V;F)$若是树，则为其支撑树。同一图的支撑树通常并不唯一。同一网络的支撑树中，总权重最小者为最小支撑树MST。</p>
+<h1 id="邻接矩阵"><a href="#邻接矩阵" class="headerlink" title="邻接矩阵"></a>邻接矩阵</h1><p>用二维矩阵记录顶点之间的联接关系，一一对应：矩阵元素对应图中可能存在的边。<br>$$<br>A[i,j]=\left{<br>\begin{aligned}<br>1 ,&amp; 若顶点i与j之间存在联边 \<br>0 ,&amp;  若顶点i与j之间不存在联边\<br>\end{aligned}<br>\right.<br>$$<br>由于为简单图，所以对角线统一设置为0。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv&gt; <span class="class"><span class="keyword">struct</span> <span class="title">Vertex</span> &#123;</span> <span class="comment">//顶点对象（为简化起见，并未严格封装）</span></span><br><span class="line">   Tv data; <span class="keyword">int</span> inDegree, outDegree; VStatus status; <span class="comment">//数据、出入度数、状态</span></span><br><span class="line">   <span class="keyword">int</span> dTime, fTime; <span class="comment">//时间标签</span></span><br><span class="line">   <span class="keyword">int</span> parent; <span class="keyword">int</span> priority; <span class="comment">//在遍历树中的父节点、优先级数</span></span><br><span class="line">   Vertex ( Tv <span class="keyword">const</span>&amp; d = ( Tv ) <span class="number">0</span> ) : <span class="comment">//构造新顶点</span></span><br><span class="line">      data ( d ), inDegree ( <span class="number">0</span> ), outDegree ( <span class="number">0</span> ), status ( UNDISCOVERED ),</span><br><span class="line">      dTime ( <span class="number">-1</span> ), fTime ( <span class="number">-1</span> ), parent ( <span class="number">-1</span> ), priority ( INT_MAX ) &#123;&#125; <span class="comment">//暂不考虑权重溢出</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">enum</span> &#123;</span> UNDISCOVERED, DISCOVERED, VISITED &#125; VStatus; <span class="comment">//顶点状态</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">enum</span> &#123;</span> UNDETERMINED, TREE, CROSS, FORWARD, BACKWARD &#125; EType; <span class="comment">//边在遍历树中所属的类型</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Te&gt; <span class="class"><span class="keyword">struct</span> <span class="title">Edge</span> &#123;</span> <span class="comment">//边对象（为简化起见，并未严格封装）</span></span><br><span class="line">   Te data; <span class="keyword">int</span> weight; EType type; <span class="comment">//数据、权重、类型</span></span><br><span class="line">   Edge ( Te <span class="keyword">const</span>&amp; d, <span class="keyword">int</span> w ) : data ( d ), weight ( w ), type ( UNDETERMINED ) &#123;&#125; <span class="comment">//构造</span></span><br><span class="line">&#125;;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="comment">//顶点类型、边类型</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">GraphMatrix</span> :</span> <span class="keyword">public</span> Graph&lt;Tv, Te&gt; &#123; <span class="comment">//基于向量，以邻接矩阵形式实现的图</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">   Vector&lt; Vertex&lt; Tv &gt; &gt; V; <span class="comment">//顶点集（向量）</span></span><br><span class="line">   Vector&lt; Vector&lt; Edge&lt; Te &gt; * &gt; &gt; E; <span class="comment">//边集（邻接矩阵）</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">   GraphMatrix() &#123; n = e = <span class="number">0</span>; &#125; <span class="comment">//构造</span></span><br><span class="line">   ~GraphMatrix() &#123; <span class="comment">//析构</span></span><br><span class="line">      <span class="keyword">for</span> ( <span class="keyword">int</span> j = <span class="number">0</span>; j &lt; n; j++ ) <span class="comment">//所有动态创建的</span></span><br><span class="line">         <span class="keyword">for</span> ( <span class="keyword">int</span> k = <span class="number">0</span>; k &lt; n; k++ ) <span class="comment">//边记录</span></span><br><span class="line">            <span class="keyword">delete</span> E[j][k]; <span class="comment">//逐条清除</span></span><br><span class="line">   &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>适用范围广泛，尤其适用于稠密图，可处理隐式图。</p>
+<h2 id="时间复杂度"><a href="#时间复杂度" class="headerlink" title="时间复杂度"></a>时间复杂度</h2><table>
+<thead>
+<tr>
+<th>判断两点之间是否存在联边</th>
+<th>$O(1)$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>获取顶点的出/入度数</td>
+<td>$O(1)$</td>
+</tr>
+<tr>
+<td>添加、删除边后更新度数</td>
+<td>$O(1)$</td>
+</tr>
+</tbody></table>
+<p>由于向量循秩访问的特点，所有静态操作接口，均只需常数时间。边的静态操作和动态操作也只需常数时间，代价是邻接矩阵的空间冗余。但是顶点的动态操作非常耗时，为了插入新的顶点，顶点集向量需添加一个元素，边集向量也需要添加一行，且每行都需要添加一个元素。</p>
+<blockquote>
+<p>计入向量扩容所需的时间，分摊而言，插入顶点的复杂度不超过$O(n)$</p>
+</blockquote>
+<p>每一向量扩容的单次插入操作，在分摊意义上来说为常数时间，在每一顶点插入过程中，n个向量的操作(包括扩容操作)完全同步，故总体的分摊时间不超过分摊的$O(n)$</p>
+<p>当然，为了插入一个顶点，在最坏情况下需要访问和修改整个邻接矩阵，共需$O(n^2)$时间。</p>
+<h2 id="空间复杂度"><a href="#空间复杂度" class="headerlink" title="空间复杂度"></a>空间复杂度</h2><p>空间复杂度为$O(n^2)$,与实际边数无关。</p>
+<p>对于无向图，可将二维邻接矩阵映射为一维向量，空间复杂度为之前的一半，渐进意义而言，空间复杂度仍然为$O(n^2)$。</p>
+<p><strong>关联矩阵</strong></p>
+<p>用二维矩阵记录顶点与边之间的联接关系，空间复杂度为$O(ne)=O(n^3)$<br>$$<br>I[i,j]=\left{<br>\begin{aligned}<br>1 ,&amp; 第j条边从第i个节点出发 \<br>-1,&amp; 第j条边进入第i个节点 \<br>0 , &amp; 否则<br>\end{aligned}<br>\right.<br>$$<br>基于关联矩阵，可以将差分约束系统转换为有向带权图，将差分约束变量视作顶点，将差分约束矩阵视为关联矩阵，如此一来，原问题转换为了有向带权图的最短路径问题。</p>
+<h1 id="邻接表"><a href="#邻接表" class="headerlink" title="邻接表"></a>邻接表</h1><p>类似于关联矩阵的思路，将关联矩阵组织的各行组织为列表，只记录存在的边</p>
+<h2 id="空间复杂度-1"><a href="#空间复杂度-1" class="headerlink" title="空间复杂度"></a>空间复杂度</h2><p>有向图=$O(n+e)$</p>
+<p>无向图=$O(n+2e)=O(n+e)$</p>
+<p>无向弧被重复存储，可通过双向链表的方式解决。</p>
+<p>适用于稀疏图</p>
+<h2 id="时间复杂度-1"><a href="#时间复杂度-1" class="headerlink" title="时间复杂度"></a>时间复杂度</h2><table>
+<thead>
+<tr>
+<th>建立邻接表</th>
+<th>$O(n+ e)$</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>枚举从$v$出发的边</td>
+<td>$O(1+deg(v))$</td>
+</tr>
+<tr>
+<td>枚举顶点$v$的邻居(无向图)</td>
+<td>$O(1 + deg(v))$</td>
+</tr>
+<tr>
+<td>枚举到$v$的边</td>
+<td>$O( n+ e)$</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>计算顶点v的出度/入度</p>
+</blockquote>
+<p>增加度数记录域：$O(n)$记录空间</p>
+<p>增加/删除边时更新度数:$O(1)$时间</p>
+<p>每次查询$O(1)$时间</p>
+<p>建立逆邻接表可将枚举到$v$的边时间复杂度降低至$O(1+deg(v))$,但是空间复杂度有所上升。</p>
+<blockquote>
+<p>给定$u$,$v$，判断$u$,$v$之间是否存在与$u$,$v$相关的边</p>
+</blockquote>
+<p>遍历顶点$i$对应的边表，方可判定是否存在与顶点$j$相关联者，所以所需时间也由$O(1)$增加至$O(deg(i))$</p>
+<p>有向图：搜索$u$的邻接表，$O(deg(u))=O(e)$</p>
+<p>无向图：搜索$u$或$v$的邻接表，$O(max(deg(u),deg(v)))=O(e)$</p>
+<p>并行搜索：$O(2min(deg(u),deg(v)))=O(e)$</p>
+<p>借助散列，边的判定可降低至$O(1)$，空间与邻接表相同。</p>
+<blockquote>
+<p>为什么有时仍用邻接矩阵，仅仅是处理简单？</p>
+</blockquote>
+<p>可处理欧拉路之类的隐式图</p>
+<h1 id="取舍原则"><a href="#取舍原则" class="headerlink" title="取舍原则"></a>取舍原则</h1><p>用邻接矩阵还是邻接表来表示图，取决于以下原则：</p>
+<ul>
+<li>空间/速度</li>
+<li>顶点类型</li>
+<li>弧类型(方向/权值)</li>
+<li>图类型(稠密图)</li>
+</ul>
+<h2 id="适用场合"><a href="#适用场合" class="headerlink" title="适用场合"></a>适用场合</h2><table>
+<thead>
+<tr>
+<th>邻接矩阵</th>
+<th>邻接表</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>经常检测边的存在</td>
+<td>经常计算顶点的度数</td>
+</tr>
+<tr>
+<td>经常做边的插入/删除</td>
+<td>顶点数目不确定</td>
+</tr>
+<tr>
+<td>图的规模固定</td>
+<td>经常做遍历</td>
+</tr>
+<tr>
+<td>稠密图</td>
+<td>稀疏图</td>
+</tr>
+</tbody></table>
+<p>图的遍历可理解为将非线性结构转化为半线性结构的过程。经遍历确定的边类型中，最重要的一类边为树边，他们与所有顶点共同构成了图的一棵支撑树，称作遍历树。</p>
+<h1 id="广度优先搜索"><a href="#广度优先搜索" class="headerlink" title="广度优先搜索"></a>广度优先搜索</h1><p>在广度优先算法中，越早被访问到的顶点，其邻居越优先被选用，而同一顶点所有邻居之间的优先级反而并不重要。例如，起始于顶点$s$的BFS搜索，首先访问顶点$s$​，再访问$s$所有未访问的邻居，再按后者的次序逐个访问它们的邻居。在所有已访问到的顶点中，仍有邻居尚未访问者，构成所谓的波峰集，于是BFS搜索过程也可等效理解为</p>
+<p><strong>反复从波峰集找到最早被访问的顶点$v$，若其邻居均已访问到，则将其逐出波峰集，否则，随意选出一个尚未访问到的邻居，并将其加入到波峰集中。</strong></p>
+<p>将图的BFS搜索应用于树结构，则其效果等效于树的层次遍历。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="comment">//广度优先搜索BFS算法（全图）</span></span><br><span class="line"><span class="keyword">void</span> Graph&lt;Tv, Te&gt;::bfs ( <span class="keyword">int</span> s ) &#123; <span class="comment">//assert: 0 &lt;= s &lt; n</span></span><br><span class="line">   reset(); <span class="keyword">int</span> clock = <span class="number">0</span>; <span class="keyword">int</span> v = s; <span class="comment">//初始化</span></span><br><span class="line">   <span class="keyword">do</span> <span class="comment">//逐一检查所有顶点</span></span><br><span class="line">      <span class="keyword">if</span> ( UNDISCOVERED == status ( v ) ) <span class="comment">//一旦遇到尚未发现的顶点</span></span><br><span class="line">         BFS ( v, clock ); <span class="comment">//即从该顶点出发启动一次BFS</span></span><br><span class="line">   <span class="keyword">while</span> ( s != ( v = ( ++v % n ) ) ); <span class="comment">//按序号检查，故不漏不重</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="comment">//广度优先搜索BFS算法（单个连通域）</span></span><br><span class="line"><span class="keyword">void</span> Graph&lt;Tv, Te&gt;::BFS ( <span class="keyword">int</span> v, <span class="keyword">int</span>&amp; clock ) &#123; <span class="comment">//assert: 0 &lt;= v &lt; n</span></span><br><span class="line">   Queue&lt;<span class="keyword">int</span>&gt; Q; <span class="comment">//引入辅助队列</span></span><br><span class="line">   status ( v ) = DISCOVERED; Q.enqueue ( v ); <span class="comment">//初始化起点</span></span><br><span class="line">   <span class="keyword">while</span> ( !Q.empty() ) &#123; <span class="comment">//在Q变空之前，不断</span></span><br><span class="line">      <span class="keyword">int</span> v = Q.dequeue(); dTime ( v ) = ++clock; <span class="comment">//取出队首顶点v</span></span><br><span class="line">      <span class="keyword">for</span> ( <span class="keyword">int</span> u = firstNbr ( v ); <span class="number">-1</span> &lt; u; u = nextNbr ( v, u ) ) <span class="comment">//枚举v的所有邻居u</span></span><br><span class="line">         <span class="keyword">if</span> ( UNDISCOVERED == status ( u ) ) &#123; <span class="comment">//若u尚未被发现，则</span></span><br><span class="line">            status ( u ) = DISCOVERED; Q.enqueue ( u ); <span class="comment">//发现该顶点</span></span><br><span class="line">            type ( v, u ) = TREE; parent ( u ) = v; <span class="comment">//引入树边拓展支撑树</span></span><br><span class="line">         &#125; <span class="keyword">else</span> &#123; <span class="comment">//若u已被发现，或者甚至已访问完毕，则</span></span><br><span class="line">            type ( v, u ) = CROSS; <span class="comment">//将(v, u)归类于跨边</span></span><br><span class="line">         &#125;</span><br><span class="line">      status ( v ) = VISITED; <span class="comment">//至此，当前顶点访问完毕</span></span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>波峰集中各顶点始终按其在BFS树中的深度在辅助队列中单调排列，且任何时刻同处于辅助队列中的顶点，深度彼此相差不超过一个单位</p>
+</blockquote>
+<p>利用数学归纳法，证明该不变性在每一顶点入队后成立。</p>
+<p>一般地，考查下一入队节点$u$,在BFS树中的深度在入队的同时确定，而就在$u$入队的那一步迭代之前，必有某一顶点$v$刚刚出队，在BFS树中$u$是$v$的孩子，故有：</p>
+<p>$depth(h)=depth(v)+1$</p>
+<p>因此，该不变性在该步迭代之前成立，则在$v$出队、$u$入队后应该继续成立。</p>
+<blockquote>
+<p>所有顶点按照在BFS树中的深度以非降次序接受访问</p>
+</blockquote>
+<p>BFS树是广度优先搜索的过程中自下而上逐层形成的，各顶点也是以其在树中的深度为序逐个被发现的，反过来，对原图的广度优先搜索过程，完全等同于对BFS树的层次遍历过程。</p>
+<p>由原图各边所联接的每一对顶点，在BFS树中的深度相差至多不超过一个单位，其中特别地，由树边联接的顶点，在BFS树中的深度之差恰好为1。</p>
+<blockquote>
+<p>所有顶点按其到$s$的距离，以非降次序接受访问</p>
+</blockquote>
+<p>每一顶点到$s$的距离均等于在BFS树中的深度，也可以理解为bfs从s到v的路径，即为二者在原图中的最短通路。</p>
+<p>反证法，假设至少有一个顶点不满足这个性质，考查此类顶点中$\pi()$值最小者u</p>
+<p>既然在BFS树(原图的子图)中，已有一条长度为depth(v)的通路联接于顶点s和u之间(树depth的定义)。</p>
+<p>故必然有$\pi(u) \leq depth(u)$</p>
+<p>因此，不妨假定$\pi(u)&lt;depth(u)$</p>
+<p>在原图中，考查$s$到$u$任何一条最短路径，其长度为$\pi(u)$。显然u不等于s，故u在该通路上的直接前驱节点存在。将次前驱节点记作$v$，则$v$应满足：</p>
+<p>$\pi(v)=\pi(u)-1&lt;\pi(u)$</p>
+<p>否则，可选其余顶点作为前驱节点</p>
+<p>之前假定$u$为其中$\pi()$值最小者，$v$的$\pi()$值比$u$小，故必然满足这一性质</p>
+<p>即得$depth(v)+1&lt;depth(u)$</p>
+<p>然而根据之前的结论，在顶点$v$出队时，作为$v$的邻接顶点之一，$u$必然会在同一步迭代中入队，并同时确定其在BFS树中的深度为：</p>
+<p>$depth(u)=depth(v)+1$</p>
+<p>以上分析对有向图同样使用。</p>
+<p>定义$dist(v,u)$为无向图中，任意顶点之间的最近距离。</p>
+<p>由树边联接的顶点，$dist(s)$恰好相差1；</p>
+<p>由跨边联接的顶点，$dist(s)$至多相差1.</p>
+<blockquote>
+<p>针对有向图和无向图讨论跨边的可能情况</p>
+</blockquote>
+<p>无向图任意一对邻接顶点在BFS树中的深度之差最多为1，因此在经过广度优先搜索后，无向图的各边无非分为两类：</p>
+<ul>
+<li>树边，$u$为<code>discovered</code>,$v$为<code>undiscovered</code>,亦是被BFS树采用的边</li>
+<li>跨边，$u$为<code>discovered</code>,$v$为<code>discovered</code>,($u$和$v$之间存在路径，故$u$必然没有访问结束)亦即联接于来自不同分支、深度相同或最多相差一层的两个顶点之间的边</li>
+</ul>
+<p>有向图中每一条边$(v,u)$均必然满足，</p>
+<p>$depth(u)\leq depth(v)+1$</p>
+<p>这一不等式取等号时，$(v,u)$即是由$v$指向$u$的一条树边。</p>
+<p>若满足：</p>
+<p>$depth(u)=depth(v)$,则$v$和$u$在BFS树中分别属于不同的分支，$(v,u)$跨越于二者之间。</p>
+<p>若满足：</p>
+<p>$depth(u)&lt;depth(v)$</p>
+<p>则在BFS树中,$u$既可能和$v$属于不同的分支，也可能就是$v$的祖先。</p>
+<p>在有向边中还可能$u$处于<code>visited</code>,$v$处于<code>discovered</code>。</p>
+<h2 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h2><p>$BFS(v)$以$v$为根，生成一棵BFS树，$n$个节点,$c$棵树，则有$n-c$条树边，故生成BFS森林包括$c$棵树，$n-c$条树边，$e-n+c$条跨边。</p>
+<p><strong>联通域分解</strong></p>
+<p>广度优先搜索算法，其算法BFS(v)只有在访遍顶点v所属的极大联通域之后方可返回，此外，若还有其他尚未访问的联通域，则算法主入口bfs()中的循环必然会继续检查其余的所有顶点，而一旦发现尚处于<code>UNDISCOVERED</code>,会在下次调用子算法BFS()并遍历该顶点属于的极大联通域。</p>
+<p>按照BFS()的各次调用顺序，分批次输出所访问的顶点以及边，可实现无向图的极大联通域分解。</p>
+<p><strong>最短路径</strong></p>
+<p>经过广度优先搜索后，各顶点在BFS树中的深度值即是在原图中从起始顶点到他们的最小距离，因此，只需要调用该算法，在每个顶点入队时随即输出其所确定的深度值，而在最终生成的BFS树中，从树根到各顶点的唯一通路，即是对应的最短通路。任意两个顶点之间的最短通路可能不止一条，但是长度必然相同。</p>
+<h1 id="深度优先搜索"><a href="#深度优先搜索" class="headerlink" title="深度优先搜索"></a>深度优先搜索</h1><p>深度优先搜索选取下一顶点的策略可概括为：优先选取最后一个被访问到的顶点的邻居。</p>
+<p>于是，从顶点$s$出发的DFS搜索，将首先访问顶点$s$，再从顶点$s$所有未访问到的邻居任取其一，并从$s$所有未访问的邻居中任取一个，并从该顶点递归地执行DFS搜索,故各顶点访问的次序类似于树的先序遍历，而各顶点被访问完的次序，则类似于树的后序遍历。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="comment">//深度优先搜索DFS算法（全图）</span></span><br><span class="line"><span class="keyword">void</span> Graph&lt;Tv, Te&gt;::dfs ( <span class="keyword">int</span> s ) &#123; <span class="comment">//assert: 0 &lt;= s &lt; n</span></span><br><span class="line">   reset(); <span class="keyword">int</span> clock = <span class="number">0</span>; <span class="keyword">int</span> v = s; <span class="comment">//初始化</span></span><br><span class="line">   <span class="keyword">do</span> <span class="comment">//逐一检查所有顶点</span></span><br><span class="line">      <span class="keyword">if</span> ( UNDISCOVERED == status ( v ) ) <span class="comment">//一旦遇到尚未发现的顶点</span></span><br><span class="line">         DFS ( v, clock ); <span class="comment">//即从该顶点出发启动一次DFS</span></span><br><span class="line">   <span class="keyword">while</span> ( s != ( v = ( ++v % n ) ) ); <span class="comment">//按序号检查，故不漏不重</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="comment">//深度优先搜索DFS算法（单个连通域）</span></span><br><span class="line"><span class="keyword">void</span> Graph&lt;Tv, Te&gt;::DFS ( <span class="keyword">int</span> v, <span class="keyword">int</span>&amp; clock ) &#123; <span class="comment">//assert: 0 &lt;= v &lt; n</span></span><br><span class="line">   dTime ( v ) = ++clock; status ( v ) = DISCOVERED; <span class="comment">//发现当前顶点v</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> u = firstNbr ( v ); <span class="number">-1</span> &lt; u; u = nextNbr ( v, u ) ) <span class="comment">//枚举v的所有邻居u</span></span><br><span class="line">      <span class="keyword">switch</span> ( status ( u ) ) &#123; <span class="comment">//并视其状态分别处理</span></span><br><span class="line">         <span class="keyword">case</span> UNDISCOVERED: <span class="comment">//u尚未发现，意味着支撑树可在此拓展</span></span><br><span class="line">            type ( v, u ) = TREE; parent ( u ) = v; DFS ( u, clock ); <span class="keyword">break</span>;</span><br><span class="line">         <span class="keyword">case</span> DISCOVERED: <span class="comment">//u已被发现但尚未访问完毕，应属被后代指向的祖先</span></span><br><span class="line">            type ( v, u ) = BACKWARD; <span class="keyword">break</span>;</span><br><span class="line">         <span class="keyword">default</span>: <span class="comment">//u已访问完毕（VISITED，有向图），则视承袭关系分为前向边或跨边</span></span><br><span class="line">            type ( v, u ) = ( dTime ( v ) &lt; dTime ( u ) ) ? FORWARD : CROSS; <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">   status ( v ) = VISITED; fTime ( v ) = ++clock; <span class="comment">//至此，当前顶点v方告访问完毕</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过显式地维护一个栈结构，动态记录从起始顶点到当前顶点通路上地各个顶点，其中栈顶对应于当前顶点。每当遇到<code>undiscovered</code>状态顶点，并令其入栈，一旦当前顶点的所有邻居都不再处于<code>undiscovered</code>状态，则将其转为<code>visited</code>状态，并令其出栈。</p>
+<p><strong>边的分类</strong></p>
+<p>每一递归实例中，先将当前节点标记为<code>discovered</code>状态，再递归地对其邻居递归处理，待所有邻居处理完毕之后再将顶点$v$置为<code>visited</code>状态，便可回溯。</p>
+<p>若顶点$u$为<code>undiscovered</code>状态，则将边$(v,u)$归纳为树边。</p>
+<p>若顶点$u$处于<code>discovered</code>状态，则发现一个有向环路，此时，在DFS遍历树中，$u$必为$v$的祖先，应将边$(v,u)$归纳为后向边。</p>
+<p>这里为每个顶点都记录了被发现的顶点和访问完成的时刻，对应的时间$[dTime(v),fTime(v)]$称为$v$的活跃期。</p>
+<p>对于有向图，顶点$v$还可能处于<code>visited</code>状态，此时通过对比$v$和$u$活跃期，即可判定$v$是否为$u$的祖先，若是，则边$(v,u)$应为前向边，否则，二者必定来自不同的分支，边$(v,u)$应归类为跨边。</p>
+<p>此处需特别注意，无向图只有后向边(不区分)，没有跨边和前向边。</p>
+<blockquote>
+<p>顶点$v$是$u$的祖先，当且仅当$[dTime(u),fTime(u)] \subseteq  [dTime(v),fTime(v)]$</p>
+</blockquote>
+<p>先证明仅当，若$v$为$u$的祖先，则遍历过程的次序应该是</p>
+<ol>
+<li>$v$被发现</li>
+<li>$u$被发现</li>
+<li>$u$访问完成</li>
+<li>$v$访问完成</li>
+</ol>
+<p>也就是说，$u$的活跃期包含于$v$的活跃期中，在任一顶点刚被发现的时候，其每个后代顶点$u$都应处于<code>undiscovered</code>状态。</p>
+<p>反之，若$u$包含于$v$的活跃期中，则意味着当$u$被发现(由<code>discovered</code>状态转入<code>discovered</code>状态，$v$应该正处于<code>discovered</code>状态。因此，$v$既不可能与$u$处于不同的分支，又不可能是$u$的后代，故当亦成立。</p>
+<p>由以上分析可进一步看出，此类顶点活跃期之间是严格的包含关系。</p>
+<blockquote>
+<p>$v$和$u$无承袭关系，当且仅当二者的活跃期无交集</p>
+</blockquote>
+<p>当必然成立，只需证明仅当</p>
+<p>考察没有承袭关系的顶点$v$和$u$，不妨设$dTime[u]&lt;dTime[v]$，则$fTime[u]&lt;dTime[v]$</p>
+<p>若不然($dTime(u)&lt;fTime(u)$),则意味着当$u$被发现时，$v$应该仍处于<code>discovered</code>状态。此时必然有一条从$v$到$u$的路径，沿途的节点都处于<code>visited</code>状态，在DFS的函数调用栈中，沿途各节点依次分别存有一帧。在DFS树中，该路径上的每一条边都对应于一对父子节点，故说明$u$是$v$的后代，与假设矛盾。</p>
+<blockquote>
+<p>起始于顶点$s$的DFS搜索过程中的某时刻，设当前节点为$v$，任一顶点$u$处于discovered状态，当且仅当$u$来自s通往$v$的路径沿途，或者等效地，在DFS树中$u$必定为$v$的祖先</p>
+</blockquote>
+<p>由条件可知$dTime(u)&lt;dTime(v)&lt;fTime(u)$</p>
+<p>由以上节点活跃期之间相互包含关系的结论，必有：</p>
+<p>$dTime(u)&lt;dTime(v)&lt;fTime(v)&lt;fTime(u)$</p>
+<p>则$[dTime(v),fTime(v)] \subseteq  [dTime(u),fTime(u)]$,$u$必定为$v$的祖先。</p>
+<p>由以上规律可知，起始顶点$s$既是第一个转入<code>discovered</code>状态的，也是最后一个转入<code>visited</code>状态的，其活跃期贯穿整个DFS算法的始末，在此期间的任何一个时刻，任何顶点处于<code>discovered</code>状态，当且仅当它属于从起始顶点$s$到当前顶点$v$的通路上。</p>
+<h2 id="应用-1"><a href="#应用-1" class="headerlink" title="应用"></a>应用</h2><p>从顶点$s$出发的深度优先搜索：</p>
+<ul>
+<li>在无向图中将访问与$s$联通的所有顶点</li>
+<li>在有向图中将访问由$s$可达的所有顶点</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>联通图的支撑树</th>
+<th>DFS/BFS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>非联通图的支撑森林</td>
+<td>DFS/BFS</td>
+</tr>
+<tr>
+<td>联通性检测</td>
+<td>DFS/BFS</td>
+</tr>
+<tr>
+<td>无向环路检测</td>
+<td>DFS/BFS</td>
+</tr>
+<tr>
+<td>有向环路检测</td>
+<td>DFS</td>
+</tr>
+<tr>
+<td>顶点之间可达性检测/路径求解</td>
+<td>DFS/BFS</td>
+</tr>
+<tr>
+<td>顶点之间的最短距离</td>
+<td>BFS</td>
+</tr>
+<tr>
+<td>直径</td>
+<td>DFS</td>
+</tr>
+<tr>
+<td>Eulerian tour</td>
+<td>DFS</td>
+</tr>
+<tr>
+<td>拓扑排序</td>
+<td>DFS</td>
+</tr>
+<tr>
+<td>双联通分量、强联通分量分解</td>
+<td>DFS</td>
+</tr>
+</tbody></table>
+<p><strong>欧拉环路问题</strong></p>
+<p>在$O(n+e)$时间内判断任一无向图是否存在欧拉环路，并且在存在时构造出一条欧拉环路</p>
+<p>根据图论的基本结论，只需遍历全图确定其连通性，再核对各顶点的度数。若连通且没有奇度数的顶点，则必然存在欧拉环路。若其中奇度数的顶点存在两个，则恰有两个，则必然存在以这两个顶点为起点和终点的欧拉环路。</p>
+<p>构造欧拉环路的一种算法：从任一顶点出发做一趟DFS，依次记录沿途经过的各边并随即从图中删除，一旦有顶点度数归零，则随即将其删除。每当回到起点，则得到一条欧拉环路。此时若还存在已访问但是还未删除的顶点，则任选其一并从它出发再做一趟DFS,过程相同。每次所新得的子环路，都需要在搜索的起始点处与此前的环路合并为一条更大的子环路。最终不剩任何顶点的时候，算法结束，当前的子环路即为原图的一条欧拉环路。</p>
+<h1 id="拓扑排序"><a href="#拓扑排序" class="headerlink" title="拓扑排序"></a>拓扑排序</h1><p>在具体情景中，有如下问题：</p>
+<ul>
+<li>给定项目工程图，是否存在可串行施工的方案？</li>
+<li>email系统中，是否存在自动转发或回复的回路</li>
+</ul>
+<p>在图论中，拓扑排序是一个有向图所有顶点的线性序列，该序列必须满足以下两个条件：</p>
+<ul>
+<li>每个顶点出现且仅出现一次</li>
+<li>若存在一条从顶点A到顶点B的路径，那么在序列中顶点A出现在顶点B的前面</li>
+</ul>
+<p>那么拓扑排序是否必然存在？</p>
+<p>教材中偏序和全序的定义为：</p>
+<ul>
+<li>偏序：集合内只有部分元素在这个关系中是可以比较的</li>
+<li>全序：任何一对元素均是可以比较的</li>
+</ul>
+<p>对于有向无环图，任意两个顶点之间的关系要么是确定的(存在先后关系)，要么是不确定的(不存在先后关系)，绝对不存在互相矛盾的关系(即环路)，以上即有向无环图。抽象而言，有向无环图两个顶点之间不存在环路，至于联通与否无所谓，所以有向无环图必然满足偏序关系。</p>
+<p>所谓全序，就是在偏序的基础上，有向无环图的任一顶点之间均有明确的关系。用图来表示，即单向联通。可见，全序就是偏序的特殊情况。</p>
+<p>拓扑排序并不唯一，交换某些节点后仍然为拓扑排序。若有向图中存在环路，则必然不可能存在拓扑排序。反之，对于有向无环图，即不含环路的有向图必然存在拓扑排序。有向无环图对应偏序关系，而拓扑排序为全序关系。在顶点数目有限时，与某一偏序相容的全序必然存在。</p>
+<h2 id="零入度"><a href="#零入度" class="headerlink" title="零入度"></a>零入度</h2><p>有限偏序集必有极大/极大元素，任何有向无环图都存在一种拓扑排序。</p>
+<p>极大元素即该元素不小于偏序集的任何其他元素，即在偏序集中是极大的。极大元素并不只是大小关系，有向无环图中的极大，其实就是在这个偏序集中不存在第二个元素可以使得它作为被处理的关系，即关系的受者。这样的元素称为该偏序集的极大元素。</p>
+<p><strong>存在性</strong></p>
+<ol>
+<li>任何DAG，必有(至少一个)顶点入度为0，记作m</li>
+<li>若DAG\{M}存在拓扑排序，则$S=&lt;u_{k1}…,u_{k(n-1)}&gt;$,则$S’=&lt;m,u_{k1}…,u_{k(n-1)}&gt;$ 即为DAG的拓扑排序。</li>
+<li>只要$m$不唯一，则拓扑排序也应不唯一</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">将所有零入度的顶点存入栈&#x2F;&#x2F;O(n)</span><br><span class="line">取空队列Q&#x2F;&#x2F;记录拓扑排序序列</span><br><span class="line">while(!S.empty())&#123;&#x2F;&#x2F;O(n)</span><br><span class="line">    Q.enqueue(v&#x3D;S.pop);&#x2F;&#x2F;栈顶顶点转入队列Q</span><br><span class="line">    for each edge(v,u)&#x2F;&#x2F;凡入度为1(经节点删除后入度为0)者，均压入栈中</span><br><span class="line">     if(inDegree(u)&lt;2) S.push(u);</span><br><span class="line">    G&#x3D;G\&#123;v&#125;;&#x2F;&#x2F;删除顶点v和其关联边</span><br><span class="line">&#125;</span><br><span class="line">return |G|:&quot;not DAG&quot;:Q;</span><br></pre></td></tr></table></figure>
+<p>残留的G空，当且仅当原图可拓扑排序。</p>
+<p>栈S和队列Q的初始化共需$O(n)$时间，主体迭代共计迭代$O(n)$步，其中涉及的操作无非以下五类：</p>
+<ul>
+<li>出、入栈，共计$O(n)$次</li>
+<li>入队，共计$O(n)$次</li>
+<li>递减邻接矩阵的入度，共计$O(e)$次</li>
+<li>删除零入度顶点，共计$O(n)$ 个</li>
+<li>删除关联边，累计$O(e)$个</li>
+</ul>
+<p>以上操作均为基本操作，故时间复杂度为$O(n+e)$</p>
+<p>空间方面，除了原图本身，引入了辅助栈和辅助队列，分别用以存放零入度顶点和排序序列，无论是S还是Q，每个顶点在其中最多存放一份，故二者的规模始终不超过$O(n)$。进一步可以发现，二者在任何时刻都不可能有公共顶点，S弹出节点并随即并入Q,故二者总体所占的空间为$O(n)$。</p>
+<h2 id="零出度"><a href="#零出度" class="headerlink" title="零出度"></a>零出度</h2><p>将关注点转至与极大顶点对称的极小顶点，同理，有限偏序集中也必然极小元素(同样，未必唯一)。该元素作为顶点，出度必然为0。在DFS搜索中，首先因访问完成而转至<code>visited</code>状态的顶点m必然具有此性质。根据DFS搜索的特性，顶点m(及其关联边)对此后的搜索过程不起作用。于是下一转至visited状态的节点可等效理解为剔除m后出度为0者。DFS搜索过程中各个顶点被标记为<code>visited</code>的顺序恰好按照逆序给出了原图的一个拓扑排序。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="comment">//基于DFS的拓扑排序算法</span></span><br><span class="line">Stack&lt;Tv&gt;* Graph&lt;Tv, Te&gt;::tSort ( <span class="keyword">int</span> s ) &#123; <span class="comment">//assert: 0 &lt;= s &lt; n</span></span><br><span class="line">   reset(); <span class="keyword">int</span> clock = <span class="number">0</span>; <span class="keyword">int</span> v = s;</span><br><span class="line">   Stack&lt;Tv&gt;* S = <span class="keyword">new</span> Stack&lt;Tv&gt;; <span class="comment">//用栈记录排序顶点</span></span><br><span class="line">   <span class="keyword">do</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> ( UNDISCOVERED == status ( v ) )</span><br><span class="line">         <span class="keyword">if</span> ( !TSort ( v, clock, S ) ) &#123; <span class="comment">//clock并非必需</span></span><br><span class="line">            <span class="keyword">while</span> ( !S-&gt;empty() ) <span class="comment">//任一连通域（亦即整图）非DAG</span></span><br><span class="line">               S-&gt;pop(); <span class="keyword">break</span>; <span class="comment">//则不必继续计算，故直接返回</span></span><br><span class="line">         &#125;</span><br><span class="line">   &#125; <span class="keyword">while</span> ( s != ( v = ( ++v % n ) ) );</span><br><span class="line">   <span class="keyword">return</span> S; <span class="comment">//若输入为DAG，则S内各顶点自顶向底排序；否则（不存在拓扑排序），S空</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="comment">//基于DFS的拓扑排序算法（单趟）</span></span><br><span class="line"><span class="keyword">bool</span> Graph&lt;Tv, Te&gt;::TSort ( <span class="keyword">int</span> v, <span class="keyword">int</span>&amp; clock, Stack&lt;Tv&gt;* S ) &#123; <span class="comment">//assert: 0 &lt;= v &lt; n</span></span><br><span class="line">   dTime ( v ) = ++clock; status ( v ) = DISCOVERED; <span class="comment">//发现顶点v</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> u = firstNbr ( v ); <span class="number">-1</span> &lt; u; u = nextNbr ( v, u ) ) <span class="comment">//枚举v的所有邻居u</span></span><br><span class="line">      <span class="keyword">switch</span> ( status ( u ) ) &#123; <span class="comment">//并视u的状态分别处理</span></span><br><span class="line">         <span class="keyword">case</span> UNDISCOVERED:</span><br><span class="line">            parent ( u ) = v; type ( v, u ) = TREE;</span><br><span class="line">            <span class="keyword">if</span> ( !TSort ( u, clock, S ) ) <span class="comment">//从顶点u处出发深入搜索</span></span><br><span class="line">               <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//若u及其后代不能拓扑排序（则全图亦必如此），故返回并报告</span></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">         <span class="keyword">case</span> DISCOVERED:</span><br><span class="line">            type ( v, u ) = BACKWARD; <span class="comment">//一旦发现后向边（非DAG），则</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//不必深入，故返回并报告</span></span><br><span class="line">         <span class="keyword">default</span>: <span class="comment">//VISITED (digraphs only)</span></span><br><span class="line">            type ( v, u ) = ( dTime ( v ) &lt; dTime ( u ) ) ? FORWARD : CROSS;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">   status ( v ) = VISITED; S-&gt;push ( vertex ( v ) ); <span class="comment">//顶点被标记为VISITED时，随即入栈</span></span><br><span class="line">   <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">//v及其后代可以拓扑排序</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>额外引入的栈复杂度不超过顶点总数$O(n)$ ,总体而言，空间复杂度与基本深度优先算法一致，为$O(n + e)$。</p>
+<p>递归跟踪过程与标准DFS过程一致，为$O(n+e)$。 </p>
+<h1 id="双联通域分解"><a href="#双联通域分解" class="headerlink" title="双联通域分解"></a>双联通域分解</h1><p>若无向图删除顶点$v$以后G包含的联通域增多，则$v$被称为关节点。如何找出图中所有关节点呢？</p>
+<p><strong>蛮力算法</strong></p>
+<ol>
+<li>通过BFS或DFS统计出图G包含的联通域数目</li>
+<li>逐一枚举各个顶点，暂时将其从图中删去</li>
+<li>统计出图G\{v}所含的联通域数目</li>
+</ol>
+<p>于是,$v$为关节点当且仅当图G\{v}的联通域数目大于图G。</p>
+<p>时间复杂度为$O(n(n+e))$</p>
+<p><strong>可行算法</strong></p>
+<p>DFS树的根节点若至少有两个分支，必定为关节点，无向图不存在跨边，所以根节点的两个分支无法通过跨边相连，去除根节点后联通域数目必然增加。若根节点只有一个分支，则不可能为根节点，叶节点绝不可能是关节点。</p>
+<p>考查一般的内部节点$c$，若节点$c$的移除导致某一棵真子树和真祖先无法联通，则$c$必定为关节点。反之，若所有子树均可以与$c$的某一祖先联通，则$c$就不可能是关节点。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="keyword">void</span> Graph&lt;Tv, Te&gt;::bcc ( <span class="keyword">int</span> s ) &#123; <span class="comment">//基于DFS的BCC分解算法</span></span><br><span class="line">   reset(); <span class="keyword">int</span> clock = <span class="number">0</span>; <span class="keyword">int</span> v = s; Stack&lt;<span class="keyword">int</span>&gt; S; <span class="comment">//栈S用以记录已访问的顶点</span></span><br><span class="line">   <span class="keyword">do</span></span><br><span class="line">      <span class="keyword">if</span> ( UNDISCOVERED == status ( v ) ) &#123; <span class="comment">//一旦发现未发现的顶点（新连通分量）</span></span><br><span class="line">         BCC ( v, clock, S ); <span class="comment">//即从该顶点出发启动一次BCC</span></span><br><span class="line">         S.pop(); <span class="comment">//遍历返回后，弹出栈中最后一个顶点——当前连通域的起点</span></span><br><span class="line">      &#125;</span><br><span class="line">   <span class="keyword">while</span> ( s != ( v = ( ++v % n ) ) );</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> hca(x) (fTime(x)) <span class="comment">//利用此处闲置的fTime[]充当hca[]</span></span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="comment">//顶点类型、边类型</span></span><br><span class="line"><span class="keyword">void</span> Graph&lt;Tv, Te&gt;::BCC ( <span class="keyword">int</span> v, <span class="keyword">int</span>&amp; clock, Stack&lt;<span class="keyword">int</span>&gt;&amp; S ) &#123; <span class="comment">//assert: 0 &lt;= v &lt; n</span></span><br><span class="line">   hca ( v ) = dTime ( v ) = ++clock; status ( v ) = DISCOVERED; S.push ( v ); <span class="comment">//v被发现并入栈</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> u = firstNbr ( v ); <span class="number">-1</span> &lt; u; u = nextNbr ( v, u ) ) <span class="comment">//枚举v的所有邻居u</span></span><br><span class="line">      <span class="keyword">switch</span> ( status ( u ) ) &#123; <span class="comment">//并视u的状态分别处理</span></span><br><span class="line">         <span class="keyword">case</span> UNDISCOVERED:</span><br><span class="line">            parent ( u ) = v; type ( v, u ) = TREE; BCC ( u, clock, S ); <span class="comment">//从顶点u处深入</span></span><br><span class="line">            <span class="keyword">if</span> ( hca ( u ) &lt; dTime ( v ) ) <span class="comment">//遍历返回后，若发现u（通过后向边）可指向v的真祖先</span></span><br><span class="line">               hca ( v ) = min ( hca ( v ), hca ( u ) ); <span class="comment">//则v亦必如此</span></span><br><span class="line">            <span class="keyword">else</span> &#123; <span class="comment">//否则，以v为关节点（u以下即是一个BCC，且其中顶点此时正集中于栈S的顶部）</span></span><br><span class="line">               <span class="keyword">do</span> &#123; </span><br><span class="line">                  temp.push ( S.pop() ); print ( vertex ( temp.top() ) ); </span><br><span class="line">               &#125; <span class="keyword">while</span> ( v != temp.top() ); </span><br><span class="line">               <span class="keyword">while</span> ( !temp.empty() ) S.push ( temp.pop() );</span><br><span class="line">               <span class="keyword">while</span> ( v != S.pop() ); <span class="comment">//依次弹出当前BCC中的节点，亦可根据实际需求转存至其它结构</span></span><br><span class="line">               S.push ( v ); <span class="comment">//最后一个顶点（关节点）重新入栈——分摊不足一次</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">         <span class="keyword">case</span> DISCOVERED:</span><br><span class="line">            type ( v, u ) = BACKWARD; <span class="comment">//标记(v, u)，并按照“越小越高”的准则</span></span><br><span class="line">            <span class="keyword">if</span> ( u != parent ( v ) ) hca ( v ) = min ( hca ( v ), dTime ( u ) ); <span class="comment">//更新hca[v]</span></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">         <span class="keyword">default</span>: <span class="comment">//VISITED (digraphs only)</span></span><br><span class="line">            type ( v, u ) = ( dTime ( v ) &lt; dTime ( u ) ) ? FORWARD : CROSS;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">   status ( v ) = VISITED; <span class="comment">//对v的访问结束</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>由于处理的是无向图，在顶点$v$的孩子$u$处返回后，通过比较$hca[u]$与$dTime[v]$的大小，即可判断是否为关节点。</p>
+<ul>
+<li>若若$hca[u] \geq dTime[v]$,则说明u的后代无法通过后向边与v的真祖先联通，故v为关节点。</li>
+<li>若$hca[u] &lt; dTime[v]$，则意味着u可经由后向边连通至v的真祖先。</li>
+</ul>
+<p>每次遇到一条后向边，也将$hca[v]$更新为$hca[v]$和$dTime[u]$之间的小者，以保证顶点v可以始终记录顶点v可由后向边向上联通的最小祖先。</p>
+<p>额外引入的栈复杂度不超过顶点总数$O(n)$ ,总体而言，空间复杂度与基本深度优先算法一致，为$O(n + e)$。</p>
+<p>时间方面，尽管同一节点可能多次入栈，但是每次入栈都对应于一个新发现的连通域，与之对应地必有至少另一顶点出栈并不再入栈，此类重复入栈操作不超过n次，入栈操作累计不超过2n次，为$O(n+e)$。 </p>
+<h1 id="优先级搜索"><a href="#优先级搜索" class="headerlink" title="优先级搜索"></a>优先级搜索</h1><p>各图搜索算法的差异，主要体现为每一步迭代对新顶点的选取策略不同，比如，BFS优先考查更早被发现的顶点，而DFS搜索优先考查最后被发现的顶点。每一种选取策略等效于给所有顶点赋予不同的优先级，而且随着算法的运行不断调整，每一步迭代所选取的节点都为当时优先级最高者。所以可以引入统一的框架，鉴于优先级在其中的关键角色，称为优先级搜索。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="keyword">template</span> &lt;<span class="keyword">typename</span> PU&gt; <span class="comment">//优先级搜索（全图）</span></span><br><span class="line"><span class="keyword">void</span> Graph&lt;Tv, Te&gt;::pfs ( <span class="keyword">int</span> s, PU prioUpdater ) &#123; <span class="comment">//assert: 0 &lt;= s &lt; n</span></span><br><span class="line">   reset(); <span class="keyword">int</span> v = s; <span class="comment">//初始化</span></span><br><span class="line">   <span class="keyword">do</span> <span class="comment">//逐一检查所有顶点</span></span><br><span class="line">      <span class="keyword">if</span> ( UNDISCOVERED == status ( v ) ) <span class="comment">//一旦遇到尚未发现的顶点</span></span><br><span class="line">         PFS ( v, prioUpdater ); <span class="comment">//即从该顶点出发启动一次PFS</span></span><br><span class="line">   <span class="keyword">while</span> ( s != ( v = ( ++v % n ) ) ); <span class="comment">//按序号检查，故不漏不重</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="keyword">template</span> &lt;<span class="keyword">typename</span> PU&gt; <span class="comment">//顶点类型、边类型、优先级更新器</span></span><br><span class="line"><span class="keyword">void</span> Graph&lt;Tv, Te&gt;::PFS ( <span class="keyword">int</span> s, PU prioUpdater ) &#123; <span class="comment">//优先级搜索（单个连通域）</span></span><br><span class="line">   priority ( s ) = <span class="number">0</span>; status ( s ) = VISITED; parent ( s ) = <span class="number">-1</span>; <span class="comment">//初始化，起点s加至PFS树中</span></span><br><span class="line">   <span class="keyword">while</span> ( <span class="number">1</span> ) &#123; <span class="comment">//将下一顶点和边加至PFS树中</span></span><br><span class="line">      <span class="keyword">for</span> ( <span class="keyword">int</span> w = firstNbr ( s ); <span class="number">-1</span> &lt; w; w = nextNbr ( s, w ) ) <span class="comment">//枚举s的所有邻居w</span></span><br><span class="line">         prioUpdater ( <span class="keyword">this</span>, s, w ); <span class="comment">//更新顶点w的优先级及其父顶点</span></span><br><span class="line">      <span class="keyword">for</span> ( <span class="keyword">int</span> shortest = INT_MAX, w = <span class="number">0</span>; w &lt; n; w++ )</span><br><span class="line">         <span class="keyword">if</span> ( UNDISCOVERED == status ( w ) ) <span class="comment">//从尚未加入遍历树的顶点中</span></span><br><span class="line">            <span class="keyword">if</span> ( shortest &gt; priority ( w ) ) <span class="comment">//选出下一个</span></span><br><span class="line">               &#123; shortest = priority ( w ); s = w; &#125; <span class="comment">//优先级最高的顶点s</span></span><br><span class="line">      <span class="keyword">if</span> ( VISITED == status ( s ) ) <span class="keyword">break</span>; <span class="comment">//直至所有顶点均已加入</span></span><br><span class="line">      status ( s ) = VISITED; type ( parent ( s ), s ) = TREE; <span class="comment">//将s及与其父的联边加入遍历树</span></span><br><span class="line">   &#125;</span><br><span class="line">&#125; <span class="comment">//通过定义具体的优先级更新策略prioUpdater，即可实现不同的算法功能</span></span><br></pre></td></tr></table></figure>
+<p>PFS搜索由两重循环构成，其中内层循环又由并列的两层循环构成，前一循环的累计时间应取决于所有顶点的出度总和，即$O(e)$,后一循环固定迭代$n$次，累计$O(n^2)$时间，二者合计总体复杂度$O(n^2)$ 。</p>
+<p>PFS中的各顶点可组织为优先级队列的形式，为此需要使用优先级队列接口：</p>
+<ul>
+<li>由$n$个顶点创建初始优先级队列，累计$ O(n)$</li>
+<li>取优先级最高的跨边$(u,w)$，累计$ O(nlogn)$</li>
+<li>更新所有关联节点到U的距离，提高优先级,共计$ O(elogn)$</li>
+</ul>
+<p>总体运行时间=$O((n+e)logn)$</p>
+<p>对于稀疏图，处理效率很高，对于稠密图，反而不如常规实现的版本。</p>
+<p>若将二叉堆改为多叉堆，则堆高降至$O(log_dn)$。</p>
+<p>上滤成本降低至$log_dn$,但是下滤成本$\displaystyle dlog_dn&gt;d\frac{ln2}{lnd}log_2n$</p>
+<p>对于稠密图，两次操作差距悬殊，如此：</p>
+<p>PFS的运行时间为$ndlog_dn+elog_dn=(nd+e)log_dn$</p>
+<p>令$\displaystyle f(x)=(nx+e)\frac{lnn}{lnx}$</p>
+<p>$\displaystyle f’(x)=n \frac{lnn}{lnx}-(nx+e)\frac{lnn}{x{ln^2x}}$</p>
+<p>$h(x)=nlnx(1+lnx)-(nx+e)lnn$</p>
+<p>$h’(x)=nlnn(1+lnx)-nlnn=nlnnlnx&gt;0$</p>
+<p>令$h(x)=0$，即$\displaystyle nlnn(xlnx-x)=elnn$</p>
+<p>即$xlnx-x=e/n$的解，根据matlab求解得，</p>
+<p>$e/(n<em>lambertw(0, (e</em>exp(-1))/n))$</p>
+<p><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Lambert_W_function">lambertw</a>，大致取$d=e/n+2$时，总体性能最优$O(elog_{e/n+2}n)$ </p>
+<p>两相权衡，大致取$d=e/n+2$时，总体性能最优$O(elog_{e/n+2}n)$</p>
+<p>对稀疏图保持高效，$elog_{e/n+2}\approx nlog_{n/n+2}n=O(nlogn)$</p>
+<p>对稠密图改进极大，$elog_{e/n+2}n \approx n^2log_{n^2+n}n \approx n^2=O(e)$</p>
+<p>对于一般的图，可以自适应地实现最优。</p>
+<h1 id="最小支撑树"><a href="#最小支撑树" class="headerlink" title="最小支撑树"></a>最小支撑树</h1><p>连通图G的某一无环联通子图T若覆盖G中的所有顶点，则称作G的一棵支撑树或生成树。</p>
+<p>支撑树<code>/spanning</code>即为覆盖N中所有顶点</p>
+<p>树，则具有以下性质：</p>
+<ul>
+<li>连通且无环，$|V|=|F|+1$</li>
+<li>再添加一条边形成环路，再删除同环的一条边恢复为树</li>
+<li>删除一条边后不再连通，再添加联边恢复为树</li>
+</ul>
+<p>同一网络的最小支撑树并不唯一。</p>
+<p>若图$G$为一带权网络，则每一棵支撑树的成本即为其所采用各边权重的总和。在G的所有支撑树中，成本最低者称作最小支撑树。</p>
+<h2 id="具体应用"><a href="#具体应用" class="headerlink" title="具体应用"></a>具体应用</h2><p>聚类分析、网络架构设计、VLSI布线设计等诸多实际应用问题可转化为最小支撑树的构造问题。在这些应用中，边的权重大多对应于某种可量化的成本，可作为对应优化问题的基本模型，同时最小支撑树构造算法也可以为一些NP问题提供足够快速、足够接近的近似解法。</p>
+<p>例如哈密顿环路(经过每个顶点刚好一次)问题，在任意n个城市的所有哈密顿环路中，找出交通成本最低者。</p>
+<p>若已经构造出对应的最小支撑数，可在$O(n)$时间内找出一条哈密尔顿环路，其交通成本不超过最优成本的两倍</p>
+<h2 id="蛮力算法"><a href="#蛮力算法" class="headerlink" title="蛮力算法"></a>蛮力算法</h2><p>由最小生成树的定义，蛮力算法大致如下：</p>
+<ul>
+<li>逐一枚举G的所有生成树，从而挑选其中的最低者</li>
+</ul>
+<blockquote>
+<p>n个互异顶点构成的图，可能有多少支撑树？</p>
+</blockquote>
+<p><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Cayley's_formula#Generalizations">Cayley公式</a>：联接n个互异顶点的树有$n^{n-2}$棵，或等价地，完全图$k_n$有$n^{n-2}$棵支撑树。</p>
+<h2 id="prim算法"><a href="#prim算法" class="headerlink" title="prim算法"></a>prim算法</h2><p>图$G=(V;E)$中，顶点集$V$的任一平凡子集$U$及其补集$V/U$都构成$G$的一个割，记作$(U;V/U)$。若边$uv$满足$u \in U$且$v\notin U$,则称作该割的一条跨越边。因此类边联接于V和其补集之间。</p>
+<p>先假定各节边的权重互异，退化情况同样可证</p>
+<p>prim算法的正确性基于以下事实：<strong>最小支撑树总是会采用联接每一割的最短跨越边</strong>。</p>
+<p>反证：假设$(u,v)$未被任何MST采用</p>
+<p>任取一棵MST,不妨命名为$T$,将$(u,v)$​加入其中，于是将出现唯一的回路，该回路必将经过$(u,v)$以及至少另一跨边$(s,t)$(若不存在跨边则二者必然不连通)，再删除边$st$则该环路必将消失。转换后的子树$T’$仍然为连通图，$T$和$T’$二者的差异仅在于边$uv$和边$st$,故二者成本之差即是这两条边的权重之差。不难看出，边$st$的权重必然大于身为最短跨越边的$uv$，故$T’$的总体权重小于$T$，这与$T$总体权重最小的前提矛盾。</p>
+<p>反之，<strong>N的任一MST必然通过极短跨边联接每一割</strong></p>
+<blockquote>
+<p>G的每棵极小支撑树中的每一条边，必然为某一割的极短跨越边</p>
+</blockquote>
+<p>任取$G$的一棵极小支撑树$T$，考查其中的任何一条树边$uv$。将该边删除之后，$T$应恰好被分成两棵子树，它们对应的两个顶点子集也构成G的一个割$(U:V/U)$。</p>
+<p>实际上，$uv$必然是该割的极短跨越边之一，否则将其替换为一条极短跨边，则可得到一棵权重更小的树。</p>
+<p>以下方法可由现有某一图最小支撑树导出该图添加一边后的最小支撑树</p>
+<p>设$T$为$N$的一棵MST，在$N$中添加边$e$后得到$N’$</p>
+<p>若：沿着$e$在$T$中对应的环路，$f$为一极长边，则$T-{f}+{e}$即为$N’$的一棵MST</p>
+<p>此时，$f=e,T-{f}+{e}=T$即为$N’$的MST</p>
+<ul>
+<li>若$e$为环路上的最长边，则e不可能属于$N’$的MST,此时,e不可能属于$N’$的MST,此时，$f=e,T-{f}+{e}=T$依然是$N’$的MST</li>
+<li>否则有$|e|\leq |f|$,移除后$T-{f}$一分为二，对应于$N/N’$的割</li>
+</ul>
+<p>此割在$N$和$N’$中导出的一对互补子图完全一致，在$N/N’$中，$f/e$应是该割的极短跨越边，故这对子图各自的MST经联接后，即是$N’$的一棵MST。</p>
+<blockquote>
+<p>在MST不唯一时，由极短跨边构成的支撑树，未必就是一棵MST</p>
+</blockquote>
+<p>同一割可能同时拥有多条极短跨越边，以下证明可说明prim算法的正确性，即</p>
+<blockquote>
+<p>只要$T_{k}$是某棵最小支撑树的子树，则$T_{k+1}$也必然是(尽管可能与前一棵子树不同)极小支撑树的子树。</p>
+</blockquote>
+<p>假定$T_{k}$是某棵最小支撑树T的子集，</p>
+<ul>
+<li>若$e\in T$,则$E\cup{e}$必然为最小支撑树T的子集</li>
+<li>设$e=(u,v)$，那么在$T$中必然存在从$u$到$v$的路径(树的性质)；$u$,$v$必然存在于$(S,V-S)$的两个点集里，于是这条路径上必有某条边$(x,y)$同样跨越割</li>
+</ul>
+<p>类似之前的操作，令$T’=T-{(x,y)}\cup{(u,v)}$</p>
+<p>那么$T’$仍然是一棵最小支撑树，$w(u,v)\leq w(x,y)$</p>
+<p>因此，$w(T’)=w(T)-w(x,y)+w(u,v)\leq w(T)$</p>
+<p>由于$T$为最小支撑树，所以$w(T)\leq w(T’)$，所以$T$’同样为最小生成树。</p>
+<blockquote>
+<p>对于权值不为正数的网络，prim算法是否仍然可行</p>
+</blockquote>
+<p>依然可行，首先确认带负权边的网络依然拥有最小支撑树，可统一增加某个值使得所有边的权值为正，得到G’,G’的每一支撑树和G的每一支撑树必然一一对应，均相差一个常数。</p>
+<blockquote>
+<p>同一割的跨边可能不止采用一次</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="comment">//Prim算法：无向连通图，各边表示为方向互逆、权重相等的一对边</span></span><br><span class="line"><span class="keyword">void</span> Graph&lt;Tv, Te&gt;::prim ( <span class="keyword">int</span> s ) &#123; <span class="comment">//assert: 0 &lt;= s &lt; n</span></span><br><span class="line">   reset(); priority ( s ) = <span class="number">0</span>;</span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++ ) &#123; <span class="comment">//共需引入n个顶点和n-1条边</span></span><br><span class="line">      status ( s ) = VISITED;</span><br><span class="line">      <span class="keyword">if</span> ( <span class="number">-1</span> != parent ( s ) ) type ( parent ( s ), s ) = TREE; <span class="comment">//引入当前的s</span></span><br><span class="line">      <span class="keyword">for</span> ( <span class="keyword">int</span> j = firstNbr ( s ); <span class="number">-1</span> &lt; j; j = nextNbr ( s, j ) ) <span class="comment">//枚举s的所有邻居j</span></span><br><span class="line">         <span class="keyword">if</span> ( ( status ( j ) == UNDISCOVERED ) &amp;&amp; ( priority ( j ) &gt; weight ( s, j ) ) ) <span class="comment">//对邻接顶点j做松弛</span></span><br><span class="line">            &#123; priority ( j ) = weight ( s, j ); parent ( j ) = s; &#125; <span class="comment">//与Dijkstra算法唯一的不同之处</span></span><br><span class="line">      <span class="keyword">for</span> ( <span class="keyword">int</span> shortest = INT_MAX, j = <span class="number">0</span>; j &lt; n; j++ ) <span class="comment">//选出下一极短跨边</span></span><br><span class="line">         <span class="keyword">if</span> ( ( status ( j ) == UNDISCOVERED ) &amp;&amp; ( shortest &gt; priority ( j ) ) )</span><br><span class="line">            &#123; shortest = priority ( j ); s = j; &#125;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="class"><span class="keyword">struct</span> <span class="title">PrimPU</span> &#123;</span> <span class="comment">//针对Prim算法的顶点优先级更新器</span></span><br><span class="line">   <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">operator</span><span class="params">()</span> <span class="params">( Graph&lt;Tv, Te&gt;* g, <span class="keyword">int</span> uk, <span class="keyword">int</span> v )</span> </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> ( UNDISCOVERED == g-&gt;status ( v ) ) <span class="comment">//对于uk每一尚未被发现的邻接顶点v</span></span><br><span class="line">         <span class="keyword">if</span> ( g-&gt;priority ( v ) &gt; g-&gt;weight ( uk, v ) ) &#123; <span class="comment">//按Prim策略做松弛</span></span><br><span class="line">            g-&gt;priority ( v ) = g-&gt;weight ( uk, v ); <span class="comment">//更新优先级（数）</span></span><br><span class="line">            g-&gt;parent ( v ) = uk; <span class="comment">//更新父节点</span></span><br><span class="line">         &#125;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>在带权网络存在多条相等的边(同为某一割的极短跨越边)时，可能存在歧义</p>
+<p>若带权网络均为整数权重，则可通过给每条边的权重增加一个扰动量来消除歧义，如此构造的W’中各边的权重必然互异，其最小支撑树必然唯一。</p>
+<p>设原图共含$v$个顶点、$e$条边，不妨假定$v-1&lt;e$。若各边权重(按照输入次序)依次为</p>
+<p>$W=[w_{1},w_{2},..w_{e}]$</p>
+<p>且不妨设各边权重不至完全相等，则可将其替换为：</p>
+<p>$W=[w_1+1/e^{2},w_2+2/e^2,..,w_e+e/e^2]$</p>
+<p>各边权重均有所增加，且增量为以$1/e^2$为公差的算术级数。</p>
+<p>所有各边的扰动量总和不超过：</p>
+<p>$(1+2+3+…+e)/e^2=(1+e)/2e&lt;1$</p>
+<p>即便在$W$中存在等权的边，在如此构造的$W$’中各边的权重必然互异。于是由prim算法构造的最小支撑树必然唯一确定。于是，$W’$的任一支撑树都应满足都应满足</p>
+<p>$|T_{m}’|\leq |T’|$</p>
+<p>$\lfloor |T_{m}’|\rfloor \leq \lfloor  |T’| \rfloor$</p>
+<p>既然$|W|=|W’|=e$,故二者的支撑树必然存在一一对应的关系。</p>
+<p>考查如此对应的每一对支撑树$T$和$T’$。既然它们各自都恰好包含$v-1$条边，故应有：</p>
+<p>$0&lt;|T’|-|T|&lt;(v-1)(1/e) \leq 1$</p>
+<p>必有：</p>
+<p>$\lfloor  |T’| \rfloor=\lfloor  |T| \rfloor$</p>
+<p>特别地，设与$T_m’$对应的支撑树为$T_m$，则也应有：</p>
+<p>$\lfloor  |T_{m}’| \rfloor=\lfloor  |T_{m}| \rfloor$</p>
+<p>$|T_m|=\lfloor |T_{m}’|\rfloor \leq \lfloor  |T’| \rfloor=|T|$</p>
+<p>由此可见，$T_m$必然是$w$的一棵最小支撑树。</p>
+<p>以上方法之所以行之有效，是因为事先在不等权的边之间确定边权重的最小差值，从而保证W’的各权重互异，同时又能保证通过向下取整运算，从而从$|T’|$确定相应的$|T|$。若权重可以取自任何实数，则这两个性质无法兼顾。</p>
+<p>当然，可推广至浮点数的情况，先将浮点数通过统一的放缩，将各边的权重转换为整数。</p>
+<p>基于优先级队列，我们可以设计如下算法：</p>
+<p>首先花费$O(n)$时间将起点$s$与其余顶点之间的$n-1$条边组织为一个优先级队列H。此后每一步迭代中，只需$O(logn)$时间即可从H中取出优先级数最小的边，并将对应的节点转入最小支撑树中。</p>
+<p>取出每个节点需要$O(logn)$时间，删除操作，下滤，累计需要$O(nlogn)$时间。</p>
+<p>所有顶点的所有邻接顶点的松弛，优先级增加，上滤，在最坏情况下累计需要$O(elogn)$时间。</p>
+<p>如此改进以后，prim算法的效率为$O((n+e)logn)$ 。</p>
+<h2 id="kruskal算法"><a href="#kruskal算法" class="headerlink" title="kruskal算法"></a>kruskal算法</h2><p>krusal算法将每个顶点视作一棵树，并将所有边按权重非降排序，依次考查各边，只要其端点分属于不同的树，则引入该边，并将端点所分别归属的树合二为一，如此迭代，累计已引入$n-1$条边时，即得到一棵最小生成树。</p>
+<blockquote>
+<p>算法过程中引入的每一条边，都是某一割的极短跨越边，因此必定属于某棵极小支撑树。</p>
+</blockquote>
+<p>设$e=(u,v)$的引入导致树$T$和$S$的合并，将$(T;V/T)$视作原网络$N$的割，则$e$当属该割的一条跨边。</p>
+<p>在确定应引入$e$时，该割的所有跨边都经kruskal考察，且只可能因为不短于$e$而被淘汰。</p>
+<p>故$e$属于该割的一条极短跨边。</p>
+<p>与prim同理，以上论述同样不充分。以下论述则为充分证明：</p>
+<blockquote>
+<p>kruskal算法过程中不断生长的森林，总是某棵MST的子图</p>
+</blockquote>
+<p><strong>时间复杂度分析</strong></p>
+<p>若全排序，则将耗时$O(eloge)=O(n^2logn)$</p>
+<p>实际上，大多数情况下只需要考虑前$O(n)$条边。</p>
+<p>将所有边组织为优先队列</p>
+<p>建堆，$O(e)$</p>
+<p>删除并复原，共迭代$O(e)$次,实际中远远小于$e$，尤其对于稠密图</p>
+<p>总共=$O(e)+O(elog n)=O(elogn)$</p>
+<blockquote>
+<p>如何高效地检查回路？</p>
+</blockquote>
+<p><strong>并查集</strong></p>
+<p>给定一组互不相交的等价类，由各自的一个成员为代表</p>
+<p>初始时各包含一个元素</p>
+<p><code>find(x)</code> 找到元素x的等价类</p>
+<p><code>union(x,y)</code> 合并x和y所属等价类</p>
+<p><code>kruskal</code>算法迭代过程中所涉及的计算无非两类：</p>
+<ul>
+<li>查询元素x对应的等价类</li>
+<li>将元素y所属的等价类(子树)，并入元素y所属的等价类(子树)</li>
+</ul>
+<p>并查集中的等价类，为某一全集的若干不相交子集。最初状态下，每个元素自成一个子集，并以该元素作为标识，每经过一次<code>union(x,y)</code>操作，都将元素y所属的子集归入元素x所属的子集，并继续沿用元素x此前的标识。</p>
+<p>仿照父子节点表示法，将每个子集组织为一棵多叉树，并令所有多叉树共存于一个向量中。子集合并即对应树的合并，元素所属的子集即是所属的树，也对应该树的根。</p>
+<p><code>find(x)</code>查找问题也就转化为了在多叉树中查找节点的问题，沿着<code>paren</code>t指针依次上行，直到最高祖先。</p>
+<p>为了有效控制树高，可采取低者优先归入高者的策略，也就是比较待合并树的高度，并倾向于将更低者归入更高者。为此需要给每个节点增加一个域，动态记录树的高度。</p>
+<p>有效控制树高的另一策略是路径压缩，在每次查找的过程中将上行通路的沿途节点取出，并作为树根的孩子重新介入树中。</p>
+<h1 id="最短路径"><a href="#最短路径" class="headerlink" title="最短路径"></a>最短路径</h1><p>若以带权图来表示真实的通讯、交通、物流或社交网络，则各边的权重可代表信道成本、交通运输费用或交往程度。给定有向图G及其中的顶点u和v，找到从u到v的最短路径和长度即为最短路径问题。</p>
+<p>对旅游者来说，最短路径意味着最经济的出行路线，对路由器来说，最短路径意味着最快将数据包传送至指定位置。</p>
+<h2 id="问题分类"><a href="#问题分类" class="headerlink" title="问题分类"></a>问题分类</h2><p><strong>单源点到各顶点的最短路径</strong></p>
+<p>给定顶点$x$，计算$x$到其余各个顶点的最短路径及其长度</p>
+<p><strong>所有顶点对之间的路径</strong></p>
+<p>找出每个顶点$i$和$j$之间的最短路径及长度</p>
+<h2 id="最短路径树"><a href="#最短路径树" class="headerlink" title="最短路径树"></a>最短路径树</h2><p>在连通图中，$s$到每个顶点都有至少一条最短路径，任何路径的最短前缀也必定为一条最短路径。在任意带权网络中，考查从源点到其余顶点的最短路径(若有多条，选取其一)，就同一起点额如烟，所有最短路径的并不含回路，因此必构成一棵树。</p>
+<h2 id="Dijkstra算法"><a href="#Dijkstra算法" class="headerlink" title="Dijkstra算法"></a>Dijkstra算法</h2><p>按照到$s$的最短距离，对其余的顶点排序</p>
+<p>$dist(s,u_1)\leq dist(s,u_2) \leq …\leq dist(s,u_{n-1})$</p>
+<p>沿着任一最短路径，各顶点到$s$的最短距离单调变化，$u_1$必定直接与$s$相连，为了找到$u_1$，只需在与$s$关联的各顶点之间找到对应权值最小者。</p>
+<p>每一个顶点$u_{k+1}$都是$T_{k}$之外距离s最近者，由此引出贪心迭代算法。与prim算法不同，考虑距离为到s的距离而不是到$T_{k}$的距离。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="comment">//最短路径Dijkstra算法：适用于一般的有向图</span></span><br><span class="line"><span class="keyword">void</span> Graph&lt;Tv, Te&gt;::dijkstra ( <span class="keyword">int</span> s ) &#123; <span class="comment">//assert: 0 &lt;= s &lt; n</span></span><br><span class="line">   reset(); priority ( s ) = <span class="number">0</span>;</span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++ ) &#123; <span class="comment">//共需引入n个顶点和n-1条边</span></span><br><span class="line">      status ( s ) = VISITED;</span><br><span class="line">      <span class="keyword">if</span> ( <span class="number">-1</span> != parent ( s ) ) type ( parent ( s ), s ) = TREE; <span class="comment">//引入当前的s</span></span><br><span class="line">      <span class="keyword">for</span> ( <span class="keyword">int</span> j = firstNbr ( s ); <span class="number">-1</span> &lt; j; j = nextNbr ( s, j ) ) <span class="comment">//枚举s的所有邻居j</span></span><br><span class="line">         <span class="keyword">if</span> ( ( status ( j ) == UNDISCOVERED ) &amp;&amp; ( priority ( j ) &gt; priority ( s ) + weight ( s, j ) ) ) <span class="comment">//对邻接顶点j做松弛</span></span><br><span class="line">            &#123; priority ( j ) = priority ( s ) + weight ( s, j ); parent ( j ) = s; &#125; <span class="comment">//与Prim算法唯一的不同之处</span></span><br><span class="line">      <span class="keyword">for</span> ( <span class="keyword">int</span> shortest = INT_MAX, j = <span class="number">0</span>; j &lt; n; j++ ) <span class="comment">//选出下一最近顶点</span></span><br><span class="line">         <span class="keyword">if</span> ( ( status ( j ) == UNDISCOVERED ) &amp;&amp; ( shortest &gt; priority ( j ) ) )</span><br><span class="line">            &#123; shortest = priority ( j ); s = j; &#125;</span><br><span class="line">   &#125;</span><br><span class="line">&#125; <span class="comment">//对于无向连通图，假设每一条边表示为方向互逆、权重相等的一对边</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> Tv, <span class="keyword">typename</span> Te&gt; <span class="class"><span class="keyword">struct</span> <span class="title">DijkstraPU</span> &#123;</span> <span class="comment">//针对Dijkstra算法的顶点优先级更新器</span></span><br><span class="line">   <span class="function"><span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">operator</span><span class="params">()</span> <span class="params">( Graph&lt;Tv, Te&gt;* g, <span class="keyword">int</span> uk, <span class="keyword">int</span> v )</span> </span>&#123;</span><br><span class="line">      <span class="keyword">if</span> ( UNDISCOVERED == g-&gt;status ( v ) ) <span class="comment">//对于uk每一尚未被发现的邻接顶点v，按Dijkstra策略</span></span><br><span class="line">         <span class="keyword">if</span> ( g-&gt;priority ( v ) &gt; g-&gt;priority ( uk ) + g-&gt;weight ( uk, v ) ) &#123; <span class="comment">//做松弛</span></span><br><span class="line">            g-&gt;priority ( v ) = g-&gt;priority ( uk ) + g-&gt;weight ( uk, v ); <span class="comment">//更新优先级（数）</span></span><br><span class="line">            g-&gt;parent ( v ) = uk; <span class="comment">//并同时更新父节点</span></span><br><span class="line">         &#125;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>若节点之间存在负权重，则<code>dijkstra</code>不可行。任意两点之间通路数目有限，其中最短者仍然存在，故最短路径树依然存在，但是<code>dijkstra</code>树在此时未必可行。可在pfs优先级更新时，不再忽略非<code>undiscovered</code>节点，一旦优先级有所增加，则随即恢复为<code>undiscovered</code>状态，进而参加下一节点的候选，时间复杂度同样因此提高。</p>
+<p>即便带权网络中不含权重相等的边，其最短路径树依然可能不唯一。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/algorithm/graph/" title="图">http://example.com/algorithm/graph/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Data-structure/" rel="tag"><i class="fa fa-tag"></i> Data structure</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/algorithm/bin-tree/" rel="prev" title="二叉树">
+                  <i class="fa fa-chevron-left"></i> 二叉树
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/algorithm/bst/" rel="next" title="二叉搜索树">
+                  二叉搜索树 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  <script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'none'
+      },
+      options: {
+        renderActions: {
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              const target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.typesetClear();
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+
+
+</body>
+</html>

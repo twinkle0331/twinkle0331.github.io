@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Serif+SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/font-awesome@4/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="借助数据结构来表示和组织的数据结构，将所有数据视作一个整体统筹处理，进而提高信息访问的规范性及其处理的效率。例如，借助关键码查找和访问数据元素，其中最典型的例子即为词典。逻辑上的词典，为由一组数据构成的集合，其中各元素都是由关键码和数据项合成的词条。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="词典">
+<meta property="og:url" content="http://example.com/algorithm/hash/index.html">
+<meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="借助数据结构来表示和组织的数据结构，将所有数据视作一个整体统筹处理，进而提高信息访问的规范性及其处理的效率。例如，借助关键码查找和访问数据元素，其中最典型的例子即为词典。逻辑上的词典，为由一组数据构成的集合，其中各元素都是由关键码和数据项合成的词条。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2019/09/08/V9cLzn6BCqXRgGK.png">
+<meta property="article:published_time" content="2019-09-07T03:13:39.000Z">
+<meta property="article:modified_time" content="2021-03-27T13:17:35.000Z">
+<meta property="article:author" content="trinkle">
+<meta property="article:tag" content="Data structure">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2019/09/08/V9cLzn6BCqXRgGK.png">
+
+
+<link rel="canonical" href="http://example.com/algorithm/hash/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>词典 | trinkle</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="trinkle" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">trinkle</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/algorithm/hash/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="trinkle">
+      <meta itemprop="description" content="Stay foolish,stay hungry.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="trinkle">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          词典
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-09-07 11:13:39" itemprop="dateCreated datePublished" datetime="2019-09-07T11:13:39+08:00">2019-09-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>借助数据结构来表示和组织的数据结构，将所有数据视作一个整体统筹处理，进而提高信息访问的规范性及其处理的效率。例如，借助关键码查找和访问数据元素，其中最典型的例子即为词典。逻辑上的词典，为由一组数据构成的集合，其中各元素都是由关键码和数据项合成的词条。</p>
+<a id="more"></a>
+
+<p>映射和词典一样，也是词条的集合，二者的差异仅在于，映射要求不同词条的关键码互异，而词典则允许多个词条拥有相同的关键码。除了静态查找，映射和词典都支持动态更新，二者均统称为符号表。符号表并不要求词条之间可根据关键码比较大小，也不需要按照大小次序来组织数据项。以散列表为代表的符号表结构，转而根据数据项之间的数值，直接做逻辑查找和物理定位。在此类结构中，关键码和数值的地位等同，这种数据访问方式即为循值访问。为了循值访问，在符号表内部仍需强制地在数据对象的数值与其物理地址之间建立某种关联。</p>
+<h1 id="应用情景"><a href="#应用情景" class="headerlink" title="应用情景"></a>应用情景</h1><p>散列以最基本的向量作为底层支撑结构，通过适当的散列函数在词条的关键码与向量单元的秩之间建立映射关系。只要散列表、散列函数、冲突排解策略安排得当，可在期望的常数时间内实现词典的所有接口操作。</p>
+<p><strong>电话查询系统</strong></p>
+<p>假设某大学拟建立一个电话簿查询系统，由电话号码查询机主信息，</p>
+<p>蛮力：使用数组，按电话号码索引，静态的查找和动态的删除仅需要常数时间。</p>
+<p>在使用8位编号系统时，可能的电话门数可能达到$10^8$次，而该校所有人员涉及的电话门数仅为25000门。上述方案使用的数组长度大致与$10^8$相当,此时的空间有效利用率仅为$25000/10^8=0.025$%，绝大部分空间处于闲置状态。</p>
+<p>此类问题在实际应用中非常常见，共同特点可归纳为：尽管词典实际需要保存的词条数N远远少于可能出现的词条数R，但是R个词条中任何一个均有可能出现在此词典中。</p>
+<p>散列表是散列方法的底层基础，逻辑上由一系列可存放词条的单元组成，故这些单元也被称为桶或桶单元，与之对应地，各桶单元也应按照其逻辑次序在物理上连续排列，往往用向量(数组)实现。此时地散列表亦称作桶数组。</p>
+<p>设桶数组的大小为M，则$N&lt;M&lt;&lt;R$，空间$=O(N+M)=O(N)$。</p>
+<h1 id="散列函数"><a href="#散列函数" class="headerlink" title="散列函数"></a>散列函数</h1><p>一组词条在散列表内部的分布取决于散列方案，即事先在词条与桶地址之间定义某种映射关系，可描述为从关键码空间到桶地址空间的函数。</p>
+<p><code>hash():key-&gt;hash(key)</code></p>
+<p>这里的<code>hash()</code>称作散列函数，<code>hash(key)</code>称作key的散列地址，即与关键码key相对应的桶在散列表中的秩。</p>
+<p>例如，某学校学生学号为10160000到10163999,则可直接使用一个长度为4000的散列表A[0~3999]，并取</p>
+<p><code>hash(key)=key-10160000</code></p>
+<p>从而将学号为x的学生学籍词条存放于桶单元A[hash(x)]。</p>
+<p>如此之后，根据任一合法学号，都可在常数时间内确定其散列地址，并完成一次查找、插入或删除。</p>
+<p>同义词，key1不等于key2，<code>hash(key1)=hash(key2)</code>。</p>
+<blockquote>
+<p>是否存在某种定址方法，保证不出现冲突(消除同义词)，即散列函数等效于一个单射。</p>
+</blockquote>
+<p>在关键码满足某些条件时，的确可以实现单射式散列。对于已知且固定的关键码集，可实现完美散列，采用两级散列，仅需$O(n)$空间，关键码之间互不冲突。一般情况下，完美散列无法保证存在。</p>
+<p><strong>设计原则</strong></p>
+<p>作为一个比较好的散列函数，应该具备以下特性：</p>
+<ul>
+<li>确定性，无论所含的数据项如何，词条E在散列表中的映射地址完全取决于关键码</li>
+<li>映射过程不可过于复杂，从而使查询和修改操作可在常数时间内完成</li>
+<li>所有关键码经过映射后应尽量覆盖整个地址空间[0,M),充分利用有效的散列表空间，即hash()最好是满射</li>
+</ul>
+<p>定义域规模R远远大于取值域规模M,hash()不可能是单射。这意味着散列冲突在所难免。最为重要的一条原则就是关键码映射到各桶的概率应尽量接近于1/M，若关键码独立均匀分布，这也是任意一对关键码相互冲突的概率。整体而言，等效于将关键码空间均匀地映射到散列地址空间，从而避免极短低效的情况。总之，随机越强、规律性越弱的散列函数越好。</p>
+<h2 id="除余法"><a href="#除余法" class="headerlink" title="除余法"></a>除余法</h2><p><code>hash(key)=key % M</code></p>
+<p>一般地，散列表长度$M$与词条关键码间隔$T$之间的公约数越大，发生冲突的可能性也越大。在实际应用中，对同一词典的访问往往具有某种周期性，若其周期与$M$有公共的因子，则冲突的概率将急剧攀升。若$M$为素数时，对于严格或大致等间隔的关键码序列，也不会出现冲突激增的情况。同时，数据对散列表的覆盖最充分，分布最均匀。</p>
+<p>若取$M=2^k$，则对任何词条都有：</p>
+<p><code>key%M=key &amp;(M-1)=key &amp; 00...001111..11</code></p>
+<p>此时采用模余法的效果，等同于从key的展开式中截取末尾的$k$个比特。词条key中更高的其余比特位对散列的位置没有任何影响，从而在很大程度上降低了散列的随机性和均匀性。</p>
+<blockquote>
+<p>假定散列表长度为$M$，采用除余法，若从空开始将间隔为$T$的$M$个关键码插入其中，若$g=gcd(M,T)$为$M$和$T$的最大公约数，则每个关键码大约与$g$个关键码冲突</p>
+</blockquote>
+<p>这一组关键码序列依次构成一个等差数列，其公差为$T$。不失一般性，设他们分别是：</p>
+<p>${0,T,2T,3T,…,(M-1)T}$</p>
+<p>按照模余法，任何一对关键码相互冲突，当且仅当它们关于散列表长$M$，属于同一同余类。$g$为$M$和$T$的最大公约数，故相对于$M$而言，这些关键码来自于$M/g$个同余类。每一类各有彼此冲突的$g$个关键码。例如，其中0所属的同余类为：</p>
+<p>${0,TM/g,2TM/g,3TM/g,…,(g-1)TM/g}$</p>
+<p>散列表的$M$个桶与$M$的$M$个同余类一一对应。既然此时的关键码只能来自其中M/g个同余类，故必有M-M/g个桶闲置，空间利用率不超过：$\displaystyle \frac{M/g}{M}=1/g$</p>
+<p><strong>除余法的缺陷</strong></p>
+<ol>
+<li>不动点：无论表长M取值如何，总有<code>hash(0)=0</code></li>
+<li>零阶均匀：$[0,R)$的关键码，平均分配至$M$个桶，但相邻关键码的散列地址也必相邻</li>
+</ol>
+<h2 id="MAD法"><a href="#MAD法" class="headerlink" title="MAD法"></a>MAD法</h2><p>一阶均匀：邻近的关键码，散列地址不再邻近</p>
+<p>取M为素数,$a&gt;0$,$b&gt;0$,$a%M!=0$，</p>
+<p>$hash(key)=(a*key+b)%M$</p>
+<p>当然，某些条件下未必需要更高阶的均匀性。</p>
+<h2 id="数字分析法"><a href="#数字分析法" class="headerlink" title="数字分析法"></a>数字分析法</h2><p>从关键码key特定进制的展开中取特定的若干位，构成一个整形地址。比如，取十进制表示的奇数位，$hash(123456789)=13579$</p>
+<h2 id="平方取中法"><a href="#平方取中法" class="headerlink" title="平方取中法"></a>平方取中法</h2><p>从关键码key的平方的十进制或二进制展开中取居中的若干位，构成一个整形地址。</p>
+<h2 id="折叠法"><a href="#折叠法" class="headerlink" title="折叠法"></a>折叠法</h2><p>将关键码的十进制或二进制展开分割为等宽的若干段，经异或运算后得到散列地址。</p>
+<h2 id="位异或法"><a href="#位异或法" class="headerlink" title="位异或法"></a>位异或法</h2><p>将特定的二进制展开分割为等宽的若干段，经异或运算得到地址</p>
+<p>总之，越是随机，越是没有规律越好。</p>
+<h2 id="伪随机数法"><a href="#伪随机数法" class="headerlink" title="伪随机数法"></a>伪随机数法</h2><p>散列函数和目标与随机数的目标一致，所以通过随机数法映射地址：</p>
+<p>$hash(key)=rand(key)%M$</p>
+<h1 id="散列码转换"><a href="#散列码转换" class="headerlink" title="散列码转换"></a>散列码转换</h1><p>作为词典的散列表结构，既不能假定词条关键码所属的类型天然地支持大小比较，更不应将关键码仅限定为整数类型。为扩大散列奇数地适用范围，散列函数hash()需要将任一类型的关键码映射为地址空间$[0,M)$内的一个整数hash(key)，通常可分解为两步</p>
+<ul>
+<li>利用某一种散列码转换函数<code>hashcode()</code>将关键码key统一转换为一个整数，称为散列码</li>
+<li>再利用散列函数将散列码映射为散列地址</li>
+</ul>
+<p>那么，这里的散列转换函数<code>hashCode()</code>支持什么条件呢？</p>
+<p>为支持后续尺度不同的散列空间，取值范围应覆盖系统所支持的最大整数范围，其次，各关键码经hashCode()映射后所得的散列码，相互之间的冲突也应尽可能减少，否则，这一阶段出现的冲突后一阶段将无法消除。</p>
+<h2 id="强制转换"><a href="#强制转换" class="headerlink" title="强制转换"></a>强制转换</h2><p>对于<code>byte</code>,<code>short</code>,<code>int</code>和<code>char</code>等本身即可表示为不超过32位整数的数据类型，可直接将它们的这种表示作为散列码。比如，可通过类型强制转换为32位整数。</p>
+<h2 id="多项式法"><a href="#多项式法" class="headerlink" title="多项式法"></a>多项式法</h2><p>与一般的组合对象不同，字符串各字符之间的次序具有特定含义，在散列码转换时务必考虑它们之间的次序。以英文为例，同一组字母往往可组成意义完全不同的多个单词，比如stop和tops等。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">size_t</span> <span class="title">hashCode</span> <span class="params">( <span class="keyword">char</span> s[] )</span> </span>&#123; <span class="comment">//生成字符串的循环移位散列码（cyclic shift hash code）</span></span><br><span class="line">   <span class="keyword">int</span> h = <span class="number">0</span>; <span class="comment">//散列码</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">size_t</span> n = <span class="built_in">strlen</span> ( s ), i = <span class="number">0</span>; i &lt; n; i++ ) <span class="comment">//自左向右，逐个处理每一字符</span></span><br><span class="line">      &#123; h = ( h &lt;&lt; <span class="number">5</span> ) | ( h &gt;&gt; <span class="number">27</span> ); h += ( <span class="keyword">int</span> ) s[i]; &#125; <span class="comment">//散列码循环左移5位，再累加当前字符</span></span><br><span class="line">   <span class="keyword">return</span> ( <span class="keyword">size_t</span> ) h; <span class="comment">//如此所得的散列码，实际上可理解为近似的“多项式散列码”</span></span><br><span class="line">&#125; <span class="comment">//对于英语单词，&quot;循环左移5位&quot;是实验统计得出的最佳值</span></span><br></pre></td></tr></table></figure>
+<p>若简单地将各字母分别对应到整数，并将其总和作为散列码，则很多单词将相互冲突。为计入各字符之间出现的相对次序，可取常数$a \geq 2$,并将$x_0x_1…x_{n-1}$的散列码取作：</p>
+<p>$x_0a^{n-1}+x_1a^{n-2}+…+x_{n-2}a^1+x_{n-1}$</p>
+<p>依次将字符串中的每个字符视为一个多项式的各项系数，故亦称为多项式散列码。其中的常数a非常关键，为了尽可能多地保留原字符串的信息以减少冲突，其低比特位不得全为0。针对不同类型的字符串，应通过实验确定a的最佳取值。</p>
+<h1 id="开散列"><a href="#开散列" class="headerlink" title="开散列"></a>开散列</h1><p>散列表中很大概率会有冲突，所以必须制定一套有效的对策，以处理和排解时常发生的冲突。</p>
+<h2 id="多槽位法"><a href="#多槽位法" class="headerlink" title="多槽位法"></a>多槽位法</h2><p>将彼此冲突的每一组词条组织为一个小规模的词典，分别存放于它们共同对应的桶单元中。比较简便的一种方法是，统一将各桶细分为更小的称作槽位的单元，每一组槽位可组织为向量或列表。只要槽位数目不多，仍可保证常数复杂度。</p>
+<p>但是绝大多数槽位都处于空闲状态，若每个桶都被细分为$k$个槽位，则当散列表总共存有$n$个词条时，装填因子</p>
+<p>$\lambda’ = N/(kM)=\lambda /k$ 将降低至原来的$1/k$。</p>
+<p>其次，很难在事先确定槽位应细分到何种程度，方可保证在任何情况下都够用，在极端情况下，可能所有(或接近所有)词条都冲突于单个桶单元。尽管几乎其余所有的桶都会处于空闲状态，该桶却会因为冲突过多而溢出。</p>
+<h2 id="独立链法"><a href="#独立链法" class="headerlink" title="独立链法"></a>独立链法</h2><p>每个桶存放一个指针，冲突的词条组织成列表。</p>
+<p>各子词典的规模往往不大，大多数往往只含单个词条或者甚至是空的。无需为每个桶预留多个槽位，任意多次的冲突都可解决。可更为灵活地动态调整各子词典地容量和规模，删除操作实现简单、统一。</p>
+<p>但是指针需要额外空间，节点也需要动态申请。一旦发生冲突，则需要遍历整个列表，导致查找成本的增加。对于列表结构来说，空间未必连续分布，系统缓存几乎失效。</p>
+<h2 id="公共溢出区法"><a href="#公共溢出区法" class="headerlink" title="公共溢出区法"></a>公共溢出区法</h2><p>单独开辟一块连续空间，发生冲突的词条，顺序存入此区域。</p>
+<p>不冲突则已，一旦发生冲突，处理冲突词条的时间正比于溢出区的规模。</p>
+<h1 id="闭散列"><a href="#闭散列" class="headerlink" title="闭散列"></a>闭散列</h1><p>就逻辑结构而言，独立链等策略便捷紧凑，但因需要引入次级关联结构，不能保证物理上的关联性，在查找过程中需要更多的I/O操作。实际上，仅仅依靠基本的散列表结构，就地排解冲突，反而是更好的选择。在冲突时允许在散列表内部寻找另一空桶存放，如此，各桶并非只能存放特定的一组词条。从理论上来说，每个桶单元可存放任一词条，所以这一策略也称作开放定址，同时，因为可用的散列地址仅限于散列表覆盖的范围内，所以亦称作闭散列。</p>
+<h2 id="线性试探法"><a href="#线性试探法" class="headerlink" title="线性试探法"></a>线性试探法</h2><p>在插入关键码key时，若发现ht[hash(key)]被占用，则转而试探ht[hash(key)+1]，若ht[hash(key)+1]被占用，则进一步试探ht[hash(key)+2],…,如此知道发现一个可用空桶。为了确保桶地址合法，最后还需要对M统一取余，第i次试探的桶单元应为：ht[(hash(key)+i)mod M],i=1,2,3…</p>
+<p>如此，被试探的桶单元在物理空间上依次连贯，地址构成等差数列。</p>
+<p><strong>查找链</strong></p>
+<p>散列表每一组相互冲突的词条将视为一个有序序列，对其中任意一员的查找都需要借助这一序列。对应的查找过程，可能终止于三种情况：</p>
+<ul>
+<li>在当前桶单元命中目标关键码，则成功返回</li>
+<li>当前桶单元为空，但其中关键码与目标关键码不等，则须转入下一桶单元继续试探</li>
+<li>当前桶单元为空，则查找以失败返回</li>
+</ul>
+<p>对于长度为n的查找链，失败查找长度为n+1，在等概率假设下，平均成功查找长度为$\lceil n/2 \rceil$</p>
+<p>相互冲突的关键码必定属于同一查找链，但是同一查找链的关键码却未必相互冲突。究其原因在于，多组各自冲突的关键码，有可能相互交织和重叠。此时，各组关键码的查找长度将进一步增加。</p>
+<p><strong>局部性</strong></p>
+<p>线性查找法组成各查找链的词条，在物理上保证一定的连贯性，具有良好的数据局部性，故系统缓存的作用可以充分发挥，查找过程中几乎无需I/O操作。尽管闭散列策略同时也会在一定程度上增加冲突发生的可能，但只要散列表的规模不是很小，装填因子不是很大，对于I/O负担的降低而言，这些问题都将微不足道。</p>
+<p>在散列表内部解决冲突，无需附加的指针(指针、链表或溢出区等)空间，结构本身保持简洁。只要还有空桶，迟早会找到。但是已发生过(并已排解)的冲突，将会导致本不必发生的冲突。</p>
+<p><strong>懒惰删除</strong></p>
+<p>查找链中任何一环的确是，都会导致后续词条因无法抵达而缺失，表现为有时无法找到实际已存在的词条。所以采用闭散列时，执行删除操作需要特别调整。</p>
+<p>为了保证查找链的完整，可将后继词条悉数取出，再重新插入，但如此将导致删除操作的复杂度增加。简明有效的方法是，为每个桶另设一个标志位，指示该桶尽管目前为空，但此前的确曾存放过词条。该桶虽不存放任何实质的词条，但仍是查找链中的一环。如此标记后，对后继词条的查找仍可照常进行，而不致中断。</p>
+<p>带有删除标记的桶扮演的角色，因具体的操作而异。</p>
+<ul>
+<li>在删除等操作之前对某一目标词条的查找，在查找过程中，只有在当前桶单元为空，且不带懒惰删除标记时方可报告查找失败，否则，无论该桶非空，或带有懒惰删除标记，都将沿着查找链继续试探。</li>
+<li>在插入等操作之前对某一目标词条的查找，无论当前桶为空，还是带有懒惰删除标记，均可报告查找成功，否则都将继续沿着查找链继续试探。</li>
+</ul>
+<p>懒惰标记的操作借助位图实现，具体操作如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Bitmap* lazyRemoval; &#x2F;&#x2F;懒惰删除标记</span><br><span class="line">#define lazilyRemoved(x)  (lazyRemoval-&gt;test(x))</span><br><span class="line">#define markAsRemoved(x)  (lazyRemoval-&gt;set(x))</span><br></pre></td></tr></table></figure>
+<p>考虑如下调整：</p>
+<ul>
+<li>每次查找成功后，将命中词条前移至查找链中第一个带有懒惰删除标记的空桶(若的确命中存在且位于空桶之前)</li>
+<li>每次查找失败后，若查找链的某一后缀完全由带懒惰删除标记的空桶组成，则清除它们的标记</li>
+</ul>
+<p>但是以上调整并不可行，为了删除带有懒惰删除标记的桶，实质上等效于压缩查找链。但是<strong>查找链可能彼此有所重叠，任何一个带有懒惰删除标记的桶，都可能同时属于多个查找链</strong>。所以其中一条查找链的压缩，都将可能导致其他查找链的断裂。因此为了使这些策略可行，还必须做更多的处理，通常都未免弄巧成拙，得不偿失。</p>
+<p><strong>查找</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> K, <span class="keyword">typename</span> V&gt; V* Hashtable&lt;K, V&gt;::get ( K k ) <span class="comment">//散列表词条查找算法</span></span><br><span class="line">&#123;  <span class="keyword">int</span> r = probe4Hit ( k ); <span class="keyword">return</span> ht[r] ? &amp; ( ht[r]-&gt;value ) : <span class="literal">NULL</span>;  &#125; <span class="comment">//禁止词条的key值雷同</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> K, <span class="keyword">typename</span> V&gt; <span class="keyword">int</span> Hashtable&lt;K, V&gt;::probe4Free ( <span class="keyword">const</span> K&amp; k ) &#123;</span><br><span class="line">   <span class="keyword">int</span> r = hashCode ( k ) % M; <span class="comment">//从起始桶（按除余法确定）出发</span></span><br><span class="line">   <span class="keyword">while</span> ( ht[r] ) r = ( r + <span class="number">1</span> ) % M; <span class="comment">//沿查找链逐桶试探，直到首个空桶（无论是否带有懒惰删除标记）</span></span><br><span class="line">   <span class="keyword">return</span> r; <span class="comment">//为保证空桶总能找到，装填因子及散列表长需要合理设置</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先采用除余法确定首个试探的桶单元，然后按线性试探法沿查找链逐桶试探。统一返回最后查找被试探的桶的秩，上层调用者只需核对该桶是否为空，即可判断是否查找失败。</p>
+<p><strong>删除</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> K, <span class="keyword">typename</span> V&gt; <span class="keyword">bool</span> Hashtable&lt;K, V&gt;::remove ( K k ) &#123; <span class="comment">//散列表词条删除算法</span></span><br><span class="line">   <span class="keyword">int</span> r = probe4Hit ( k ); <span class="keyword">if</span> ( !ht[r] ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//对应词条不存在时，无法删除</span></span><br><span class="line">   release ( ht[r] ); ht[r] = <span class="literal">NULL</span>; markAsRemoved ( r ); N--; <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">   <span class="comment">//否则释放桶中词条，设置懒惰删除标记，并更新词条总数</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> K, <span class="keyword">typename</span> V&gt; <span class="keyword">int</span> Hashtable&lt;K, V&gt;::probe4Hit ( <span class="keyword">const</span> K&amp; k ) &#123;</span><br><span class="line">   <span class="keyword">int</span> r = hashCode ( k ) % M; <span class="comment">//从起始桶（按除余法确定）出发</span></span><br><span class="line">   <span class="keyword">while</span> ( ( ht[r] &amp;&amp; ( k != ht[r]-&gt;key ) ) || ( !ht[r] &amp;&amp; lazilyRemoved ( r ) ) )</span><br><span class="line">      r = ( r + <span class="number">1</span> ) % M; <span class="comment">//沿查找链线性试探：跳过所有冲突的桶，以及带懒惰删除标记的桶</span></span><br><span class="line">   <span class="keyword">return</span> r; <span class="comment">//调用者根据ht[r]是否为空，即可判断查找是否成功</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>首先调用<code>probe4Hit(k)</code>算法，沿关键码k对应的查找链顺序查找。若在某桶单元命中，则释放其中的词条，为该桶单元设置懒惰删除标记，并更新词典的规模。</p>
+<p><strong>插入</strong></p>
+<p>调用<code>probe4Free(k)</code>算法，若沿关键码k所属查找链可找到一空桶，则在其中创建对应的词条，并更新词典的规模。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> K, <span class="keyword">typename</span> V&gt; <span class="keyword">bool</span> Hashtable&lt;K, V&gt;::put ( K k, V v ) &#123; <span class="comment">//散列表词条插入</span></span><br><span class="line">   <span class="keyword">if</span> ( ht[probe4Hit ( k ) ] ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//雷同元素不必重复插入</span></span><br><span class="line">   <span class="keyword">int</span> r = probe4Free ( k ); <span class="comment">//为新词条找个空桶（只要装填因子控制得当，必然成功）</span></span><br><span class="line">   ht[r] = <span class="keyword">new</span> Entry&lt;K, V&gt; ( k, v ); ++N; <span class="comment">//插入（注意：懒惰删除标记无需复位）</span></span><br><span class="line">   <span class="keyword">if</span> ( N * <span class="number">2</span> &gt; M ) rehash(); <span class="comment">//装填因子高于50%后重散列</span></span><br><span class="line">   <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> K, <span class="keyword">typename</span> V&gt; <span class="keyword">int</span> Hashtable&lt;K, V&gt;::probe4Free ( <span class="keyword">const</span> K&amp; k ) &#123;</span><br><span class="line">   <span class="keyword">int</span> r = hashCode ( k ) % M; <span class="comment">//从起始桶（按除余法确定）出发</span></span><br><span class="line">   <span class="keyword">while</span> ( ht[r] ) r = ( r + <span class="number">1</span> ) % M; <span class="comment">//沿查找链逐桶试探，直到首个空桶（无论是否带有懒惰删除标记）</span></span><br><span class="line">   <span class="keyword">return</span> r; <span class="comment">//为保证空桶总能找到，装填因子及散列表长需要合理设置</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>装填因子$\lambda =N/M$是最为重要的因素。随着$\lambda$上升，词条在散列表中聚集的程度必将持续减少，这也势必加剧查找成本的进一步攀升。若将装填因子控制在适当范围内，闭散列的平均效率通常可保持在较为理想的水平。一般建议是$\lambda &lt;0.5$。</p>
+<p><strong>重散列</strong></p>
+<p>将装填因子控制在一定范围内，重散列即是常用的一种方法。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> K, <span class="keyword">typename</span> V&gt; <span class="keyword">void</span> Hashtable&lt;K, V&gt;::rehash() &#123;</span><br><span class="line">   <span class="keyword">int</span> old_capacity = M; Entry&lt;K, V&gt;** old_ht = ht;</span><br><span class="line">   M = primeNLT ( <span class="number">2</span> * M, <span class="number">1048576</span>, <span class="string">&quot;../../_input/prime-1048576-bitmap.txt&quot;</span> ); <span class="comment">//容量至少加倍</span></span><br><span class="line">   N = <span class="number">0</span>; ht = <span class="keyword">new</span> Entry&lt;K, V&gt;*[M]; <span class="built_in">memset</span> ( ht, <span class="number">0</span>, <span class="keyword">sizeof</span> ( Entry&lt;K, V&gt;* ) * M ); <span class="comment">//新桶数组</span></span><br><span class="line">   release ( lazyRemoval ); lazyRemoval = <span class="keyword">new</span> Bitmap ( M ); <span class="comment">//新开懒惰删除标记比特图</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> i = <span class="number">0</span>; i &lt; old_capacity; i++ ) <span class="comment">//扫描原桶数组</span></span><br><span class="line">      <span class="keyword">if</span> ( old_ht[i] ) <span class="comment">//将非空桶中的词条逐一</span></span><br><span class="line">         put ( old_ht[i]-&gt;key, old_ht[i]-&gt;value ); <span class="comment">//插入至新的桶数组</span></span><br><span class="line">   release ( old_ht ); <span class="comment">//释放原桶数组——由于其中原先存放的词条均已转移，故只需释放桶数组本身</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>重散列算法：装填因子过大时，采取“逐一取出再插入”的朴素策略，对桶数组扩容</p>
+<p>不可简单地（通过memcpy()）将原桶数组复制到新桶数组（比如前端），否则存在两个问题：</p>
+<ul>
+<li>会继承原有冲突</li>
+<li>可能导致查找链在后端断裂，即便为所有扩充桶设置懒惰删除标志也无济于事</li>
+</ul>
+<h2 id="平方试探法"><a href="#平方试探法" class="headerlink" title="平方试探法"></a>平方试探法</h2><p><strong>单向平方试探</strong></p>
+<p>线性试探法各查找链均由物理地址连续的桶单元组成，因而会加剧关键码的聚集趋势，查找操作的效率将有所降低。平凡试探法可有效缓解聚集现象，在试探过程中，按如下规则确定第j次试探的桶地址：</p>
+<p>$(hash(key)+j^2)%M,j=0,1,2,…$</p>
+<p>各次试探的位置到起始位置的距离以平方速率增长。</p>
+<p><strong>局部性</strong></p>
+<p>平凡试探法之所以可以有效地缓解聚集现象，是因为充分利用了平方函数的特点，顺着查找链，试探位置的间距将以线性的速度增长。同时，常规的I/O操作页面规模已足够大，只有在查找链极长时，才有可能引发额外的I/O操作。</p>
+<blockquote>
+<p>设散列表长度取作素数$M&gt;2$,试证明：任一关键码所对应的的查找链中，前$\lceil M/2 \rceil=(M+1)/2$个桶必然互异</p>
+</blockquote>
+<p>反证，假设存在$0 \leq a &lt; \lceil M/2 \rceil$,使查找链上的第$a$个位置与第$b$个位置冲突，于是$a^2$和$b^2$必然同属于关于$M$的同一同余类，亦即：</p>
+<p>$a^2 \equiv b^2(mod M)$</p>
+<p>于是$a^2-b^2=(a+b)(a-b) \equiv 0(mod M)$</p>
+<p>无论是$(a+b)$还是$(a-b)$绝对值都严格小于M,故均不可能被M整除，这与M为素数的条件矛盾。</p>
+<p>查找链的前$\lceil M/2 \rceil$项关于$M$必然属于不同的同余类，因此互不冲突。在装填因子不足50%时，$\lceil M/2 \rceil$ 至少有一个是空余的，因此不可能发生无法抵达空桶的情况。</p>
+<p>M若为合数，$n^2%M$可能的取值必然少于$\lceil M/2 \rceil$种，M若为素数，$n^2%M$可能的取值恰好等于$\lceil M/2 \rceil$种，恰由查找链的前$\lceil M/2 \rceil$项取遍。</p>
+<blockquote>
+<p>在装填因子超过50%时，只要适当调整各桶的位置，下一插入操作必然因无法达到空桶而失败</p>
+</blockquote>
+<p>任取：$\lceil M/2 \rceil \leq c&lt;M-1$,考查查找链上的第$c$项</p>
+<p>总是存在$0 \leq d &lt;\lceil m/2 \rceil $,查找链上第$d$项与该第$c$项冲突</p>
+<p>实际上，只要令$d=M-c \neq c$</p>
+<p>则有：$c^2-d^2=(c+d)(c-d)=M(c-d) \equiv 0(mod M)$</p>
+<p>于是$c^2$和$d^2$同属一个同余类，作为散列地址相互冲突。</p>
+<blockquote>
+<p>散列表长度$M$为合数时，即便装填因子低于50%,平方试探仍有可能无法终止</p>
+</blockquote>
+<p>考查$M=12$的散列表，{$0^2$,$1^2$,$2^2$,$3^2$,$4^2$,…}关于$M$模余只有${0,1,4,9}$四种可能。于是，即便只有这四个位置为空，也会因为查找链的重合循环导致新的关键码0无法插入。但是此时的装填因子仅为$\lambda=4/12&lt;50%$</p>
+<p>此时，对于秩$0 \leq a&lt;b&lt;\lceil M/2\rceil$,即便</p>
+<p>$a+b \equiv 0 (mod M)$</p>
+<p>$a-b \equiv 0(mod M)$</p>
+<p>均不成立，也依然可能有:</p>
+<p>$a^2-b^2=(a+b)(a-b) \equiv 0 (modM)$</p>
+<p>以以上例子为例，$M=12$的散列表，取$a=24$和$b=4$,则</p>
+<p>$2+4=6 \equiv 0(mod 12)$</p>
+<p>$2-4=-2 \equiv 0(mod 12)$</p>
+<p>均不成立，然而依然有$2^2-4^2=-12\equiv 0(mod 12)$</p>
+<p><strong>双向平方试探</strong></p>
+<p>自冲突位置起，将以{$+1^2$,$-1^2$,$+2^2$,$-2^2$,$+3^2$,$-3^2$,…}为间距依次试探。整个试探过程中，跳转的方向前后交替，所以称为双向平方试探。</p>
+<blockquote>
+<p>只要散列表取作$4k+3$($k$为非负整数)，则任一关键码所对应的查找链中，前$M$个桶必然互异</p>
+</blockquote>
+<p>根据跳转的方向，查找链的前$M$项可分为三类：</p>
+<ul>
+<li>O:第1次试探，位于原地的起点</li>
+<li>A:第$2、4、6、…,M-1$次试探，相对于起点向前跳转</li>
+<li>B:第$3、5、7、….M$次试探，相对于起点向后跳转</li>
+</ul>
+<p>根据此前的结论,$O \cup A$和$O \cup B$内部的试探不至相互冲突。因此，只需考虑A类试探和B类试探之间是否会存在冲突。</p>
+<p>假设第$2a$次试探和第$2b+1$次试探相互冲突，于是便有：</p>
+<p>$a^2 \equiv b^2(mod M)$</p>
+<p>亦即$n=a^2+b^2\equiv 0(mod M) $</p>
+<p>对于形如$M=4k+3$的素数表长，这是不可能的</p>
+<p>一个自然数$n$若可表示为一对整数的平方和，则称之为可平方拆分的。</p>
+<p>不妨设n的素因子分解式为：</p>
+<p>$n=p_1^{\alpha1}p_2^{\alpha2}p_3^{\alpha3}…p_d^{\alpha d}$</p>
+<p>以下恒等式：</p>
+<p>$(u^2+v^2)(s^2+t^2)=(us+vt)^2$</p>
+<p>$n$是可平方拆分的当且仅当对每个$1\leq d \leq d$，或$\alpha i$为偶数，或$p_i$是可平方拆分的。</p>
+<p>除了$2=1^2+1^2$,其余素数可以根据关于4的模余值划分为两个同余类。根据费马平方和定理，形如$4k+1$的素因子必可以平方拆分，而形如$4k+3$的素因子必然不可平方拆分。因此，若$n$可平方拆分，则对于其中每一个形如$p_i=4k+3$的素因子，$\alpha i$必然是偶数。</p>
+<p>由以上式子得，$M=4k+3$应是$4k+3$的一个素因子。根据分析可知，n必然可以被$M^2$整除，于是便有：</p>
+<p>$n=a^2+b^2 \geq M^2$</p>
+<p>然而，对于取值在$[1,\lfloor M/2 \rfloor]$ 范围内的$a$和$b$，这是不可能的。</p>
+<h1 id="散列应用"><a href="#散列应用" class="headerlink" title="散列应用"></a>散列应用</h1><h2 id="桶排序"><a href="#桶排序" class="headerlink" title="桶排序"></a>桶排序</h2><p><strong>简单情况</strong></p>
+<p>考查如下问题：给定$[0,M)$内的$n$个互异整数，如何高效地进行排序？</p>
+<p>借助散列表$E[0,M)$</p>
+<ul>
+<li>创建散列表并将散列表初始化为0</li>
+<li>使用最简单的散列函数$hash(key)=key4,将整数视为关键码逐一插入到散列表中</li>
+<li>顺序遍历一趟散列表，依次输出非空桶中存放的关键码</li>
+</ul>
+<p>散列表的创建初始化耗时$O(M)$,将所有关键码插入散列表耗时$O( n )$ ，依次读出非空桶中的关键码$O(M)$，总体运行时间为$O(n+M)$。</p>
+<p><strong>一般情况</strong></p>
+<p>允许关键码重复，又该如何高效排序？</p>
+<p>沿用以上构思，只不过这次需要处理散列冲突。不妨采用独立链法解决冲突，将所有整数作为关键码插入散列表后，只需一趟顺序遍历即可得到完整的排序结果，在串联时留意链表方向，甚至可以确保排序结果的稳定，如此实现的桶排序算法属于稳定算法。</p>
+<p>散列表的创建初始化耗时$O(M)$,将所有关键码插入散列表耗时$O( n )$ ，依次读出非空桶中的关键码$O(M)$，总体运行时间为$O(n+M)$。在n&gt;&gt;M的场合，桶排序的时间将是:</p>
+<p>$O(n+M)=O(max(n,M))=O(n)$</p>
+<p>线性正比于待排序元素的数目，突破了$\Omega(nlogn)$的下界。在关键码均匀分布时，亦是如此。</p>
+<p>基于散列表的排序算法采取的是循秩访问的方式，摒弃了以往基于关键码大小比较式的设计思路，所以不受下界约束。</p>
+<p><strong>最大间隙</strong></p>
+<p>任意$n$个互异点均将实轴分为$n-1$段有界区间，其中哪一段最长？</p>
+<p><strong>平凡算法</strong></p>
+<ul>
+<li><p>将各点按照坐标排序(最坏情况下$\Omega(n logn)$)</p>
+</li>
+<li><p>依次计算相邻点对之间的距离，保留最大者$\Theta (n)$</p>
+</li>
+</ul>
+<p><strong>线性算法</strong></p>
+<ul>
+<li>一趟线性扫描找到最左点、最右点</li>
+<li>将有效范围划分为$n-1$段($n$个桶)</li>
+<li>通过散列将各点归入对应的桶</li>
+<li>在各桶中，动态记录最左点和最右点</li>
+<li>算出相邻(非空桶之间的距离)</li>
+<li>最大距离则为最大间隙</li>
+</ul>
+<p><strong>正确性</strong></p>
+<p>$n-1$个间隙中的最宽者，绝不可能窄于这些间隙的平均宽度，即各个桶单元对应的区间宽度。最大间隙的两个端点绝不可能落在同一桶单元内。必然来自两个非空桶，中间可能有若干非空桶。左端点应在前一桶中应该最靠右，而又端点在后一桶中应该最靠左，因此只需动态记录各桶的最左点和最右点。</p>
+<p><strong>复杂度</strong></p>
+<p>时间复杂度为$O(n)$，空间复杂度为维护散列表所需空间，$O(n)$辅助空间。</p>
+<p>对于最小间隙的问题，则不可使用以上方法，因为上述方法可用基于<strong>最大间隙至少与相邻的两个桶相交</strong>的事实，而最小间隙既有可能与两个相邻的非空桶相交，也有可能只与其中一个桶相交。</p>
+<h2 id="基数排序"><a href="#基数排序" class="headerlink" title="基数排序"></a>基数排序</h2><p>实际应用场景中词条的关键码，未必都是整数。比如，一种常见情形是，关键码由多个字段组成，并采用所谓的字典序确定大小次序：<strong>任意两个关键码的大小关系取决于它们第一个互异的字段</strong>。</p>
+<p>假定关键码由$t$个字段{$k_t$,$k_{t-1}$,$k_{t-2}$,…,$k_1$}组成，其中$k_t$优先级最高。只需按照优先级递增的顺序对每一字段做一趟桶排序，即可实现按整个关键码字典序的排序。这一算法称作基数排序，采用了低位字段优先的策略，其中所做桶排序的趟数，取决于组成关键码的字段数。</p>
+<p><strong>正确性与稳定性</strong></p>
+<p>以以下命题作为归纳假设：在经过基数排序的前i趟桶排序后，所有词条均已按照关键码最低的i个字段有序排列。</p>
+<p>假定前$i-1$趟均成立，考查第i趟桶排序的情况</p>
+<ul>
+<li>凡第$i$位不同的词条：即便此前为逆序，现在亦必已转为有序</li>
+<li>凡第$i$位相同的词条，得益于桶排序的稳定性，必保持原有次序</li>
+</ul>
+<p>如此实现的基数排序同样稳定。</p>
+<p><strong>复杂度</strong></p>
+<p>根据以上基数排序的流程，总体运行时间等于其中各趟桶排序所需时间的总和。</p>
+<p>设各字段取值范围为$[0,m_i),1 \leq i \leq t $</p>
+<p>$M=max{m_1,m_2,…,m_t}$</p>
+<p>总体运行时间不超过:</p>
+<p>$O(n+m_1)+O(n+m_2)+…O(n+m_t)=O(t(n+M))$</p>
+<p>当$M=O(n)$且$t$为常数时，$O(n)$。</p>
+<p>在一些特定场合，基数排序非常高效。例如，任给来自$[0,n^d)$范围内的$n$个整数，其中常数d&gt;1，可在$O(n)$时间内完成对它们的排序。</p>
+<ul>
+<li>在$O(dn)=O(n)$时间内，将这些整数转换为$n$进制的表示。</li>
+<li>将每一位视作一个域，则这些整数的排序依据等效于按照这些域的字典序，直接套用基数排序即可完成排序</li>
+</ul>
+<p>以上基数排序过程包含$d$趟桶排序，累计耗时：</p>
+<p>$dO(n)=O(dn)=O(n)$</p>
+<p>原因：</p>
+<ol>
+<li>整数的取值范围有限制</li>
+<li>不再是基于比较的计算模式</li>
+</ol>
+<h2 id="计数排序"><a href="#计数排序" class="headerlink" title="计数排序"></a>计数排序</h2><p>若将任一有序序列等效地视作有序向量，则每个元素的秩，应恰好等于序列中不大于该元素的元素总数。例如，其中最小元素的秩为$0$，最大元素的秩为$n-14$，分别有$0$和$n-1$个元素不大于它们。根据这一原理，只需统计出各元素的对应这一指标，也就确定了它们在有序向量中各自对应的秩。</p>
+<p>无需借助冲突的独立链表，由此可得计数排序算法</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">int* countingsort(int A[0,n))</span><br><span class="line">   引入一个可计数的散列表H[<span class="number">0</span>,M),其长度等于输入元素取值范围的宽度M</span><br><span class="line">   将H[]中所有桶的数值初始化为<span class="number">0</span></span><br><span class="line">   遍历序列A[<span class="number">0</span>,n) <span class="comment">//遍历计数，O(n)</span></span><br><span class="line">     对于每一项，令H[A[k]]++</span><br><span class="line">   遍历散列表H[<span class="number">0</span>,M)</span><br><span class="line">     对于每一项H[i],令H[i+<span class="number">1</span>]+=H[i]</span><br><span class="line">   创建序列S[<span class="number">0</span>,n)，记录排序结果</span><br><span class="line">   逆向遍历输入序列A[<span class="number">0</span>,n)</span><br><span class="line">     对于每一项A[k]</span><br><span class="line">     令S[--H[A[k]]]=A[k]</span><br><span class="line">   返回s[<span class="number">0</span>,n)</span><br></pre></td></tr></table></figure>
+<p>注意，最后一步扫描不可从前到后，否则稳定性不再满足。</p>
+<p>其中各个步骤所需的时间，总体而言不超过$O(n+M)$ 。若$n&gt;&gt;m$，则排序时间为$O(n)$。这就是所谓的小集合大数据的情况，在当下已经成为数据和信息处理的主流类型。</p>
+<h1 id="跳转表"><a href="#跳转表" class="headerlink" title="跳转表"></a>跳转表</h1><p>可否综合向量与列表的优势，高效地实现词典接口？具体地，如何使得各接口的效率为$O(logn)$。</p>
+<p><img src="https://i.loli.net/2019/09/08/V9cLzn6BCqXRgGK.png"></p>
+<p>跳转表的宏观逻辑如图所示，其内部由沿纵向分层，横向相互耦合的多个列表{$S_0$,$S_1$,$S_2$,…,$S_h$}组成，$h$称为跳转表的高度。每一水平列表称作一层，其中$S_0$和$S_h$分别称作底层和顶层。同层节点之间可定义前驱和后继关系。为便于查找，同层节点都按关键码排序。层次不同的节点可能沿着纵向组成塔，同一塔内的节点以高度为序定义前驱和后继。塔与词典中的词条一一对应。</p>
+<p>高层列表总是底层列表的子集，其中特别地，$S_0$包含词典中所有词条，而$S_h$除头、尾哨兵外不含任何实质地词条。跳转表的层高$h$必然决定于最大的塔高。</p>
+<p>跳转表各塔高度的随机分布规律对跳转表的整体性能至关重要。控制跳转表的生长过程，在时间和空间上都可实现足够高的效率。此类控制策略必然满足所谓生长概率减半的条件：</p>
+<p>对于任意的$0 \leq k&lt;h$,$S_k$中任一节点在$S_{k+1}$中仍然出现的概率，始终为1/2。</p>
+<p>可见，各塔高度符合集合分布：$Pr(h=k)=p^{k-1}(1-p)$</p>
+<p>于是，期望的塔高为$E(h)=1/(1-p)=2$</p>
+<p>也可以如此解释，$S_0$中任一关键码在$S_k$中依然出现的概率均为$2^{-k}$,第$k$层节点数的期望值$E(|S_k|)=n2^{-k}=n/2^k$。</p>
+<p>于是，所有节点期望的总数(即各层列表所需空间总和)为</p>
+<p>$E(\sum_k|S_k|)=\sum_kE(|S_k|)=n\sum_k2^{-k}&lt;2n=O(n)$</p>
+<p>跳转表所需空间期望值为$ O( n )$</p>
+<h2 id="初始化与构造"><a href="#初始化与构造" class="headerlink" title="初始化与构造"></a>初始化与构造</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">void</span> Quadlist&lt;T&gt;::init() &#123; <span class="comment">//Quadlist初始化，创建Quadlist对象时统一调用</span></span><br><span class="line">   header = <span class="keyword">new</span> QuadlistNode&lt;T&gt;; <span class="comment">//创建头哨兵节点</span></span><br><span class="line">   trailer = <span class="keyword">new</span> QuadlistNode&lt;T&gt;; <span class="comment">//创建尾哨兵节点</span></span><br><span class="line">   header-&gt;succ = trailer; header-&gt;pred = <span class="literal">NULL</span>; <span class="comment">//沿横向联接哨兵</span></span><br><span class="line">   trailer-&gt;pred = header; trailer-&gt;succ = <span class="literal">NULL</span>; <span class="comment">//沿横向联接哨兵</span></span><br><span class="line">   header-&gt;above = trailer-&gt;above = <span class="literal">NULL</span>; <span class="comment">//纵向的后继置空</span></span><br><span class="line">   header-&gt;below = trailer-&gt;below = <span class="literal">NULL</span>; <span class="comment">//纵向的前驱置空</span></span><br><span class="line">   _size = <span class="number">0</span>; <span class="comment">//记录规模</span></span><br><span class="line">&#125; <span class="comment">//如此构造的四联表，不含任何实质的节点，且暂时与其它四联表相互独立</span></span><br></pre></td></tr></table></figure>
+<p>每个词条都在所属的塔内同时存在多个副本，浪费了大量的空间。只需将所有词条组织为一个独立的横向列表，则各词条所对应的纵向列表即可不必重复保留词条的副本。纵向列表中的每个节点，只需通过引用指向横向列表中对应的词条。如此，一旦查找终止于某纵向列表，即可直接通过引用找到对应的词条。</p>
+<h2 id="查找"><a href="#查找" class="headerlink" title="查找"></a>查找</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> K, <span class="keyword">typename</span> V&gt; V* Skiplist&lt;K, V&gt;::get ( K k ) &#123; <span class="comment">//跳转表词条查找算法</span></span><br><span class="line">   <span class="keyword">if</span> ( empty() ) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">   ListNode&lt;Quadlist&lt;Entry&lt;K, V&gt;&gt;*&gt;* qlist = first(); <span class="comment">//从顶层Quadlist的</span></span><br><span class="line">   QuadlistNode&lt;Entry&lt;K, V&gt;&gt;* p = qlist-&gt;data-&gt;first(); <span class="comment">//首节点开始</span></span><br><span class="line">   <span class="keyword">return</span> skipSearch ( qlist, p, k ) ? &amp; ( p-&gt;entry.value ) : <span class="literal">NULL</span>; <span class="comment">//查找并报告</span></span><br><span class="line">&#125; <span class="comment">//有多个命中时靠后者优先</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> K, <span class="keyword">typename</span> V&gt; <span class="keyword">bool</span> Skiplist&lt;K, V&gt;::skipSearch (</span><br><span class="line">   ListNode&lt;Quadlist&lt;Entry&lt;K, V&gt;&gt;*&gt;* &amp;qlist, <span class="comment">//从指定层qlist的</span></span><br><span class="line">   QuadlistNode&lt;Entry&lt;K, V&gt;&gt;* &amp;p, <span class="comment">//首节点p出发</span></span><br><span class="line">   K&amp; k ) &#123; <span class="comment">//向右、向下查找目标关键码k</span></span><br><span class="line">   <span class="keyword">while</span> ( <span class="literal">true</span> ) &#123; <span class="comment">//在每一层</span></span><br><span class="line">      <span class="keyword">while</span> ( p-&gt;succ &amp;&amp; ( p-&gt;entry.key &lt;= k ) ) <span class="comment">//从前向后查找</span></span><br><span class="line">         p = p-&gt;succ; <span class="comment">//直到出现更大的key或溢出至trailer</span></span><br><span class="line">      p = p-&gt;pred; <span class="comment">//此时倒回一步，即可判断是否</span></span><br><span class="line">      <span class="keyword">if</span> ( p-&gt;pred &amp;&amp; ( k == p-&gt;entry.key ) ) <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">//命中</span></span><br><span class="line">      qlist = qlist-&gt;succ; <span class="comment">//否则转入下一层</span></span><br><span class="line">      <span class="keyword">if</span> ( !qlist-&gt;succ ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//若已到穿透底层，则意味着失败</span></span><br><span class="line">      p = ( p-&gt;pred ) ? p-&gt;below : qlist-&gt;data-&gt;first(); <span class="comment">//否则转至当前塔的下一节点</span></span><br><span class="line">   &#125;  <span class="comment">//课后：通过实验统计，验证关于平均查找长度的结论</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的参数<code>p</code>和<code>qlist</code>分别指示命中关键码所属塔的顶部节点及其所属的列表。<code>qlist</code>和<code>p</code>的初始值分别为顶层列表及其首节点，返回后将为上层的查找节点提供必要的信息。</p>
+<p><strong>时间复杂度</strong></p>
+<p>考查第$k$层列表$S_k$,</p>
+<p>$S_k$非空，当且仅当$S_0$所含的$n$个节点中,至少有一个会出现在$S_k$中，相应的概率为</p>
+<p>$Pr(|S_k|&gt;0) \leq n2^{-k}=n/2^k$</p>
+<p>反过来，$S_k$ 为空的概率为</p>
+<p>$Pr(|S_k|&gt;0) \geq 1-n2^{-k}$</p>
+<p>这一概率随着高度$k$的增加将迅速上升并接近100%。</p>
+<p>以$k=3logn$层为例，该层列表为空，当且仅当$h&lt;k$,对应的概率为</p>
+<p>$Pr(h&lt;k)=Pr(|S_k|=0)\geq 1-n/2^k=1-n/n^3=1-1/n^2$</p>
+<p>一般地，$k=alogn$层列表为空的概率为$1-1/n^{a-1}$,$a&gt;3$后这一概率将迅速地接近100%。</p>
+<p>$h$的期望值$S(h)=O(logn)$</p>
+<p>查找的过程中，每次跳转只能向右或向下，故活跃节点的高度必单调非增，每个高度上纵向跳转至多一次。因此，整个查找过程中消耗于纵向跳转的时间不超过跳转表高度的期望值$O(logn)$。</p>
+<p>沿同一列表的横向跳转所经过的节点必然依次紧邻，且均为各自所属塔的塔顶。若将同层连续横向跳转的次数记作$Y$,跳转经过$k$个塔顶，一个非塔顶则有几何分布：</p>
+<p>$Pr(Y=k)=(1-p)^kp$</p>
+<p>$E(Y)=(1-p)/p=(1-0.5)/0.5=1$</p>
+<p>同层列表中紧邻的塔顶节点，平均不过$1+1=2$个。沿着每条查找路径，在每一高度上平均只做常数次横向跳转。因此，整个查找过程中所做的横向跳转的期望次数，线性正比于跳转表的期望高度，亦是$O( log n)$。</p>
+<h2 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h2><p>此处通过逻辑表达式<code>rand%2</code> 来模拟投掷硬币，并保证生长概率减半的条件。通过伪随机数的奇偶，近似地模拟一次理想的掷硬币实验。只要伪随机数为奇数，新塔就继续生长，否则停止生长。新塔的期望高度，将取决于此前连续的正面硬币的期望次数。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> K, <span class="keyword">typename</span> V&gt; <span class="keyword">bool</span> Skiplist&lt;K, V&gt;::put ( K k, V v ) &#123; <span class="comment">//跳转表词条插入算法</span></span><br><span class="line">   Entry&lt;K, V&gt; e = Entry&lt;K, V&gt; ( k, v ); <span class="comment">//待插入的词条（将被随机地插入多个副本）</span></span><br><span class="line">   <span class="keyword">if</span> ( empty() ) insertAsFirst ( <span class="keyword">new</span> Quadlist&lt;Entry&lt;K, V&gt;&gt; ); <span class="comment">//插入首个Entry</span></span><br><span class="line">   ListNode&lt;Quadlist&lt;Entry&lt;K, V&gt;&gt;*&gt;* qlist = first(); <span class="comment">//从顶层四联表的</span></span><br><span class="line">   QuadlistNode&lt;Entry&lt;K, V&gt;&gt;* p = qlist-&gt;data-&gt;first(); <span class="comment">//首节点出发</span></span><br><span class="line">   <span class="keyword">if</span> ( skipSearch ( qlist, p, k ) ) <span class="comment">//查找适当的插入位置（不大于关键码k的最后一个节点p）</span></span><br><span class="line">      <span class="keyword">while</span> ( p-&gt;below ) p = p-&gt;below; <span class="comment">//若已有雷同词条，则需强制转到塔底</span></span><br><span class="line">   qlist = last(); <span class="comment">//以下，紧邻于p的右侧，一座新塔将自底而上逐层生长</span></span><br><span class="line">   QuadlistNode&lt;Entry&lt;K, V&gt;&gt;* b = qlist-&gt;data-&gt;insertAfterAbove ( e, p ); <span class="comment">//新节点b即新塔基座</span></span><br><span class="line">   <span class="keyword">while</span> ( rand() &amp; <span class="number">1</span> ) &#123; <span class="comment">//经投掷硬币，若确定新塔需要再长高一层，则</span></span><br><span class="line">      <span class="keyword">while</span> ( qlist-&gt;data-&gt;valid ( p ) &amp;&amp; !p-&gt;above ) p = p-&gt;pred; <span class="comment">//找出不低于此高度的最近前驱</span></span><br><span class="line">      <span class="keyword">if</span> ( !qlist-&gt;data-&gt;valid ( p ) ) &#123; <span class="comment">//若该前驱是header</span></span><br><span class="line">         <span class="keyword">if</span> ( qlist == first() ) <span class="comment">//且当前已是最顶层，则意味着必须</span></span><br><span class="line">            insertAsFirst ( <span class="keyword">new</span> Quadlist&lt;Entry&lt;K, V&gt;&gt; ); <span class="comment">//首先创建新的一层，然后</span></span><br><span class="line">         p = qlist-&gt;pred-&gt;data-&gt;first()-&gt;pred; <span class="comment">//将p转至上一层Skiplist的header</span></span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="comment">//否则，可径自</span></span><br><span class="line">         p = p-&gt;above; <span class="comment">//将p提升至该高度</span></span><br><span class="line">      qlist = qlist-&gt;pred; <span class="comment">//上升一层，并在该层</span></span><br><span class="line">      b = qlist-&gt;data-&gt;insertAfterAbove ( e, p, b ); <span class="comment">//将新节点插入p之后、b之上</span></span><br><span class="line">   &#125;<span class="comment">//课后：调整随机参数，观察总体层高的相应变化</span></span><br><span class="line">   <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">//Dictionary允许重复元素，故插入必成功——这与Hashtable等Map略有差异</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h2><p>从跳转表中删除关键码为$k$的词条的具体操作过程</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> K, <span class="keyword">typename</span> V&gt; <span class="keyword">bool</span> Skiplist&lt;K, V&gt;::remove ( K k ) &#123; <span class="comment">//跳转表词条删除算法</span></span><br><span class="line">   <span class="keyword">if</span> ( empty() ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//空表情况</span></span><br><span class="line">   ListNode&lt;Quadlist&lt;Entry&lt;K, V&gt;&gt;*&gt;* qlist = first(); <span class="comment">//从顶层Quadlist的</span></span><br><span class="line">   QuadlistNode&lt;Entry&lt;K, V&gt;&gt;* p = qlist-&gt;data-&gt;first(); <span class="comment">//首节点开始</span></span><br><span class="line">   <span class="keyword">if</span> ( !skipSearch ( qlist, p, k ) ) <span class="keyword">return</span> <span class="literal">false</span>; <span class="comment">//目标词条不存在，直接返回</span></span><br><span class="line">   <span class="keyword">do</span> &#123; <span class="comment">//若目标词条存在，则逐层拆除与之对应的塔</span></span><br><span class="line">      QuadlistNode&lt;Entry&lt;K, V&gt;&gt;* lower = p-&gt;below; <span class="comment">//记住下一层节点，并</span></span><br><span class="line">      qlist-&gt;data-&gt;remove ( p ); <span class="comment">//删除当前层节点，再</span></span><br><span class="line">      p = lower; qlist = qlist-&gt;succ; <span class="comment">//转入下一层</span></span><br><span class="line">   &#125; <span class="keyword">while</span> ( qlist-&gt;succ ); <span class="comment">//如上不断重复，直到塔基</span></span><br><span class="line">   <span class="keyword">while</span> ( !empty() &amp;&amp; first()-&gt;data-&gt;empty() ) <span class="comment">//逐一地</span></span><br><span class="line">      List::remove ( first() ); <span class="comment">//清除已可能不含词条的顶层Quadlist</span></span><br><span class="line">   <span class="keyword">return</span> <span class="literal">true</span>; <span class="comment">//删除操作成功完成</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>QuadlistNode</code>节点总是以塔为单位，自顶而下得成批被删除，其中每一节点的删除，都按照如下模式：节点p为当前的塔顶，将它从横向列表中删除，其下邻随后将称为新塔顶，并将在紧随其后的下一次删除操作中被删除。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="comment">//删除Quadlist内位置p处的节点，返回其中存放的词条</span></span><br><span class="line">T Quadlist&lt;T&gt;::remove ( QlistNodePosi(T) p ) &#123; <span class="comment">//assert: p为Quadlist中的合法位置</span></span><br><span class="line">   p-&gt;pred-&gt;succ = p-&gt;succ; p-&gt;succ-&gt;pred = p-&gt;pred; _size--;<span class="comment">//摘除节点</span></span><br><span class="line">   T e = p-&gt;entry; <span class="keyword">delete</span> p; <span class="comment">//备份词条，释放节点</span></span><br><span class="line">   <span class="keyword">return</span> e; <span class="comment">//返回词条</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt; <span class="keyword">int</span> Quadlist&lt;T&gt;::clear() &#123; <span class="comment">//清空Quadlist</span></span><br><span class="line">   <span class="keyword">int</span> oldSize = _size;</span><br><span class="line">   <span class="keyword">while</span> ( <span class="number">0</span> &lt; _size ) remove ( header-&gt;succ ); <span class="comment">//逐个删除所有节点</span></span><br><span class="line">   <span class="keyword">return</span> oldSize;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>词条的删除算法，不外乎消耗于两个方面：</p>
+<ul>
+<li><strong>查找目标关键码</strong> </li>
+<li><strong>拆除与目标关键码相关的塔</strong></li>
+</ul>
+<p>词条删除操作所需时间不超过$O(h)=O(logn)$</p>
+<h1 id="位图"><a href="#位图" class="headerlink" title="位图"></a>位图</h1><p>集合可视为一种抽象数据类型，考查其中的特例，整数集合，按照散列的思想，所有离散集或者显式地本身就是整数集，或者隐式地可转换为整数集。</p>
+<p>对集合的操作有：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">set</span><span class="params">(<span class="keyword">int</span> k)</span></span>;<span class="comment">//将整数加入当前集合</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">clear</span><span class="params">(<span class="keyword">int</span> k)</span></span>;<span class="comment">//从当前集合中排除整数k</span></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">test</span><span class="params">(<span class="keyword">int</span> k)</span>P</span>;<span class="comment">//判断整数是否属于当前集合</span></span><br></pre></td></tr></table></figure>
+<p>位图是一种特殊的序列结构，可用于动态地表示由一组无符号整数构成的集合，其长度无限，且每个元素取值为布尔型。</p>
+<p>一种简洁的实现方式如下，使用物理地址连续的一段空间，各元素依次对应于一个比特位:若集合包含整数$k$,则该段空间中的第$k$个比特位为1，否则该比特位为0。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Bitmap</span> &#123;</span> <span class="comment">//位图Bitmap类</span></span><br><span class="line">    <span class="keyword">private</span>:</span><br><span class="line">      <span class="keyword">char</span>* M; <span class="keyword">int</span> N; <span class="comment">//比特图所存放的空间M[]，容量为N*sizeof(char)*8比特</span></span><br><span class="line">      <span class="keyword">protected</span>:</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">init</span> <span class="params">( <span class="keyword">int</span> n )</span> </span>&#123; M = <span class="keyword">new</span> <span class="keyword">char</span>[N = ( n + <span class="number">7</span> ) / <span class="number">8</span>]; <span class="built_in">memset</span> ( M, <span class="number">0</span>, N ); &#125;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">    Bitmap ( <span class="keyword">int</span> n = <span class="number">8</span> ) &#123; init ( n ); &#125; <span class="comment">//按指定或默认规模创建比特图（为测试暂时选用较小的默认值）</span></span><br><span class="line">    Bitmap ( <span class="keyword">char</span>* file, <span class="keyword">int</span> n = <span class="number">8</span> ) <span class="comment">//按指定或默认规模，从指定文件中读取比特图</span></span><br><span class="line">    &#123;    </span><br><span class="line">      init ( n ); </span><br><span class="line">      FILE* fp = fopen ( file, <span class="string">&quot;r&quot;</span> ); fread ( M, <span class="keyword">sizeof</span> ( <span class="keyword">char</span> ), N, fp );                     fclose ( fp );  </span><br><span class="line">    &#125;</span><br><span class="line">    ~Bitmap() &#123; <span class="keyword">delete</span> [] M; M = <span class="literal">NULL</span>; &#125; <span class="comment">//析构时释放比特图空间</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">set</span>   <span class="params">( <span class="keyword">int</span> k )</span> </span>&#123; expand ( k );  M[k &gt;&gt; <span class="number">3</span>] |=   ( <span class="number">0x80</span> &gt;&gt; ( k &amp; <span class="number">0x07</span> ) ); &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">clear</span> <span class="params">( <span class="keyword">int</span> k )</span> </span>&#123; expand ( k );  M[k &gt;&gt; <span class="number">3</span>] &amp;= ~ ( <span class="number">0x80</span> &gt;&gt; ( k &amp; <span class="number">0x07</span> ) ); &#125;</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">test</span>  <span class="params">( <span class="keyword">int</span> k )</span> </span>&#123; expand ( k ); <span class="keyword">return</span> M[k &gt;&gt; <span class="number">3</span>] &amp;( <span class="number">0x80</span> &gt;&gt; ( k &amp; <span class="number">0x07</span> ) );&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">dump</span> <span class="params">( <span class="keyword">char</span>* file )</span> <span class="comment">//将位图整体导出至指定的文件，以便对此后的新位图批量初始化</span></span></span><br><span class="line"><span class="function">    </span>&#123;  FILE* fp = fopen ( file, <span class="string">&quot;w&quot;</span> ); </span><br><span class="line">       fwrite ( M, <span class="keyword">sizeof</span> ( <span class="keyword">char</span> ), N, fp ); </span><br><span class="line">       fclose ( fp );  </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">char</span>* <span class="title">bits2string</span> <span class="params">( <span class="keyword">int</span> n )</span> </span>&#123; <span class="comment">//将前n位转换为字符串——</span></span><br><span class="line">       expand ( n - <span class="number">1</span> ); <span class="comment">//此时可能被访问的最高位为bitmap[n - 1]</span></span><br><span class="line">       <span class="keyword">char</span>* s = <span class="keyword">new</span> <span class="keyword">char</span>[n + <span class="number">1</span>]; s[n] = <span class="string">&#x27;\0&#x27;</span>; <span class="comment">//字符串所占空间，由上层调用者负责释放</span></span><br><span class="line">       <span class="keyword">for</span> ( <span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; i++ ) s[i] = test ( i ) ? <span class="string">&#x27;1&#x27;</span> : <span class="string">&#x27;0&#x27;</span>;</span><br><span class="line">       <span class="keyword">return</span> s; <span class="comment">//返回字符串位置</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">expand</span> <span class="params">( <span class="keyword">int</span> k )</span> </span>&#123; <span class="comment">//若被访问的Bitmap[k]已出界，则需扩容</span></span><br><span class="line">         <span class="keyword">if</span> ( k &lt; <span class="number">8</span> * N ) <span class="keyword">return</span>; <span class="comment">//仍在界内，无需扩容</span></span><br><span class="line">         <span class="keyword">int</span> oldN = N; <span class="keyword">char</span>* oldM = M;</span><br><span class="line">         init ( <span class="number">2</span> * k ); <span class="comment">//与向量类似，加倍策略</span></span><br><span class="line">         memcpy_s ( M, N, oldM, oldN ); <span class="keyword">delete</span> [] oldM; <span class="comment">//原数据转移至新空间</span></span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<p>每个字节通常包含8个比特，故通过移位运算：$k&gt;&gt;3$ 即可确定该元素所属字节的秩，通过逻辑与运算$k&amp;0x07$即可确定该比特位在该字节中的位置；通过移位操作(高位顺序在前)：</p>
+<p>$0x80&gt;&gt;(k&amp;0x07)$即可得到该比特位在此字节中的数值掩码。 </p>
+<p><code>dump()</code>接口将位图导出至指定文件，以便于对此后的新位图进行初始化。</p>
+<p><code>set()</code>,<code>clear()</code>,<code>test()</code>仅涉及常数次基本运算，故其时间复杂度为$O(1)$。</p>
+<p>位图向量所占的空间线性正比于集合的取值范围。</p>
+<h2 id="典型应用"><a href="#典型应用" class="headerlink" title="典型应用"></a>典型应用</h2><blockquote>
+<p>int A[n]的元素均取自[0,m)，如何剔除其中的重复者</p>
+</blockquote>
+<p>仿照无序向量的去重方法，先有序化，再扫描一次$O(nlogn+n)$</p>
+<p>但是数据量虽大，但是重复率极高，比如$2^{24}&lt;&lt;n=10^{10}$</p>
+<p>即$10000000000$个无符号整数，若采用内部排序算法需要$4*n=40GB$内存，否则，频繁的I/O操作将导致效率低下。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Bitmap <span class="title">B</span><span class="params">(m)</span></span>;</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;n;i++) B.<span class="built_in">set</span>(A[i]);<span class="comment">//O(n)</span></span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> k=<span class="number">0</span>;i&lt;m;k++) <span class="keyword">if</span>(B.test(k)) <span class="comment">/*...*/</span>;<span class="comment">//O(m)</span></span><br></pre></td></tr></table></figure>
+<p>可通过位图来利用$m&lt;&lt;n$的条件</p>
+<p>总体运行时间$O(n+m)$</p>
+<p>空间复杂度$O(m)$,搜索引擎的应用类似，词表规模不大，但是重复的概率很高。</p>
+<blockquote>
+<p>如何计算[0,n)内的素数</p>
+</blockquote>
+<p>不计内循环，外循环自身每次仅一次加法、两次判断，累计O(n)</p>
+<p>内循环每趟迭代$O(n/i)$步，由素数定理至多$n/lnn$趟，累计耗时不过</p>
+<p>$n/2 + n/3 + n/5 + n/7 + n/11 + …&lt;  n/2 + n/3 + n/4 + n/6 + n/7 + … + n/(n/ln(n))$</p>
+<p>$=  O(n(ln(n/lnn) - 1))$</p>
+<p>$=  O(nln(n) - nln(ln(n)) - 1)$</p>
+<p>$=  O(nlogn)$</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">Eratosthenes</span> <span class="params">( <span class="keyword">int</span> n, <span class="keyword">char</span>* file )</span> </span>&#123;</span><br><span class="line">   <span class="function">Bitmap <span class="title">B</span> <span class="params">( n )</span></span>; B.<span class="built_in">set</span> ( <span class="number">0</span> ); B.<span class="built_in">set</span> ( <span class="number">1</span> ); <span class="comment">//0和1都不是素数</span></span><br><span class="line">   <span class="keyword">for</span> ( <span class="keyword">int</span> i = <span class="number">2</span>; i &lt; n; i++ ) <span class="comment">//反复地，从下一</span></span><br><span class="line">      <span class="keyword">if</span> ( !B.test ( i ) ) <span class="comment">//可认定的素数i起</span></span><br><span class="line">         <span class="keyword">for</span> ( <span class="keyword">int</span> j = __min ( i, <span class="number">46340</span> ) * __min ( i, <span class="number">46340</span> ); j &lt; n; j += i ) <span class="comment">//以i为间隔</span></span><br><span class="line">            B.<span class="built_in">set</span> ( j ); <span class="comment">//将下一个数标记为合数</span></span><br><span class="line">   B.dump ( file ); <span class="comment">//将所有整数的筛选标记统一存入指定文件，以便日后直接导入</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>内循环从$i * i$而非$i + i$开始，迭代步数由$O(n / i)$降至$O(max(1, n / i - i))$</p>
+<h2 id="快速初始化"><a href="#快速初始化" class="headerlink" title="快速初始化"></a>快速初始化</h2><p>将$B[m]$拆分为一堆等长的rank型向量，总体空间复杂度仍然为$O(m)$。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Bitmap</span> &#123;</span> <span class="comment">//位图Bitmap类：以空间作为补偿，节省初始化时间（仅允许插入，不支持删除）</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">   Rank* F; Rank N; <span class="comment">//规模为N的向量F，记录[k]被标记的次序（即其在栈T[]中的秩）</span></span><br><span class="line">   Rank* T; Rank top; <span class="comment">//容量为N的栈T，记录被标记各位秩的栈，以及栈顶指针</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">   <span class="function"><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">valid</span> <span class="params">( Rank r )</span> </span>&#123; <span class="keyword">return</span> ( <span class="number">0</span> &lt;= r ) &amp;&amp; ( r &lt; top ); &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">   Bitmap ( Rank n = <span class="number">8</span> ) <span class="comment">//按指定（或默认）规模创建比特图（为测试暂时选用较小的默认值）</span></span><br><span class="line">   &#123; N = n; F = <span class="keyword">new</span> Rank[N]; T = <span class="keyword">new</span> Rank[N]; top = <span class="number">0</span>; &#125; <span class="comment">//在O(1)时间内隐式地初始化</span></span><br><span class="line">   ~Bitmap() &#123; <span class="keyword">delete</span> [] F; <span class="keyword">delete</span> [] T; &#125; <span class="comment">//析构时释放空间</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 接口</span></span><br><span class="line">   <span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">set</span> <span class="params">( Rank k )</span> </span>&#123; <span class="comment">//插入</span></span><br><span class="line">      <span class="keyword">if</span> ( test ( k ) ) <span class="keyword">return</span>; <span class="comment">//忽略已带标记的位</span></span><br><span class="line">      F[k] = top++; T[ F[k] ] = k; <span class="comment">//建立校验环</span></span><br><span class="line">   &#125;</span><br><span class="line">   <span class="function"><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">test</span> <span class="params">( Rank k )</span> <span class="comment">//测试</span></span></span><br><span class="line"><span class="function">   </span>&#123;  <span class="keyword">return</span> valid ( F[k] ) &amp;&amp; ( k == T[ F[k] ] );  &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>每当需要调用<code>set(k)</code>标记新的$B[k]$位时，即可将$k$压入栈$T[]$中，并将当前元素(当前的顶元素)在栈中的秩存入$F[k]$。在$k$与$T[F[k]]$之间建立了一个校验环路，当$F[k]$指向栈$T[]$中某个有效元素(<code>valid(F[k])</code>)恰好等于$k$时，在逻辑上必然等效于<code>B[k]=True</code>,反之亦然。test(k)只需判断以上两个条件是否成立。</p>
+<p>以上方法仅限于标记操作<code>set()</code>，尚且不支持clear()操作。如需兼顾这两个操作，就必须有效地区分两种操作，从未标记过的，以及曾经一度被标记后来又被清除的。否则，每次为无标记的位增加标记时简单套用目前的set()接口为其增加一个校验环，则无法限制在$N$以内，整个结构的空间复杂度也将随着操作的次数严格地单调增加。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Bitmap</span> &#123;</span> <span class="comment">//位图Bitmap类：以空间作为补偿，节省初始化时间（既允许插入，亦支持删除）</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">   Rank* F; Rank N; <span class="comment">//规模为N的向量F，记录[k]被标记的次序（即其在栈T[]中的秩）</span></span><br><span class="line">   Rank* T; Rank top; <span class="comment">//容量为N的栈T，记录被标记各位秩的栈，以及栈顶指针</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">   <span class="function"><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">valid</span> <span class="params">( Rank r )</span> </span>&#123; <span class="keyword">return</span> ( <span class="number">0</span> &lt;= r ) &amp;&amp; ( r &lt; top ); &#125;</span><br><span class="line">   <span class="function"><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">erased</span> <span class="params">( Rank k )</span> <span class="comment">//判断[k]是否曾被标记过，且后来又被清除</span></span></span><br><span class="line"><span class="function">   </span>&#123; <span class="keyword">return</span> valid ( F[k] ) &amp;&amp; ! ( T[ F[k] ] + <span class="number">1</span> + k ); &#125; <span class="comment">//这里约定：T[ F[k] ] = - 1 - k</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">   Bitmap ( Rank n = <span class="number">8</span> ) <span class="comment">//按指定（或默认）规模创建比特图（为测试暂时选用较小的默认值）</span></span><br><span class="line">   &#123; N = n; F = <span class="keyword">new</span> Rank[N]; T = <span class="keyword">new</span> Rank[N]; top = <span class="number">0</span>; &#125; <span class="comment">//在O(1)时间内隐式地初始化</span></span><br><span class="line">   ~Bitmap() &#123; <span class="keyword">delete</span> [] F; <span class="keyword">delete</span> [] T; &#125; <span class="comment">//析构时释放空间</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 接口</span></span><br><span class="line">   <span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">set</span> <span class="params">( Rank k )</span> </span>&#123; <span class="comment">//插入</span></span><br><span class="line">      <span class="keyword">if</span> ( test ( k ) ) <span class="keyword">return</span>; <span class="comment">//忽略已带标记的位</span></span><br><span class="line">      <span class="keyword">if</span> ( !erased ( k ) ) F[k] = top++; <span class="comment">//若系初次标记，则创建新校验环</span></span><br><span class="line">      T[ F[k] ] = k; <span class="comment">//若系曾经标记后被清除，则恢复原校验环</span></span><br><span class="line">   &#125;</span><br><span class="line">   <span class="function"><span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">clear</span> <span class="params">( Rank k )</span> <span class="comment">//删除</span></span></span><br><span class="line"><span class="function">   </span>&#123;  <span class="keyword">if</span> ( test ( k ) ) T[ F[k] ] = - <span class="number">1</span> - k;  &#125; <span class="comment">//忽略不带标记的位</span></span><br><span class="line">   <span class="function"><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="title">test</span> <span class="params">( Rank k )</span> <span class="comment">//测试</span></span></span><br><span class="line"><span class="function">   </span>&#123;  <span class="keyword">return</span> valid ( F[k] ) &amp;&amp; ( k == T[ F[k] ] );  &#125;</span><br></pre></td></tr></table></figure>
+<p>这里的<code>clear()</code>接口将$T[F[k]]$取负之后再减一，也就是再与正常校验环不冲突的情况下就地保留原校验环的信息。</p>
+<p><code>set(k)</code>只需调用<code>erased(k)</code>即可判断$k$属于哪种类型，若从未标记过，则按之前的方法新建一个校验环，否则直接恢复原先的校验环。</p>
+<p>再考查以上实现的空间复杂度，表面上看$F[]$和$T[]$的规模均不超过$N$,但是两个向量元素类型不再是比特位而是秩。二者的本质区别在于前一类元素自身所占的空间与整体规模无关，而后者有关。这里$rank$类型的取值必须足以覆盖<code>Bitmap</code>的规模，反之，可用Bitmap最大也不能超越$rank$类型的取值范围。比如，$rank$为四个字节类型的整数，则<code>Bitmap</code>的规模无法超过$2^{31}-1=O(10^9)$，否则$rank$的自身字宽必须相应加大。所幸目前多数应用均不超过这个规模，因此可近似认为以上算法具有线性复杂度。</p>
+<p>还用于散列表和桶单元的初始化和图的初始化。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>trinkle
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://example.com/algorithm/hash/" title="词典">http://example.com/algorithm/hash/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Data-structure/" rel="tag"><i class="fa fa-tag"></i> Data structure</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/algorithm/bst/" rel="prev" title="二叉搜索树">
+                  <i class="fa fa-chevron-left"></i> 二叉搜索树
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/algorithm/pq/" rel="next" title="优先级队列">
+                  优先级队列 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">trinkle</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/mist/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+  
+
+
+
+
+  <script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'none'
+      },
+      options: {
+        renderActions: {
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              const target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.typesetClear();
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+
+
+</body>
+</html>

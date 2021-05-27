@@ -10412,4 +10412,16 @@
         <tag>Data structure</tag>
       </tags>
   </entry>
+  <entry>
+    <title>张量分解</title>
+    <url>/research/tensor/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>nlp</category>
+      </categories>
+      <tags>
+        <tag>tensor network</tag>
+        <tag>math</tag>
+      </tags>
+  </entry>
 </search>

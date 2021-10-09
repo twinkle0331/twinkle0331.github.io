@@ -10413,9 +10413,27 @@
       </tags>
   </entry>
   <entry>
-    <title>词向量与对比学习</title>
-    <url>/research/word2vec/</url>
-    <content><![CDATA[<p><img src="/images/test.png"></p>
+    <title>word2vec</title>
+    <url>/word2vec/word2vec/</url>
+    <content><![CDATA[<p>与传统的one-hot表示不同，word2vec为分布式表示，分布式是指把信息分布式地存储在向量的各个维度中。one-hot表示仅仅只有一个维度表示了词的语意。</p>
+<a id="more"></a>
+
+<p>harris分布式假设认为相似上下文的词语应该有相似的语意，由此衍生了一系列的方法。</p>
+<h1 id="Skip-gram"><a href="#Skip-gram" class="headerlink" title="Skip-gram"></a>Skip-gram</h1><p>Skip-gram模型中，给定当前词$w$和上下文$c$</p>
+<h5 id="argmax-theta-prod-w-in-text-left-prod-c-in-C-w-p-c-w-theta-right"><a href="#argmax-theta-prod-w-in-text-left-prod-c-in-C-w-p-c-w-theta-right" class="headerlink" title="$argmax_{\theta}  \prod_{w \in text} \left [ \prod_{c\in C(w)} p(c|w;\theta) \right] $"></a>$argmax_{\theta}  \prod_{w \in text} \left [ \prod_{c\in C(w)} p(c|w;\theta) \right] $</h5><p>$C(w)$为$w$的上下文</p>
+<p>$argmax_\theta \prod _{(w,c)\in D} p(c|w;\theta)$</p>
+<p>这里$D$为所有上下文对。</p>
+<p>$argmax_{\theta} \prod_{(w,c)\in D} p(D=1|C,W;\theta) \prod_{(w,c) \in D’} P(D=0| c,w;\theta)$</p>
+<p>$= argmax_{\theta} \prod_{(w,c)\in D} p(D=1|C,W;\theta) \prod_{(w,c) \in D’} (1-P(D=1| c,w;\theta)) $</p>
+<p>$= argmax_{\theta} \sum_{(w,c) \in D} log(\frac{1}{1+e^{-v_c \cdot v_w}}) + \sum_{(w,c)\in D’} log(1-\frac{1}{1+e^{-v_c\cdot v_w}})$</p>
+<p>$= argmax_{\theta} \sum_{(w,c)\in D} log \frac{1}{1+e^{-v_c \cdot v_w}} + \sum _{(w,c)\in D’} log(\frac{1}{1+e^{v_c}{v_w}}) $</p>
+<p>$= argmax_{\theta} \sum_{(w,c)\in D} log \sigma(v_c \cdot v_w) + \sum_{(w,c)\in D’} log(\sigma(-v_c \cdot v_w))$</p>
 ]]></content>
+      <categories>
+        <category>nlp</category>
+      </categories>
+      <tags>
+        <tag>word2vec</tag>
+      </tags>
   </entry>
 </search>

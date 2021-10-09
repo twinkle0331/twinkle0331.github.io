@@ -23,20 +23,21 @@
     var NexT = window.NexT || {};
     var CONFIG = {"hostname":"twinkle0331.github.io","root":"/","images":"/images","scheme":"Mist","version":"8.2.2","exturl":false,"sidebar":{"position":"right","display":"remove","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
   </script>
+<meta name="description" content="与传统的one-hot表示不同，word2vec为分布式表示，分布式是指把信息分布式地存储在向量的各个维度中。one-hot表示仅仅只有一个维度表示了词的语意。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="词向量与对比学习">
-<meta property="og:url" content="http://twinkle0331.github.io/research/word2vec/index.html">
+<meta property="og:title" content="word2vec">
+<meta property="og:url" content="http://twinkle0331.github.io/word2vec/word2vec/index.html">
 <meta property="og:site_name" content="trinkle">
+<meta property="og:description" content="与传统的one-hot表示不同，word2vec为分布式表示，分布式是指把信息分布式地存储在向量的各个维度中。one-hot表示仅仅只有一个维度表示了词的语意。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://twinkle0331.github.io/images/test.png">
 <meta property="article:published_time" content="2021-10-09T01:54:51.000Z">
-<meta property="article:modified_time" content="2021-10-09T01:56:15.888Z">
+<meta property="article:modified_time" content="2021-10-09T06:23:20.202Z">
 <meta property="article:author" content="trinkle">
+<meta property="article:tag" content="word2vec">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://twinkle0331.github.io/images/test.png">
 
 
-<link rel="canonical" href="http://twinkle0331.github.io/research/word2vec/">
+<link rel="canonical" href="http://twinkle0331.github.io/word2vec/word2vec/">
 
 
 <script class="page-configurations">
@@ -48,7 +49,7 @@
     lang   : 'zh-CN'
   };
 </script>
-<title>词向量与对比学习 | trinkle</title>
+<title>word2vec | trinkle</title>
   
 
 
@@ -188,7 +189,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://twinkle0331.github.io/research/word2vec/">
+    <link itemprop="mainEntityOfPage" href="http://twinkle0331.github.io/word2vec/word2vec/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -201,7 +202,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          词向量与对比学习
+          word2vec
         </h1>
 
         <div class="post-meta-container">
@@ -214,6 +215,15 @@
 
       <time title="创建时间：2021-10-09 09:54:51" itemprop="dateCreated datePublished" datetime="2021-10-09T09:54:51+08:00">2021-10-09</time>
     </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/nlp/" itemprop="url" rel="index"><span itemprop="name">nlp</span></a>
+        </span>
+    </span>
 
   
 </div>
@@ -225,7 +235,19 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p><img src="/images/test.png"></p>
+        <p>与传统的one-hot表示不同，word2vec为分布式表示，分布式是指把信息分布式地存储在向量的各个维度中。one-hot表示仅仅只有一个维度表示了词的语意。</p>
+<a id="more"></a>
+
+<p>harris分布式假设认为相似上下文的词语应该有相似的语意，由此衍生了一系列的方法。</p>
+<h1 id="Skip-gram"><a href="#Skip-gram" class="headerlink" title="Skip-gram"></a>Skip-gram</h1><p>Skip-gram模型中，给定当前词$w$和上下文$c$</p>
+<h5 id="argmax-theta-prod-w-in-text-left-prod-c-in-C-w-p-c-w-theta-right"><a href="#argmax-theta-prod-w-in-text-left-prod-c-in-C-w-p-c-w-theta-right" class="headerlink" title="$argmax_{\theta}  \prod_{w \in text} \left [ \prod_{c\in C(w)} p(c|w;\theta) \right] $"></a>$argmax_{\theta}  \prod_{w \in text} \left [ \prod_{c\in C(w)} p(c|w;\theta) \right] $</h5><p>$C(w)$为$w$的上下文</p>
+<p>$argmax_\theta \prod _{(w,c)\in D} p(c|w;\theta)$</p>
+<p>这里$D$为所有上下文对。</p>
+<p>$argmax_{\theta} \prod_{(w,c)\in D} p(D=1|C,W;\theta) \prod_{(w,c) \in D’} P(D=0| c,w;\theta)$</p>
+<p>$= argmax_{\theta} \prod_{(w,c)\in D} p(D=1|C,W;\theta) \prod_{(w,c) \in D’} (1-P(D=1| c,w;\theta)) $</p>
+<p>$= argmax_{\theta} \sum_{(w,c) \in D} log(\frac{1}{1+e^{-v_c \cdot v_w}}) + \sum_{(w,c)\in D’} log(1-\frac{1}{1+e^{-v_c\cdot v_w}})$</p>
+<p>$= argmax_{\theta} \sum_{(w,c)\in D} log \frac{1}{1+e^{-v_c \cdot v_w}} + \sum _{(w,c)\in D’} log(\frac{1}{1+e^{v_c}{v_w}}) $</p>
+<p>$= argmax_{\theta} \sum_{(w,c)\in D} log \sigma(v_c \cdot v_w) + \sum_{(w,c)\in D’} log(\sigma(-v_c \cdot v_w))$</p>
 
     </div>
 
@@ -243,7 +265,7 @@
   </li>
   <li class="post-copyright-link">
       <strong>本文链接：</strong>
-      <a href="http://twinkle0331.github.io/research/word2vec/" title="词向量与对比学习">http://twinkle0331.github.io/research/word2vec/</a>
+      <a href="http://twinkle0331.github.io/word2vec/word2vec/" title="word2vec">http://twinkle0331.github.io/word2vec/word2vec/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
@@ -251,6 +273,9 @@
 </ul>
 </div>
 
+          <div class="post-tags">
+              <a href="/tags/word2vec/" rel="tag"><i class="fa fa-tag"></i> word2vec</a>
+          </div>
 
         
 

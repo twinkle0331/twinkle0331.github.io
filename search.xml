@@ -10413,15 +10413,9 @@
       </tags>
   </entry>
   <entry>
-    <title>张量分解</title>
-    <url>/research/tensor/</url>
-    <content><![CDATA[]]></content>
-      <categories>
-        <category>nlp</category>
-      </categories>
-      <tags>
-        <tag>tensor network</tag>
-        <tag>math</tag>
-      </tags>
+    <title>词向量与对比学习</title>
+    <url>/research/word2vec/</url>
+    <content><![CDATA[<p><img src="/images/test.png"></p>
+]]></content>
   </entry>
 </search>

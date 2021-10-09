@@ -30,11 +30,13 @@
 <meta property="og:site_name" content="trinkle">
 <meta property="og:description" content="与传统的one-hot表示不同，word2vec为分布式表示，分布式是指把信息分布式地存储在向量的各个维度中。one-hot表示仅仅只有一个维度表示了词的语意。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://twinkle0331.github.io/images/word2vec/test.png">
 <meta property="article:published_time" content="2021-10-09T01:54:51.000Z">
-<meta property="article:modified_time" content="2021-10-09T06:23:20.202Z">
+<meta property="article:modified_time" content="2021-10-09T06:26:10.313Z">
 <meta property="article:author" content="trinkle">
 <meta property="article:tag" content="word2vec">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://twinkle0331.github.io/images/word2vec/test.png">
 
 
 <link rel="canonical" href="http://twinkle0331.github.io/word2vec/word2vec/">
@@ -239,6 +241,7 @@
 <a id="more"></a>
 
 <p>harris分布式假设认为相似上下文的词语应该有相似的语意，由此衍生了一系列的方法。</p>
+<p><img src="/images/word2vec/test.png"></p>
 <h1 id="Skip-gram"><a href="#Skip-gram" class="headerlink" title="Skip-gram"></a>Skip-gram</h1><p>Skip-gram模型中，给定当前词$w$和上下文$c$</p>
 <h5 id="argmax-theta-prod-w-in-text-left-prod-c-in-C-w-p-c-w-theta-right"><a href="#argmax-theta-prod-w-in-text-left-prod-c-in-C-w-p-c-w-theta-right" class="headerlink" title="$argmax_{\theta}  \prod_{w \in text} \left [ \prod_{c\in C(w)} p(c|w;\theta) \right] $"></a>$argmax_{\theta}  \prod_{w \in text} \left [ \prod_{c\in C(w)} p(c|w;\theta) \right] $</h5><p>$C(w)$为$w$的上下文</p>
 <p>$argmax_\theta \prod _{(w,c)\in D} p(c|w;\theta)$</p>
@@ -357,7 +360,38 @@
 
 
 
-  
+  <script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'none'
+      },
+      options: {
+        renderActions: {
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              const target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.1.2/es5/tex-mml-chtml.js';
+    script.defer = true;
+    document.head.appendChild(script);
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.typesetClear();
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
 
 
 </body>

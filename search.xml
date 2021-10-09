@@ -10419,6 +10419,7 @@
 <a id="more"></a>
 
 <p>harris分布式假设认为相似上下文的词语应该有相似的语意，由此衍生了一系列的方法。</p>
+<p><img src="/images/word2vec/test.png"></p>
 <h1 id="Skip-gram"><a href="#Skip-gram" class="headerlink" title="Skip-gram"></a>Skip-gram</h1><p>Skip-gram模型中，给定当前词$w$和上下文$c$</p>
 <h5 id="argmax-theta-prod-w-in-text-left-prod-c-in-C-w-p-c-w-theta-right"><a href="#argmax-theta-prod-w-in-text-left-prod-c-in-C-w-p-c-w-theta-right" class="headerlink" title="$argmax_{\theta}  \prod_{w \in text} \left [ \prod_{c\in C(w)} p(c|w;\theta) \right] $"></a>$argmax_{\theta}  \prod_{w \in text} \left [ \prod_{c\in C(w)} p(c|w;\theta) \right] $</h5><p>$C(w)$为$w$的上下文</p>
 <p>$argmax_\theta \prod _{(w,c)\in D} p(c|w;\theta)$</p>

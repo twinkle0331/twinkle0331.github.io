@@ -311,6 +311,237 @@
       </tags>
   </entry>
   <entry>
+    <title>并发控制</title>
+    <url>/database_system/concurrency-control/</url>
+    <content><![CDATA[<p>事务的基本特性是隔离性，然而当数据库中由多个事务并发执行时，事务的隔离性不一定能保持。为保持事务的隔离性，系统必须对并发事务之间的相互作用加以控制，这种控制通过并发控制机制来实现。</p>
+<a id="more"></a>
+
+<p>之前我们了解到视图串行化并不存在有效验证方法，那么还需要有一种方式来确保在不提前知道所有调度的情况下所有执行调度仍然是正确的，因此引入锁机制。</p>
+<p>之前的调度序列在引入锁机制后</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"> T1                      T2</span><br><span class="line">BEGIN</span><br><span class="line">LOCK(A)</span><br><span class="line">R(A)</span><br><span class="line">                       BEGIN</span><br><span class="line">                       LOCK(A)</span><br><span class="line">W(A)</span><br><span class="line">R(A)</span><br><span class="line">UNLOCK(A)</span><br><span class="line">                       R(A)</span><br><span class="line">                       W(A)                       </span><br><span class="line">COMMIT</span><br><span class="line">                       UNLOCK(A)</span><br><span class="line">                       COMMIT</span><br></pre></td></tr></table></figure>
+<p>在T2申请对A锁的时候，T1已经取得了对A的锁，在T1释放对A锁之后，T2才可得到对A的锁。</p>
+<p>锁的基本类型有两种</p>
+<ul>
+<li>S-LOCK: 共享读锁</li>
+<li>X-LOCK: 排他写锁</li>
+</ul>
+<p>对于给定的一个锁类型集合,令A与B代表任意的锁类型，假设事务Ti请求对数据项加A类型锁，而事务Tj当前在数据库Q上拥有B类型锁，而事务Ti可立即获得数据项Q上的锁，那么A类型锁和B类型锁是相容的。</p>
+<p>S-LOCK和X-LOCK的相容性矩阵如下</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>S</th>
+<th>X</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>S</td>
+<td>true</td>
+<td>false</td>
+</tr>
+<tr>
+<td>X</td>
+<td>false</td>
+<td>false</td>
+</tr>
+</tbody></table>
+<p>关于锁的流程为</p>
+<ol>
+<li><p>事务申请锁(或者更新)</p>
+</li>
+<li><p>锁管理器授予锁或者拒绝请求</p>
+</li>
+<li><p>事务释放锁</p>
+</li>
+<li><p>锁管理器释放内部的锁表</p>
+<p>锁表中存储持有锁的事务信息和等待锁的事务信息</p>
+</li>
+</ol>
+<p>在系统中每一个事物遵从称为封锁协议的一组规则，这些规则规定事务何时对数据项进行加锁、解锁，封锁协议限制了可能的调度数目。</p>
+<h1 id="两阶段封锁协议"><a href="#两阶段封锁协议" class="headerlink" title="两阶段封锁协议"></a>两阶段封锁协议</h1><p>确保串行性的一个协议是两阶段封锁协议，该协议要求每个事务分两个阶段提出加锁和释放锁申请。</p>
+<ol>
+<li><p>增长阶段：事务可以获得锁，但是不能释放锁</p>
+<p>锁管理器允许/拒绝请求</p>
+</li>
+<li><p>缩减阶段：事务可以释放锁，但是不能释放锁</p>
+<p>在增长阶段后不允许申请/升级锁。</p>
+</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"> T1                      T2</span><br><span class="line">BEGIN</span><br><span class="line">X-LOCK(A)</span><br><span class="line">R(A)</span><br><span class="line">W(A)</span><br><span class="line">                       BEGIN</span><br><span class="line">                       X-LOCK(A)</span><br><span class="line">R(A)</span><br><span class="line">UNLOCK(A)</span><br><span class="line">                       W(A)                       </span><br><span class="line">COMMIT</span><br><span class="line">                       UNLOCK(A)</span><br><span class="line">                       COMMIT</span><br></pre></td></tr></table></figure>
+<p>两阶段封锁协议可保证冲突可串行化，产生无环的依赖图。</p>
+<p>在两阶段封锁协议中，可能存在级联回滚现象。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"> T1                      T2</span><br><span class="line">BEGIN</span><br><span class="line">X-LOCK(A)</span><br><span class="line">X-LOCK(B)</span><br><span class="line">R(A)</span><br><span class="line">W(A)</span><br><span class="line">UNLOCK(A)</span><br><span class="line">                       BEGIN</span><br><span class="line">                       X-LOCK(A)</span><br><span class="line">                       R(A)</span><br><span class="line">                       W(A)</span><br><span class="line">R(B)                    .</span><br><span class="line">W(B)                    .</span><br><span class="line">ABORT                   .</span><br></pre></td></tr></table></figure>
+<p>在事务T1的W(B)后发生故障，从而导致T2级联回滚，从而导致无效的操作。同时存在可能的可串行化调度，但是不被两阶段封锁协议允许。</p>
+<p>可通过严格两阶段封锁协议或者强两阶段封锁协议解决。</p>
+<h2 id="强两阶段封锁协议"><a href="#强两阶段封锁协议" class="headerlink" title="强两阶段封锁协议"></a>强两阶段封锁协议</h2><p>除了要求封锁是两阶段以外，还要求事务持有的所有锁必须在事务提交后方可释放。</p>
+<ul>
+<li>仅仅允许可冲突可串行化调度</li>
+<li>不存在级联回滚现象</li>
+<li>一个事务写入的值在该事务结束前不可被其余事务读入或者写入</li>
+<li>可能存在死锁现象</li>
+</ul>
+<p><img src="https://i.loli.net/2020/02/06/JLQBVAg3ubpvkMz.png"></p>
+<h2 id="死锁处理"><a href="#死锁处理" class="headerlink" title="死锁处理"></a>死锁处理</h2><p><strong>死锁检测</strong></p>
+<p>系统创建等待图，节点为事务，若事务Ti等待事务Tj释放锁，那么添加从Ti到Tj的边。系统定期检查等待图中是否出现环路，再决定如何破坏循环。</p>
+<ul>
+<li><p>当系统检测到死锁，系统将会选择一个回滚的事务来破坏环路</p>
+</li>
+<li><p>取决于应用处理方式，选择的事务将重启或者终止</p>
+</li>
+<li><p>有多种事务属性可作为选择替代的根据，不存在哪个优于其余选择</p>
+<p>按照时间(最早或者最晚)</p>
+<p>按照进程(最少/最多执行的查询)</p>
+<p>按照已经锁住的条目个数</p>
+<p>按照回滚事务的个数</p>
+<p>按照事务过去重启的次数</p>
+</li>
+<li><p>在选择事务后，系统还需决定回滚的长度，要么整个事务的操作均撤销，要么撤销操作数目达到死锁解除的要求即可。</p>
+</li>
+</ul>
+<p><strong>死锁预防</strong></p>
+<p>当一个事务请求已经被其他事务持有的锁，此时执行死锁预防算法。</p>
+<p>基于时间给定优先级，例如，时间越久意味着优先级越高。如此可确保不存在死锁，因为只有一个方向的等待。当一个事务重启，它将继承之前的优先级。</p>
+<ul>
+<li>wait-die:若T1优先级高于T2,T1等待T2，否则T1终止</li>
+<li>wound-wait:若T1优先级高于T2，T2终止，否则T1等待</li>
+</ul>
+<p><img src="https://i.loli.net/2020/02/06/zgCqmRNaUSLfI3Y.png"></p>
+<h2 id="多粒度"><a href="#多粒度" class="headerlink" title="多粒度"></a>多粒度</h2><p>之前提到的例子均将一个个数据项作为同步执行的单元，如果一个事务想更新一百万个元组，那么该事务将请求一百万个条目。为了避免多余的开销，系统将通过层次化锁来允许一个事务粗粒度加锁。例如，该事务将为一百个元组申请一个锁，而不是为每个元组申请一个锁。当一个事务请求层次化结构中的某个节点，该事务隐式地为其后代加锁。</p>
+<p>若事务Ti希望封锁整个数据库，而Tj持有其中某个节点的锁，那么系统如何判定根节点是否可以加锁呢？</p>
+<p>一种可能的方法是遍历整棵树，显然违背了多粒度锁机制的初衷。通过引入意向锁来允许高层次节点在无需检查后代节点即可加共享锁或者排他锁。如果一个节点加上了意向锁，那么意味着在树的更低层进行显式加锁，即以更小的粒度加锁。在一个节点显示加锁之前，其所有祖先节点均加上了意向锁。因此，事务不必遍历整棵树即可判定能否成功地给一个节点加锁。</p>
+<ul>
+<li><strong>共享型意向锁(IS)</strong> 将在树的较低层进行显式封锁，但是只能加共享锁</li>
+<li><strong>排他型意向锁(IX)</strong> 在树的较低层进行显式封锁，可以是共享锁或排他锁</li>
+<li><strong>共享排他型意向锁(SIX)</strong> 以该节点为根的子树显式地加上共享锁，在树的更低层显示地加上排他锁</li>
+</ul>
+<p>这些锁的相容矩阵为</p>
+<p><img src="https://i.loli.net/2020/02/06/5G4bs23khoDpdOw.png"></p>
+<p>多粒度封锁协议根据以下规则对数据项Q加锁：</p>
+<ul>
+<li>事务Ti必须首先封锁树的根节点，并可以加任意类型的锁</li>
+<li>仅当Ti当前对Q的父节点具有IX或IS锁时，Ti可以对节点Q可加S锁或者IS锁、</li>
+<li>仅当Ti当前对Q的父节点具有IX或SIX锁时，Ti可以对节点Q加X、SIX或IX锁</li>
+</ul>
+<p>加锁按照从上到下的顺序，而锁的释放则按照从下到上的顺序。</p>
+<p>在低层次的锁申请过多时，为了更高粒度的并行，可以升级锁。</p>
+<h1 id="时间戳排序协议"><a href="#时间戳排序协议" class="headerlink" title="时间戳排序协议"></a>时间戳排序协议</h1>]]></content>
+      <categories>
+        <category>Systems</category>
+      </categories>
+      <tags>
+        <tag>database systems</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>数据库导论</title>
+    <url>/database_system/database/</url>
+    <content><![CDATA[<p>数据库管理系统在日常生活中的应用非常广泛，用于管理计算机数据。随着当今时代数据爆炸性增长，数据库系统也日益成为计算机应用的核心部分。</p>
+<a id="more"></a>
+
+<p>数据库是由一组模拟生活中某些方面的数据组织成的集合，例如，模拟学生或者歌曲库。数据库管理系统就是用于管理数据库的软件。</p>
+<p>为什么引入数据库管理系统呢？</p>
+<h1 id="简易设计"><a href="#简易设计" class="headerlink" title="简易设计"></a>简易设计</h1><p>假设我们用文件来管理数据库中的数据，以歌手和他们发布的专辑信息为例，我们将分别为歌手和专辑建立CSV文件。</p>
+<p><code>歌手.csv</code>文件信息为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&quot;Wu Tang Clan&quot;,1992,&quot;USA&quot;</span><br><span class="line">&quot;Notorious BIG&quot;,1992,&quot;USA&quot;</span><br><span class="line">&quot;Ice Cube&quot;,1989,&quot;USA&quot;</span><br></pre></td></tr></table></figure>
+<p>每行的信息分别为歌手名、出道年份、国家。</p>
+<p><code>专辑.csv</code>文件信息为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&quot;Enter the Wu Tang&quot;,&quot;Wu Tang Clan&quot;,1993</span><br><span class="line">&quot;St.Ides Mix Tape&quot;,&quot;Wu Tang Clan&quot;,1994</span><br><span class="line">&quot;AmeriKKKa&#39;s Most Wanted&quot;,&quot;Ice Cube&quot;,1990</span><br></pre></td></tr></table></figure>
+<p>每行的信息分别为专辑名、歌手名、发布年份。</p>
+<p>查询<code>Ice Cube</code>出道年份可用如下代码实现：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">for line in file: </span><br><span class="line"> record &#x3D; parse(line) </span><br><span class="line"> if “Ice Cube” &#x3D;&#x3D; record[0]: </span><br><span class="line">   print int(record[1])</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>但是这种通过文件来存储数据的方式存在不少问题</p>
+<ul>
+<li><p>数据完整性</p>
+<p>如何存储多个歌手的专辑信息？</p>
+<p>如何防止无效信息的写入？</p>
+</li>
+<li><p>查询/更新实现</p>
+<p>如何查询特定的记录？</p>
+<p>如何实现基于同一数据库的应用？</p>
+<p>如何控制线程并发写入数据库？</p>
+</li>
+<li><p>持久性</p>
+<p>如何在机器更新时确保信息正确？</p>
+<p>如何在多个设备之间同步？</p>
+</li>
+</ul>
+<p>基于以上考虑，我们引入了数据库管理系统，通过数据库管理系统来定义、创建、查询、更新数据库。</p>
+<h1 id="数据模型"><a href="#数据模型" class="headerlink" title="数据模型"></a>数据模型</h1><p>接下来我们将通过数据模型来描述数据库中的数据。数据模型是数据库结构的基础。给定数据模型后，对特定数据集合的描述称为模式。</p>
+<p>数据模型分为以下几类</p>
+<ul>
+<li><p><strong>关系模型</strong>  用表的集合来表示数据和数据建的联系</p>
+</li>
+<li><p><strong>实体-联系模型</strong>  现实世界由一组称为实体的基本对象和这些对象之间的联系构成，实体-联系模型即用于描述这些数据。</p>
+</li>
+<li><p><strong>半结构数据模型</strong></p>
+</li>
+<li><p><strong>网状数据模型</strong></p>
+</li>
+<li><p><strong>层次数据模型</strong></p>
+<p>其中网状数据模型和层次数据模型和底层实现很紧密，实现复杂，所以现在很少使用。数据库设计基本围绕关系模型展开。</p>
+</li>
+</ul>
+<h1 id="关系模型"><a href="#关系模型" class="headerlink" title="关系模型"></a>关系模型</h1><p>关系模型的核心在于</p>
+<ol>
+<li>以简单的数据结构来存储数据(关系)</li>
+<li>通过高级语言来操作数据</li>
+<li>物理层存储取决于具体实现</li>
+</ol>
+<p>关系模型主要由以下部分组成</p>
+<ul>
+<li>结构：关系的定义和结构内容，即关系对应的属性和这些属性中的值</li>
+<li>完整性：确保数据库内容满足约束，例如，所有的年份属性都应该是数字</li>
+<li>操作：如何访问和修改数据库的内容</li>
+</ul>
+<p>一个关系即是一组代表实体的属性的无序序列。正因为关系无序，所以数据库管理系统可以任何方式存储关系。一个有$n$个属性的关系被称为$n$列关系。</p>
+<p>一个元组是关系中一组属性的值，也就是关系中某一行。元组中的值通常是原子的，即不可再拆分。特殊的空值NULL是每个域的成员。</p>
+<p>一个关系的主键区别了不同的元组。某些数据库管理系统在用户未定义主键时自行创建主键。</p>
+<h1 id="数据库操纵语言"><a href="#数据库操纵语言" class="headerlink" title="数据库操纵语言"></a>数据库操纵语言</h1><p>数据库系统提供数据定义语言来定义数据库模式，以及数据库操纵语言来表达数据库的管理和更新。实际上，数据定义和数据操作语言并不是分离的，而是简单地构成了单一的数据库语言的不同部分。</p>
+<p>数据库操作语言分为两类</p>
+<ul>
+<li><strong>过程化数据库操纵语言</strong> 指明用户需要什么数据，以及怎么获取这些数据</li>
+<li><strong>声明化数据库操纵语言</strong> 只要求用户指定需要什么数据，而不指明如何获取这些数据</li>
+</ul>
+<h2 id="关系代数"><a href="#关系代数" class="headerlink" title="关系代数"></a>关系代数</h2><p>关系代数是一个运算的集合，以一个或两个关系为输入，以一个新的关系为结果。可通过嵌套来实现更复杂的操作。</p>
+<p>关系基本运算有：选择、投影、并、集合交、集合并、集合差、笛卡尔积和重命名。</p>
+<p><strong>选择运算</strong></p>
+<p>选择运算选出满足给定谓词的元组。</p>
+<ul>
+<li>谓词过滤不符合条件的元组，仅留下满足谓词条件的元组</li>
+<li>可通过连词将多个谓词连接</li>
+</ul>
+<p><strong>投影运算</strong></p>
+<p>投影运算以某个关系为输入，输出仅含特定属性的元组的关系。</p>
+<ul>
+<li>可重新排列属性顺序</li>
+<li>可对属性的值操作</li>
+</ul>
+<p><strong>集合交</strong></p>
+<p>集合交以两个关系为输入，输出仅含在两个关系中均出现的元组的关系。</p>
+<p><strong>集合并</strong></p>
+<p>集合并以两个关系为输入，输出在两个关系中至少出现一次的元组的关系。</p>
+<p><strong>集合差</strong></p>
+<p>集合并以两个关系为输入，输出在第一个关系中出现而第二个关系中不出现的元组的关系。</p>
+<p><strong>连接运算</strong></p>
+<p>以两个关系为输入，生成一个关系，该关系中的元组是两个元组（每个输入关系中各选一个）的组合，并且具有一个或多个属性的公共值。</p>
+<p><strong>笛卡尔积</strong></p>
+<p>以两个关系为输入，输出所有可能的组合。</p>
+<p>关系代数为过程化语言，因为关系代数定义了计算查询的步骤。</p>
+<p>例如，若想查询R和S连接后满足b_id等于102的元组，</p>
+<p>关系代数可以是先连接R，S，再选择其中b_id等于102的元组，或者先选择S中b_id等于102的元组，再与R连接。</p>
+<p>更好的方式是声明想让数据库管理系统返回的元组，类似查询R和S连接后满足b_id等于102的元组。</p>
+<p>关系代数定义了数据库查询的原语。</p>
+<p>关系模型仅描述了高层次的操作，与具体实现语言无关。</p>
+]]></content>
+      <categories>
+        <category>Systems</category>
+      </categories>
+      <tags>
+        <tag>database systems</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>attacklab</title>
     <url>/systems/attacklab/</url>
     <content><![CDATA[<p>各种病毒扫描软件都会提示有安全漏洞，通过安全漏洞攻击者可以使攻击者能够在未授权的情况下访问或破坏系统。栈溢出攻击就是常见的攻击手段之一，通过向栈中写入过多的数据导致数据溢出来改变程序执行流程，从而达到攻击的效果。在attack lab中，我们将利用getbuf()函数不检查输入字符存储空间和栈分配空间检查的这一特性来对现有程序进行控制流劫持，执行非法程序代码。</p>
@@ -405,133 +636,6 @@
 <figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="number">00000000004019</span>a0 &lt;addval_273&gt;:</span><br><span class="line">  <span class="number">4019</span>a0:   <span class="number">8</span>d <span class="number">87</span> <span class="number">48</span> <span class="number">89</span> c7 c3       lea    <span class="number">-0x3c3876b8</span>(%rdi),%eax</span><br><span class="line">  <span class="number">4019</span>a6:   c3                      retq</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>cookie的偏移位置为<code>55(0x37)-3*8=31</code><br>构造攻击字符串如下：</p>
 <figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> </span><br><span class="line"><span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> </span><br><span class="line"><span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> </span><br><span class="line"><span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> </span><br><span class="line"><span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span></span><br><span class="line">ad <span class="number">1</span>a <span class="number">40</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="comment">//movq %rsp, %rax</span></span><br><span class="line">d8 <span class="number">19</span> <span class="number">40</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="comment">//add_xy</span></span><br><span class="line">a2 <span class="number">19</span> <span class="number">40</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="comment">//mov %rax, %rdi,</span></span><br><span class="line">fa <span class="number">18</span> <span class="number">40</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span></span><br><span class="line"><span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span></span><br><span class="line"><span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span></span><br><span class="line"><span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span></span><br><span class="line"><span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span></span><br><span class="line"><span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">00</span> <span class="number">35</span> <span class="comment">//cookie</span></span><br><span class="line"><span class="number">39</span> <span class="number">62</span> <span class="number">39</span> <span class="number">39</span> <span class="number">37</span> <span class="number">66</span> <span class="number">61</span> <span class="number">00</span></span><br></pre></td></tr></table></figure>]]></content>
-      <categories>
-        <category>Systems</category>
-      </categories>
-      <tags>
-        <tag>csapp</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>datalab</title>
-    <url>/systems/datalab/</url>
-    <content><![CDATA[<p>计算机中的数以二进制的形式存储和运算，每个比特不是0就是1。计算机通过对比特进行不同方式的编码和描述，从而执行纷繁复杂的各种任务。我们有诸多基于底层的接口，所以一般不会直接接触到比特的运算。datalab直接与编码数字序列的0和1打交道，通过对整数和浮点数的位操作来实现一系列的操作。</p>
-<a id="more"></a>
-
-<h1 id="整数运算"><a href="#整数运算" class="headerlink" title="整数运算"></a>整数运算</h1><h2 id="bitXor"><a href="#bitXor" class="headerlink" title="bitXor"></a>bitXor</h2><blockquote>
-<p>x^y using only ~ and &amp;<br>Example: bitXor(4, 5) = 1<br> Legal ops: ~ &amp;<br> Max ops: 14<br> Rating: 1</p>
-</blockquote>
-<p>假设a,b均为由单个二进制位表示的数<br>则a,b,a^b对应真值表如下<br>a^b在a,b中只有一个取1时取1</p>
-<table>
-<thead>
-<tr>
-<th align="center">a</th>
-<th align="center">b</th>
-<th align="center">a^b</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="center">0</td>
-<td align="center">1</td>
-<td align="center">1</td>
-</tr>
-<tr>
-<td align="center">1</td>
-<td align="center">1</td>
-<td align="center">0</td>
-</tr>
-<tr>
-<td align="center">1</td>
-<td align="center">0</td>
-<td align="center">1</td>
-</tr>
-<tr>
-<td align="center">0</td>
-<td align="center">0</td>
-<td align="center">1</td>
-</tr>
-</tbody></table>
-<p>(<del>a&amp;b)|(</del>b&amp;a)<br>a取0，b取1时为1，<br>b取0，a取1时为1，<br><del>((</del>a&amp;b)|(<del>b&amp;a))即为结果<br>但是只能用</del>和&amp;，化简得(<del>((</del>a)&amp;b))&amp;(<del>((</del>b)&amp;a))</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">bitXor</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> (~((~x)&amp;y))&amp;(~((~y)&amp;x));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="tmin"><a href="#tmin" class="headerlink" title="tmin"></a>tmin</h2><blockquote>
-<p>return minimum two’s complement integer<br>Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 4<br> Rating: 1</p>
-</blockquote>
-<p>32位时补码可以表示最大整数为1&gt;&gt;31</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">tmin</span><span class="params">(<span class="keyword">void</span>)</span> </span>&#123;</span><br><span class="line"> <span class="keyword">return</span> <span class="number">1</span>&gt;&gt;<span class="number">31</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="isTmax"><a href="#isTmax" class="headerlink" title="isTmax"></a>isTmax</h2><blockquote>
-<p>returns 1 if x is the maximum, two’s complement number,and 0 otherwise<br>Legal ops: ! ~ &amp; ^ | +<br> Max ops: 10<br> Rating: 1</p>
-</blockquote>
-<p>2(Tmax+1)会溢出为0，符合2*num等于0的数只有0x0和0x10000000<br>再排除0即可<br>!(x+1+x+1)&amp;!(x+1)<br>调试时报错，不可以使用0xff和0x0以外的常数，由0xff和0x0变换得到0x1<br>0xff+0xff=0x1fe<br>0x1fe&amp;0xff=0xfe<br>0xfe^0xff=0x1</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">//以下的tmp即为0x1;</span></span><br><span class="line"> <span class="function"><span class="keyword">int</span> <span class="title">isTmax</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">   tmp=((<span class="number">0xff</span>+<span class="number">0xff</span>)&amp;<span class="number">0xff</span>)^<span class="number">0xff</span>;</span><br><span class="line">  <span class="keyword">return</span> !(x+tmp+x+tmp)&amp;!(x+tmp);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="allOddBits"><a href="#allOddBits" class="headerlink" title="allOddBits"></a>allOddBits</h2><blockquote>
-<p>return 1 if all odd-numbered bits in word set to 1<br>where bits are numbered from 0 (least significant) to 31 (most significant)<br> Examples allOddBits(0xFFFFFFFD) = 0, allOddBits(0xAAAAAAAA) = 1<br> Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 12<br> Rating: 2</p>
-</blockquote>
-<p>奇数位全为0，偶数位全为1的32位二进制数的十六进制表示为0xaaaaaaaa<br>若x满足奇数位全为1，则取反后奇数位全为0<br>则x&amp;0xaaaaaaaa所有位均为0</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">allOddBits</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> !(~x&amp;<span class="number">0xaaaaaaaa</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="negate"><a href="#negate" class="headerlink" title="negate"></a><strong>negate</strong></h2><blockquote>
-<p>return -x<br>Example: negate(1) = -1.<br> Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 5<br> Rating: 2</p>
-</blockquote>
-<p>一个数的相反数的补码表示为该数的反码再加一</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">x+~x=<span class="number">0xffffffff</span>=<span class="number">-1</span></span><br><span class="line">x+~x+<span class="number">1</span>=<span class="number">0</span></span><br><span class="line"><span class="keyword">int</span> negate(<span class="keyword">int</span> x) &#123;</span><br><span class="line">  <span class="keyword">return</span> (~x+<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="isAsciiDigit"><a href="#isAsciiDigit" class="headerlink" title="isAsciiDigit"></a>isAsciiDigit</h2><blockquote>
-<p>return 1 if 0x30 &lt;= x &lt;= 0x39 (ASCII codes for characters ‘0’ to ‘9’)<br>Example: isAsciiDigit(0x35) = 1.<br>isAsciiDigit(0x3a) = 0.<br>  isAsciiDigit(0x05) = 0.<br> Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 15<br> Rating: 3</p>
-</blockquote>
-<p>判断x在0x30到0x39<br>x-0x30的符号位为0<br>x-0x3a的符号位为1</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">isAsciiDigit</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> (!((x+(~(<span class="number">0x30</span>)+<span class="number">1</span>))&gt;&gt;<span class="number">31</span>))&amp;((x+(~(<span class="number">0x3A</span>)+<span class="number">1</span>))&gt;&gt;<span class="number">31</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="conditional"><a href="#conditional" class="headerlink" title="conditional"></a>conditional</h2><blockquote>
-<p>same as x ? y : z<br>Example: conditional(2,4,5) = 4<br> Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 16<br> Rating: 3</p>
-</blockquote>
-<p>0xffffffff&amp;a=a,0x00000000&amp;b=0x00000000<br>当x=1时，得到0xffffffff(0),当x=0时，得到0x00000000(1)<br>思路一：!x-1 也即!x+~1+1</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">conditional</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y, <span class="keyword">int</span> z)</span> </span>&#123;</span><br><span class="line">  cond=!x+~<span class="number">1</span>+<span class="number">1</span></span><br><span class="line">  <span class="keyword">return</span> (mask&amp;y)|((~mask&amp;z);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">int</span> conditional(<span class="keyword">int</span> x, <span class="keyword">int</span> y, <span class="keyword">int</span> z) &#123;</span><br><span class="line">  <span class="keyword">return</span> ((!x+~<span class="number">1</span>+<span class="number">1</span>)&amp;y)|((~!x+<span class="number">1</span>)&amp;z);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>思路二：位移</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">conditional</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y, <span class="keyword">int</span> z)</span> </span>&#123;</span><br><span class="line">  mask=(x&gt;&gt;<span class="number">31</span>)&lt;&lt;<span class="number">31</span>;</span><br><span class="line">  <span class="keyword">return</span> (mask&amp;y)|(~mask&amp;z);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="isLessOrEqual"><a href="#isLessOrEqual" class="headerlink" title="isLessOrEqual"></a>isLessOrEqual</h2><blockquote>
-<p>if x &lt;= y  then return 1, else return 0<br>Example: isLessOrEqual(4,5) = 1.<br> Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 24<br> Rating: 3</p>
-</blockquote>
-<ol>
-<li>在x与y同号的情况下转换为p=y-x&gt;=0，然后p符号位(p&gt;&gt;31）&amp;1为0则返回1，符号位1则返回0；</li>
-<li>异号时，只要x&gt;=0，就要返回0，否则返回1，由(x&gt;&gt;31)&amp;1判断；</li>
-<li>c=a+b可作为x,y同号还是异号的判断。</li>
-</ol>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">isLessOrEqual</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> a=x&gt;&gt;<span class="number">31</span>;</span><br><span class="line">  <span class="keyword">int</span> b=y&gt;&gt;<span class="number">31</span>;</span><br><span class="line">  <span class="keyword">int</span> c=a^b;</span><br><span class="line">  <span class="keyword">int</span> p=y+(~x+<span class="number">1</span>);</span><br><span class="line">  <span class="keyword">int</span> q=!((p&gt;&gt;<span class="number">31</span>)&amp;<span class="number">1</span>);</span><br><span class="line">  <span class="keyword">int</span> ans=(c&amp;q)|(!c&amp;a);</span><br><span class="line">  <span class="keyword">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="logicalNeg"><a href="#logicalNeg" class="headerlink" title="logicalNeg"></a>logicalNeg</h2><blockquote>
-<p>implement the ! operator, using all of the legal operators except !<br>Examples: logicalNeg(3) = 0, logicalNeg(0) = 1<br> Legal ops: ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 12<br> Rating: 4 </p>
-</blockquote>
-<p>令y=~x+1，考虑x与y的符号位：</p>
-<ol>
-<li>当x=0x0时，x，y两者符号位都为0；</li>
-<li>当x=0x8000 0000时，x，y两者符号位都为1；</li>
-<li>否则，两者符号位为01或10；</li>
-<li>根据离散数学的真值表得出(<del>x)&amp;(</del>y)，则当且仅当<code>x=0x0</code>时，其符号位为1</li>
-</ol>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">logicalNeg</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> ((~(~x+<span class="number">1</span>)&amp;~x)&gt;&gt;<span class="number">31</span>)&amp;<span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="howManyBits"><a href="#howManyBits" class="headerlink" title="howManyBits"></a>howManyBits</h2><blockquote>
-<p>return the minimum number of bits required to represent x in   two’s complement<br>Examples: howManyBits(12) = 5<br>         howManyBits(298) = 10<br>         howManyBits(-5) = 4<br>         howManyBits(0)  = 1<br>         howManyBits(-1) = 1<br>         howManyBits(0x80000000) = 32<br> Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 90<br> Rating: 4</p>
-</blockquote>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">howManyBits</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> temp=x^(x&gt;&gt;<span class="number">31</span>);<span class="comment">//x小于0时取反码</span></span><br><span class="line">    <span class="keyword">int</span> isZero=!temp;</span><br><span class="line">    <span class="comment">//notZeroMask is 0xffffffff</span></span><br><span class="line">    <span class="keyword">int</span> notZeroMask=(!(!temp)&lt;&lt;<span class="number">31</span>)&gt;&gt;<span class="number">31</span>;</span><br><span class="line">    <span class="keyword">int</span> bit_16,bit_8,bit_4,bit_2,bit_1;</span><br><span class="line">    bit_16=!(!(temp&gt;&gt;<span class="number">16</span>))&lt;&lt;<span class="number">4</span>;</span><br><span class="line">    <span class="comment">//see if the high 16bits have value,if have,then we need at least 16 bits</span></span><br><span class="line">    <span class="comment">//if the highest 16 bits have value,then rightshift 16 to see the exact place of  </span></span><br><span class="line">    <span class="comment">//if not means they are all zero,right shift nothing and we should only consider the low 16 bits</span></span><br><span class="line">    temp=temp&gt;&gt;bit_16;</span><br><span class="line">    bit_8=!(!(temp&gt;&gt;<span class="number">8</span>))&lt;&lt;<span class="number">3</span>;</span><br><span class="line">    temp=temp&gt;&gt;bit_8;</span><br><span class="line">    bit_4=!(!(temp&gt;&gt;<span class="number">4</span>))&lt;&lt;<span class="number">2</span>;</span><br><span class="line">    temp=temp&gt;&gt;bit_4;</span><br><span class="line">    bit_2=!(!(temp&gt;&gt;<span class="number">2</span>))&lt;&lt;<span class="number">1</span>;</span><br><span class="line">    temp=temp&gt;&gt;bit_2;</span><br><span class="line">    bit_1=!(!(temp&gt;&gt;<span class="number">1</span>));</span><br><span class="line">    temp=bit_16+bit_8+bit_4+bit_2+bit_1+<span class="number">2</span>;<span class="comment">//at least we need one bit for 1 to tmax,</span></span><br><span class="line">    <span class="comment">//and we need another bit for sign</span></span><br><span class="line">    <span class="keyword">return</span> isZero|(temp&amp;notZeroMask);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="浮点数运算"><a href="#浮点数运算" class="headerlink" title="浮点数运算"></a>浮点数运算</h1><h2 id="floatScale2"><a href="#floatScale2" class="headerlink" title="floatScale2"></a>floatScale2</h2><blockquote>
-<p>Return bit-level equivalent of expression 2*f for<br>floating point argument f.<br>Both the argument and result are passed as unsigned int’s, but they are to be interpreted as the bit-level representation of<br> single-precision floating point values.<br> When argument is NaN, return argument<br> Legal ops: Any integer/unsigned operations incl. ||, &amp;&amp;. also if, while<br> Max ops: 30<br> Rating: 4</p>
-</blockquote>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="title">floatScale2</span><span class="params">(<span class="keyword">unsigned</span> uf)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">unsigned</span> s = uf&amp;<span class="number">0x80000000</span>;</span><br><span class="line">	<span class="keyword">unsigned</span> <span class="built_in">exp</span> = uf&amp;<span class="number">0x7f800000</span>;</span><br><span class="line">	<span class="keyword">unsigned</span> frac = uf&amp;<span class="number">0x007fffff</span>;</span><br><span class="line">	<span class="keyword">if</span>(!<span class="built_in">exp</span>) &#123;</span><br><span class="line">		frac&lt;&lt;=<span class="number">1</span>;</span><br><span class="line">	&#125;<span class="keyword">else</span> <span class="keyword">if</span>(<span class="built_in">exp</span>^<span class="number">0x7f800000</span>) &#123;</span><br><span class="line">		<span class="built_in">exp</span> += <span class="number">0x00800000</span>;</span><br><span class="line">		<span class="keyword">if</span>(!(<span class="built_in">exp</span>^<span class="number">0x7f800000</span>)) &#123;</span><br><span class="line">			frac = <span class="number">0</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> s|<span class="built_in">exp</span>|frac;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="floatFloat2Int"><a href="#floatFloat2Int" class="headerlink" title="floatFloat2Int"></a>floatFloat2Int</h2><blockquote>
-<p>Return bit-level equivalent of expression (int) f<br>for floating point argument f.<br> Argument is passed as unsigned int, but it is to be interpreted as the bit-level representation of a<br>single-precision floating point value.<br> Anything out of range (including NaN and infinity) should return 0x80000000u.<br>Legal ops: Any integer/unsigned operations incl. ||, &amp;&amp;. also if, while<br> Max ops: 30<br> Rating: 4</p>
-</blockquote>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">floatFloat2Int</span><span class="params">(<span class="keyword">unsigned</span> uf)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> sign=(uf&gt;&gt;<span class="number">31</span>)&amp;<span class="number">1</span>;<span class="comment">//取得符号位</span></span><br><span class="line">  <span class="keyword">int</span> <span class="built_in">exp</span>=uf&gt;&gt;<span class="number">23</span>&amp;<span class="number">0xff</span>;<span class="comment">//取得阶码</span></span><br><span class="line">  <span class="keyword">int</span> frac=uf&amp;<span class="number">0x7fffffff</span>;<span class="comment">//取得小数位</span></span><br><span class="line">  <span class="keyword">int</span> E=<span class="built_in">exp</span><span class="number">-127</span>;<span class="comment">//计算E</span></span><br><span class="line">  <span class="keyword">if</span>(<span class="built_in">exp</span>==<span class="number">255</span>||E&gt;<span class="number">30</span>)&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0x80000000</span>u;<span class="comment">//如果超出表示范围，返回0x80000000u</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span>(!<span class="built_in">exp</span>||E&lt;<span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;<span class="comment">//如果exp为0或偏移量小于0，均为不大于1的小数，E均等于1，则舍入到0</span></span><br><span class="line">  &#125;</span><br><span class="line">  frac=frac|(<span class="number">1</span>&lt;&lt;<span class="number">23</span>);<span class="comment">//frac=frac+1.0</span></span><br><span class="line">  <span class="comment">//小数点在23位处，根据E与23的相对位置调整小数点</span></span><br><span class="line">  <span class="keyword">if</span> (E&gt;<span class="number">23</span>)&#123;</span><br><span class="line">    frac=frac&lt;&lt;(E<span class="number">-23</span>);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    frac=frac&gt;&gt;(<span class="number">23</span>-E);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (sign) &#123;</span><br><span class="line">    frac = ~(frac) + <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> frac;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="float-i2f"><a href="#float-i2f" class="headerlink" title="float_i2f"></a>float_i2f</h2><blockquote>
-<p> Return bit-level equivalent of expression (float) x<br> Result is returned as unsigned int, but it is to be interpreted as the bit-levelrepresentation of a single-precision floating point values.<br> Legal ops: Any integer/unsigned operationsincl. ||, &amp;&amp;. also if, while<br> Max ops: 30<br> Rating: 4</p>
-</blockquote>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="title">float_i2f_2</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;  </span><br><span class="line">    <span class="keyword">int</span> sign = x&gt;&gt;<span class="number">31</span>&amp;<span class="number">1</span>; </span><br><span class="line">    <span class="keyword">int</span> i;  </span><br><span class="line">    <span class="keyword">int</span> exponent;   </span><br><span class="line">    <span class="keyword">int</span> fraction; </span><br><span class="line">    <span class="keyword">int</span> delta;  </span><br><span class="line">    <span class="keyword">int</span> fraction_mask;  </span><br><span class="line">    <span class="keyword">if</span>(x == <span class="number">0</span>)  </span><br><span class="line">        <span class="keyword">return</span> x;  </span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span>(x==<span class="number">0x80000000</span>)  </span><br><span class="line">        exponent=<span class="number">158</span>; <span class="comment">//x为Tmin(-2^31)时,exponent=31+127=158 </span></span><br><span class="line">    <span class="keyword">else</span>&#123;  </span><br><span class="line">        <span class="keyword">if</span> (sign)  </span><br><span class="line">            x = -x;  </span><br><span class="line">        i = <span class="number">30</span>;  </span><br><span class="line">        <span class="keyword">while</span> ( !(x &gt;&gt; i) )  </span><br><span class="line">            i--;<span class="comment">//小数点偏移位数  </span></span><br><span class="line">        exponent = i + <span class="number">127</span>;</span><br><span class="line">        x = x &lt;&lt; (<span class="number">31</span> - i);  </span><br><span class="line">        fraction_mask = <span class="number">0x7fffff</span>;  </span><br><span class="line">        fraction = fraction_mask &amp; (x &gt;&gt; <span class="number">8</span>);<span class="comment">//32位数字舍弃低八位和首位的1得到23位的小数域</span></span><br><span class="line">		</span><br><span class="line">        x = x &amp; <span class="number">0xff</span>; <span class="comment">//舍入部分 </span></span><br><span class="line">        delta = x &gt; <span class="number">128</span> || ((x == <span class="number">128</span>) &amp;&amp; (fraction &amp; <span class="number">1</span>));<span class="comment">//向偶数舍入</span></span><br><span class="line">		</span><br><span class="line">        fraction += delta;  </span><br><span class="line">        <span class="keyword">if</span>(fraction &gt;&gt; <span class="number">23</span>) &#123;  </span><br><span class="line">            fraction &amp;= fraction_mask;<span class="comment">//处理溢出情况  </span></span><br><span class="line">            exponent += <span class="number">1</span>;  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="keyword">return</span> (sign&lt;&lt;<span class="number">31</span>)|(exponent&lt;&lt;<span class="number">23</span>)|fraction;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
-<h2 id="bitCount"><a href="#bitCount" class="headerlink" title="bitCount"></a>bitCount</h2><blockquote>
-<p>returns count of number of 1’s in word<br>Examples: bitCount(5) = 2, bitCount(7) = 3<br>Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br>Max ops: 40<br>Rating: 4</p>
-</blockquote>
-<p>分而治之，首先我们考虑两位的情况<br>例如二进制10,10&amp;01表明最低位是否为1，(x&gt;&gt;1)&amp;1,表明最低位的零位是否为1，<br>(x&amp;0x1)+(x&gt;&gt;1)&amp;0x1<br>计算每一位中1的个数并且相加</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">bitcount2</span><span class="params">(<span class="keyword">int</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> bit1=<span class="number">0x1</span>;</span><br><span class="line">    <span class="keyword">return</span> x&amp;bit1+(x&gt;&gt;<span class="number">1</span>)&amp;bit1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>接下来我们考虑四位的情况<br>例如1001，1001&amp;0101=0001,(1001&gt;&gt;1)&amp;0101=0001;<br>0001+0100=0101表示每两位均各有1个1，<br>将四位看作两段两位的二进制数，每段的1的个数由一个二位二进制数表示<br>0101&amp;0011=0001；(0101&gt;&gt;2)=0001,0001&amp;0011=0001;<br>计算每两位中1的个数并且相加<br>0001+0001=0010,即为最后的答案</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">bitcount4</span><span class="params">(<span class="keyword">int</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> mask1=<span class="number">0x1</span>;</span><br><span class="line">    <span class="keyword">int</span> mask2=<span class="number">0x3</span>;</span><br><span class="line">    <span class="keyword">int</span> ans=(x&amp;mask1)+(x&gt;&gt;<span class="number">1</span>)&amp;mask1;</span><br><span class="line">    ans=(ans&amp;mask2)+(ans&gt;&gt;<span class="number">2</span>)&amp;mask2;</span><br><span class="line">    <span class="keyword">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>接下来我们考虑八位的情况<br>例如01111001，01111001&amp;01010101=01010001,01111001&gt;&gt;1=00111100;<br>00101100&amp;01010101=00010100,00010100+01010001=01100101;<br>每二位分别有1，2，1，1个1<br>接下来计算每四位中1的个数<br>01100101&amp;00110011=00100001，01100101&gt;&gt;2=00011001;<br>00100001+00010001=00110010<br>每四位分别有3，2个1<br>接下来计算每8位中1的个数</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">bitcount8</span><span class="params">(<span class="keyword">int</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> mask1=<span class="number">0x55</span>;</span><br><span class="line">    <span class="keyword">int</span> mask2=<span class="number">0x33</span>;</span><br><span class="line">    <span class="keyword">int</span> mask3=<span class="number">0x0f</span>;</span><br><span class="line">    <span class="keyword">int</span> ans=(x&amp;mask1)+((x&gt;&gt;<span class="number">1</span>)&amp;mask1);</span><br><span class="line">    ans=(ans&amp;mask2)+((ans&gt;&gt;<span class="number">2</span>)&amp;mask2);</span><br><span class="line">    ans=(ans&amp;mask3)+((ans&gt;&gt;<span class="number">4</span>)&amp;mask3);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>推广得到32位的计算如下</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">bitCount</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> _mask1 = (<span class="number">0x55</span>)|(<span class="number">0x55</span>&lt;&lt;<span class="number">8</span>);</span><br><span class="line">  <span class="keyword">int</span> _mask2 = (<span class="number">0x33</span>)|(<span class="number">0x33</span>&lt;&lt;<span class="number">8</span>);</span><br><span class="line">  <span class="keyword">int</span> _mask3 = (<span class="number">0x0f</span>)|(<span class="number">0x0f</span>&lt;&lt;<span class="number">8</span>);</span><br><span class="line">  <span class="keyword">int</span> mask1 = _mask1|(_mask1&lt;&lt;<span class="number">16</span>);</span><br><span class="line">  <span class="keyword">int</span> mask2 = _mask2|(_mask2&lt;&lt;<span class="number">16</span>);</span><br><span class="line">  <span class="keyword">int</span> mask3 = _mask3|(_mask3&lt;&lt;<span class="number">16</span>);</span><br><span class="line">  <span class="keyword">int</span> mask4 = (<span class="number">0xff</span>)|(<span class="number">0xff</span>&lt;&lt;<span class="number">16</span>);</span><br><span class="line">  <span class="keyword">int</span> mask5 = (<span class="number">0xff</span>)|(<span class="number">0xff</span>&lt;&lt;<span class="number">8</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">int</span> ans = (x &amp; mask1) + ((x&gt;&gt;<span class="number">1</span>) &amp; mask1);</span><br><span class="line">  ans = (ans &amp; mask2) + ((ans&gt;&gt;<span class="number">2</span>) &amp; mask2);</span><br><span class="line">  ans = (ans &amp; mask3) + ((ans&gt;&gt;<span class="number">4</span>) &amp; mask3);</span><br><span class="line">  ans = (ans &amp; mask4) + ((ans&gt;&gt;<span class="number">8</span>) &amp; mask4);</span><br><span class="line">  ans = (ans &amp; mask5) + ((ans&gt;&gt;<span class="number">16</span>) &amp; mask5);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
       <categories>
         <category>Systems</category>
       </categories>
@@ -930,223 +1034,6 @@
 <li>共享段的控制</li>
 </ul>
 </li>
-</ul>
-]]></content>
-      <categories>
-        <category>Systems</category>
-      </categories>
-      <tags>
-        <tag>Operating Systems</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>非连续内存分配算法</title>
-    <url>/systems/dvmm/</url>
-    <content><![CDATA[<p>连续内存分配内存利用效率比较低，无法适应动态修改。非连续内存分配通过允许分配非连续物理内存空间来解决问题，其中根据分块标准的不同，分为以段为单位的段式存储管理和以页为单位的页式存储管理。段式内存便于内存保护，而页式内存便于内存转移，将二者折衷又引入了段页式存储管理。</p>
-<a id="more"></a>
-
-<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>连续内存的缺点：</p>
-<ul>
-<li>物理内存必须连续</li>
-<li>存在外碎片和内碎片</li>
-<li>内存分配的动态修改困难</li>
-<li>内存利用率较低</li>
-</ul>
-<p>非连续分配的设计目标：提高内存利用效率和管理灵活</p>
-<ul>
-<li>允许一个程序使用非连续的物理地址空间</li>
-<li>允许共享代码与数据</li>
-<li>支持动态加载和动态链接</li>
-</ul>
-<p><strong>非连续内存分配的实现</strong></p>
-<blockquote>
-<p>如何实现虚拟地址和物理地址的转换：不同的逻辑地址可能位于不连续的物理区域中</p>
-</blockquote>
-<ul>
-<li>软件实现（灵活，开销大）</li>
-<li>硬件实现（够用，开销小）</li>
-</ul>
-<blockquote>
-<p>如何选择非连续分配中的内存分块大小？内碎片、外碎片问题？</p>
-</blockquote>
-<p>段式存储管理（segmentation）：分块大，以段为单位<br>页式存储管理（paging）：分块小，以页为单位</p>
-<h1 id="段式存储管理"><a href="#段式存储管理" class="headerlink" title="段式存储管理"></a>段式存储管理</h1><h2 id="段地址空间"><a href="#段地址空间" class="headerlink" title="段地址空间"></a>段地址空间</h2><p>进程的段地址空间由多个段组成：<br>• 主代码段<br>• 子模块代码段<br>• 公用库代码段<br>• 堆栈段（stack）<br>• 堆数据（heap）<br>• 初始化数据段<br>• 符号表等</p>
-<p>段式存储管理的目的：更细粒度和灵活的分离与共享。</p>
-<p>段式地址空间的不连续二维结构</p>
-<p><img src="https://i.loli.net/2019/07/27/5d3b8b8ee04ff11870.png"></p>
-<p>段地址空间的逻辑视图</p>
-<p><img src="https://i.loli.net/2019/07/27/5d3b8bbc75c4068840.png"></p>
-<h2 id="段访问机制"><a href="#段访问机制" class="headerlink" title="段访问机制"></a>段访问机制</h2><blockquote>
-<p>段的概念</p>
-</blockquote>
-<ul>
-<li>段表示访问方式和存储数据等属性相同的一段地址空间</li>
-<li>对应一个连续的内存“块”</li>
-<li> 若干个段组成进程逻辑地址空间</li>
-</ul>
-<p>段访问：逻辑地址由二元组        段号addr  段内偏移</p>
-<ul>
-<li>(s，addr)表示s</li>
-<li>段号addr  段内偏移</li>
-</ul>
-<p>由单地址方案转换为”段基址+段内偏移”</p>
-<p><strong>段访问的硬件实现</strong></p>
-<p><img src="https://i.loli.net/2019/07/27/5d3b8ca5a692a17089.png"></p>
-<ol>
-<li>首先从逻辑地址中取出段号和偏移量</li>
-<li>在段表中以段号为索引，查找对应的段描述符，得到段基址和段长度</li>
-<li>由MMU判断偏移量是否大于段长度，若大于，则内存异常</li>
-<li>偏移量与段基址相加得到物理地址，根据物理地址访问对应的内容</li>
-</ol>
-<h1 id="页式存储管理"><a href="#页式存储管理" class="headerlink" title="页式存储管理"></a>页式存储管理</h1><h2 id="基本单位"><a href="#基本单位" class="headerlink" title="基本单位"></a>基本单位</h2><blockquote>
-<p>物理页面</p>
-</blockquote>
-<p>页帧（Page Frame）<br>• 把物理地址空间划分为大小相同的基本分配单位<br>• $2$，如512,4096,8192，4k是常用大小</p>
-<blockquote>
-<p>逻辑页面</p>
-</blockquote>
-<p>页面（Page）<br>• 把逻辑地址空间也划分为相同大小的基本分配单位<br>• 帧和页的大小必须是相同的</p>
-<blockquote>
-<p>页面到页帧之间的转换</p>
-</blockquote>
-<p>• 逻辑地址到物理地址的转换<br>• 页表<br>• MMU/TLB 使转换高效进行</p>
-<h2 id="页到页帧"><a href="#页到页帧" class="headerlink" title="页到页帧"></a>页到页帧</h2><p><strong>页帧物理地址计算</strong></p>
-<p><img src="https://i.loli.net/2019/07/27/5d3b8fe4e58d066683.png"></p>
-<p><strong>页逻辑地址计算</strong></p>
-<p><img src="https://i.loli.net/2019/07/27/5d3b908d4f3c116363.png"></p>
-<p><strong>页式存储中的地址映射</strong></p>
-<blockquote>
-<p>如何将页映射到帧</p>
-</blockquote>
-<ul>
-<li>逻辑地址中的页号是连续的，物理地址中的页号是不连续的</li>
-<li>不是所有页都有对应的帧</li>
-<li>页表保存了逻辑地址与物理地址之间的映射关系</li>
-</ul>
-<h2 id="页表"><a href="#页表" class="headerlink" title="页表"></a>页表</h2><p><strong>页表结构</strong></p>
-<p>每个进程都有一个页表</p>
-<ul>
-<li>每个页面对应一个页表项</li>
-<li> 随进程运行状态而动态变化（可以动态调整内存空间大小）</li>
-<li> 页表基址寄存器：PTBR，Page Table Base Register 存储页表基地址</li>
-</ul>
-<p><img src="https://i.loli.net/2019/07/27/5d3b91b76c36360461.png"></p>
-<blockquote>
-<p>页表项组成</p>
-</blockquote>
-<p>帧号：f</p>
-<p>页表项标志：</p>
-<ul>
-<li><strong>存在位(reside bit)</strong> 逻辑页面是否存在对应的物理帧</li>
-<li><strong>修改位(dirty bit，又称为脏位)</strong>  对应页面中内容是否被修改了</li>
-<li><strong>引用位(clock/reference bit)</strong> 在过去一段事件内是否访问过页中内容</li>
-</ul>
-<p><strong>性能问题</strong></p>
-<ul>
-<li>访问一个内存单元需要2次内存访问 (内存访问性能问题)<ul>
-<li>第一次访问获取页表项</li>
-<li>第二次访问获取数据</li>
-</ul>
-</li>
-<li>页表大小可能会很大</li>
-</ul>
-<blockquote>
-<p>如何解决页式存储的性能问题</p>
-</blockquote>
-<ul>
-<li><strong>缓存 (Caching)</strong> 缓存页表项 ，根据局部性原理，之后极大可能再次访问，从而减少访问次数。例如TLB</li>
-<li><strong>间接访问 (Indirection)</strong> 将页表项分为多级，逐级访问，比如多级页表</li>
-</ul>
-<h2 id="快表"><a href="#快表" class="headerlink" title="快表"></a>快表</h2><p><img src="https://i.loli.net/2019/07/27/5d3b96de83b1371477.png"></p>
-<p>关联存储器：有一组key，可以并行地查找所有表项，得到匹配项</p>
-<p>快表(Translation look-aside buffer)位于CPU中，所以速度块，成本高，功耗大。</p>
-<blockquote>
-<p>快表（TLB）与高速缓存（cache）有什么不同？</p>
-</blockquote>
-<p>TLB：缓存页表项</p>
-<p>Cache：缓存内存地址对应的数据</p>
-<h2 id="多级页表"><a href="#多级页表" class="headerlink" title="多级页表"></a>多级页表</h2><p><img src="https://i.loli.net/2019/07/27/5d3b97ba9b16d15315.png"></p>
-<p>针对大地址空间，多级页表变得繁琐。</p>
-<p>页寄存器和反置页面的思路：</p>
-<ul>
-<li>不让页表与逻辑地址空间的大小相对应</li>
-<li>让页表与物理地址空间的大小相对应</li>
-</ul>
-<h2 id="页寄存器"><a href="#页寄存器" class="headerlink" title="页寄存器"></a>页寄存器</h2><p>每个帧与一个页寄存器（Page Register）关联，寄存器内容包括：</p>
-<ul>
-<li>使用位（Residence bit）：此帧是否被进程占用</li>
-<li>占用页号（Occupier）：对应的页号p</li>
-<li> 保护位（Protection bits）：设置该页的访问方式，比如可读，可写。</li>
-</ul>
-<p><strong>页寄存器示例</strong></p>
-<ul>
-<li>物理内存大小：40964096=4K*4KB=16MB</li>
-<li>页面大小：4096bytes=4KB</li>
-<li>页帧数：4096=4K</li>
-<li>页寄存器使用的空间：8*4096=32KB（假定每个页寄存器占8字节）</li>
-<li>页寄存器带来的额外开销：32K/16M=0.2%（大约）</li>
-<li>虚拟内存的大小：任意</li>
-</ul>
-<p><strong>页寄存器特征</strong></p>
-<p>优点：</p>
-<ul>
-<li>页表大小相对于物理内存而言很小</li>
-<li>页表大小与逻辑地址空间大小无关</li>
-</ul>
-<p>缺点：</p>
-<ul>
-<li>页表信息对调后，需要根据帧号可找页号</li>
-<li> 在页寄存器中搜索逻辑地址中的页号</li>
-</ul>
-<p><strong>页寄存器中的地址转换</strong></p>
-<p>以快表缓存页表项的页寄存器为例，</p>
-<ol>
-<li>对逻辑地址进行Hash变换 </li>
-<li>在快表中查找对应页表项</li>
-<li>有冲突时遍历冲突项列表</li>
-<li>查找失败时，产生异常</li>
-</ol>
-<p><strong>快表的限制</strong></p>
-<ul>
-<li>快表的容量限制</li>
-<li>快表的功耗限制（StrongARM上快表功耗占27%）</li>
-</ul>
-<h2 id="反置页表"><a href="#反置页表" class="headerlink" title="反置页表"></a>反置页表</h2><p><img src="https://i.loli.net/2019/07/27/5d3b98f267b5a68131.png"></p>
-<p>查找过程：</p>
-<ol>
-<li>从逻辑地址中得到页号</li>
-<li>根据页号的运行进程pid计算hash值</li>
-<li>在反置页表中查找对应页表项，从中找到相应的物理帧号</li>
-</ol>
-<blockquote>
-<p>可有效应对大地址空间可采用的页表手段是() </p>
-</blockquote>
-<ul>
-<li><input checked="" disabled="" type="checkbox"> 多级页表</li>
-<li><input checked="" disabled="" type="checkbox"> 反置页表</li>
-<li><input disabled="" type="checkbox"> 页寄存器</li>
-<li><input disabled="" type="checkbox"> 单级页表</li>
-</ul>
-<p>页寄存器和反置页表很像，但它们的一个区别是进程ID在地址转换中的使用。没有进程ID（页寄存器方案）时，页表占用的空间仍然是与进程数相关的。反置页表的大小只与物理内存大小，与并发进程数无关。</p>
-<p>采用页寄存器的硬件开销会很大。所以现在的通用CPU（包括64位的CPU）没有采用这种方式，大部分还是多级页表。由于有TLB作为缓存，效率还不错。</p>
-<h1 id="段页式存储管理"><a href="#段页式存储管理" class="headerlink" title="段页式存储管理"></a>段页式存储管理</h1><p>段式内存便于内存保护，页式存储便于内存利用和优化转移，因此引入段页式存储管理。</p>
-<p><img src="https://i.loli.net/2019/07/27/5d3b992475fc583205.png"></p>
-<p>逻辑地址：段号+页号+页内偏移</p>
-<p>物理地址：帧号+页内偏移</p>
-<p><strong>地址转换过程</strong></p>
-<ol>
-<li>从逻辑地址中的得到段号s和页号P,偏移o</li>
-<li>根据段基址和段号S查找对应段表项</li>
-<li>访问段S的页表，取出对应的帧号</li>
-</ol>
-<p><strong>段页式存储管理中的内存共享</strong></p>
-<p>通过指向相同的页表基址，实现进程间的段共享。</p>
-<p>在启动页机制后，不可能进行的操作包括（）</p>
-<ul>
-<li><input checked="" disabled="" type="checkbox"> 取消段机制，只保留页机制</li>
-<li><input disabled="" type="checkbox"> 取消页机制，只保留段机制</li>
-<li><input disabled="" type="checkbox"> 取消页机制，也取消段机制</li>
-<li><input disabled="" type="checkbox"> 保留页机制，也保留段机制</li>
 </ul>
 ]]></content>
       <categories>
@@ -1567,6 +1454,350 @@
 <li>只为大文件分配间接索引块 大文件在访问数据块时需要大量查询</li>
 </ul>
 </li>
+</ul>
+]]></content>
+      <categories>
+        <category>Systems</category>
+      </categories>
+      <tags>
+        <tag>Operating Systems</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>datalab</title>
+    <url>/systems/datalab/</url>
+    <content><![CDATA[<p>计算机中的数以二进制的形式存储和运算，每个比特不是0就是1。计算机通过对比特进行不同方式的编码和描述，从而执行纷繁复杂的各种任务。我们有诸多基于底层的接口，所以一般不会直接接触到比特的运算。datalab直接与编码数字序列的0和1打交道，通过对整数和浮点数的位操作来实现一系列的操作。</p>
+<a id="more"></a>
+
+<h1 id="整数运算"><a href="#整数运算" class="headerlink" title="整数运算"></a>整数运算</h1><h2 id="bitXor"><a href="#bitXor" class="headerlink" title="bitXor"></a>bitXor</h2><blockquote>
+<p>x^y using only ~ and &amp;<br>Example: bitXor(4, 5) = 1<br> Legal ops: ~ &amp;<br> Max ops: 14<br> Rating: 1</p>
+</blockquote>
+<p>假设a,b均为由单个二进制位表示的数<br>则a,b,a^b对应真值表如下<br>a^b在a,b中只有一个取1时取1</p>
+<table>
+<thead>
+<tr>
+<th align="center">a</th>
+<th align="center">b</th>
+<th align="center">a^b</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">0</td>
+<td align="center">1</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td align="center">1</td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td align="center">0</td>
+<td align="center">1</td>
+</tr>
+<tr>
+<td align="center">0</td>
+<td align="center">0</td>
+<td align="center">1</td>
+</tr>
+</tbody></table>
+<p>(<del>a&amp;b)|(</del>b&amp;a)<br>a取0，b取1时为1，<br>b取0，a取1时为1，<br><del>((</del>a&amp;b)|(<del>b&amp;a))即为结果<br>但是只能用</del>和&amp;，化简得(<del>((</del>a)&amp;b))&amp;(<del>((</del>b)&amp;a))</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">bitXor</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> (~((~x)&amp;y))&amp;(~((~y)&amp;x));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="tmin"><a href="#tmin" class="headerlink" title="tmin"></a>tmin</h2><blockquote>
+<p>return minimum two’s complement integer<br>Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 4<br> Rating: 1</p>
+</blockquote>
+<p>32位时补码可以表示最大整数为1&gt;&gt;31</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">tmin</span><span class="params">(<span class="keyword">void</span>)</span> </span>&#123;</span><br><span class="line"> <span class="keyword">return</span> <span class="number">1</span>&gt;&gt;<span class="number">31</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="isTmax"><a href="#isTmax" class="headerlink" title="isTmax"></a>isTmax</h2><blockquote>
+<p>returns 1 if x is the maximum, two’s complement number,and 0 otherwise<br>Legal ops: ! ~ &amp; ^ | +<br> Max ops: 10<br> Rating: 1</p>
+</blockquote>
+<p>2(Tmax+1)会溢出为0，符合2*num等于0的数只有0x0和0x10000000<br>再排除0即可<br>!(x+1+x+1)&amp;!(x+1)<br>调试时报错，不可以使用0xff和0x0以外的常数，由0xff和0x0变换得到0x1<br>0xff+0xff=0x1fe<br>0x1fe&amp;0xff=0xfe<br>0xfe^0xff=0x1</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">//以下的tmp即为0x1;</span></span><br><span class="line"> <span class="function"><span class="keyword">int</span> <span class="title">isTmax</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">   tmp=((<span class="number">0xff</span>+<span class="number">0xff</span>)&amp;<span class="number">0xff</span>)^<span class="number">0xff</span>;</span><br><span class="line">  <span class="keyword">return</span> !(x+tmp+x+tmp)&amp;!(x+tmp);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="allOddBits"><a href="#allOddBits" class="headerlink" title="allOddBits"></a>allOddBits</h2><blockquote>
+<p>return 1 if all odd-numbered bits in word set to 1<br>where bits are numbered from 0 (least significant) to 31 (most significant)<br> Examples allOddBits(0xFFFFFFFD) = 0, allOddBits(0xAAAAAAAA) = 1<br> Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 12<br> Rating: 2</p>
+</blockquote>
+<p>奇数位全为0，偶数位全为1的32位二进制数的十六进制表示为0xaaaaaaaa<br>若x满足奇数位全为1，则取反后奇数位全为0<br>则x&amp;0xaaaaaaaa所有位均为0</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">allOddBits</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> !(~x&amp;<span class="number">0xaaaaaaaa</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="negate"><a href="#negate" class="headerlink" title="negate"></a><strong>negate</strong></h2><blockquote>
+<p>return -x<br>Example: negate(1) = -1.<br> Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 5<br> Rating: 2</p>
+</blockquote>
+<p>一个数的相反数的补码表示为该数的反码再加一</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">x+~x=<span class="number">0xffffffff</span>=<span class="number">-1</span></span><br><span class="line">x+~x+<span class="number">1</span>=<span class="number">0</span></span><br><span class="line"><span class="keyword">int</span> negate(<span class="keyword">int</span> x) &#123;</span><br><span class="line">  <span class="keyword">return</span> (~x+<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="isAsciiDigit"><a href="#isAsciiDigit" class="headerlink" title="isAsciiDigit"></a>isAsciiDigit</h2><blockquote>
+<p>return 1 if 0x30 &lt;= x &lt;= 0x39 (ASCII codes for characters ‘0’ to ‘9’)<br>Example: isAsciiDigit(0x35) = 1.<br>isAsciiDigit(0x3a) = 0.<br>  isAsciiDigit(0x05) = 0.<br> Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 15<br> Rating: 3</p>
+</blockquote>
+<p>判断x在0x30到0x39<br>x-0x30的符号位为0<br>x-0x3a的符号位为1</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">isAsciiDigit</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> (!((x+(~(<span class="number">0x30</span>)+<span class="number">1</span>))&gt;&gt;<span class="number">31</span>))&amp;((x+(~(<span class="number">0x3A</span>)+<span class="number">1</span>))&gt;&gt;<span class="number">31</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="conditional"><a href="#conditional" class="headerlink" title="conditional"></a>conditional</h2><blockquote>
+<p>same as x ? y : z<br>Example: conditional(2,4,5) = 4<br> Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 16<br> Rating: 3</p>
+</blockquote>
+<p>0xffffffff&amp;a=a,0x00000000&amp;b=0x00000000<br>当x=1时，得到0xffffffff(0),当x=0时，得到0x00000000(1)<br>思路一：!x-1 也即!x+~1+1</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">conditional</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y, <span class="keyword">int</span> z)</span> </span>&#123;</span><br><span class="line">  cond=!x+~<span class="number">1</span>+<span class="number">1</span></span><br><span class="line">  <span class="keyword">return</span> (mask&amp;y)|((~mask&amp;z);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">int</span> conditional(<span class="keyword">int</span> x, <span class="keyword">int</span> y, <span class="keyword">int</span> z) &#123;</span><br><span class="line">  <span class="keyword">return</span> ((!x+~<span class="number">1</span>+<span class="number">1</span>)&amp;y)|((~!x+<span class="number">1</span>)&amp;z);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>思路二：位移</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">conditional</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y, <span class="keyword">int</span> z)</span> </span>&#123;</span><br><span class="line">  mask=(x&gt;&gt;<span class="number">31</span>)&lt;&lt;<span class="number">31</span>;</span><br><span class="line">  <span class="keyword">return</span> (mask&amp;y)|(~mask&amp;z);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="isLessOrEqual"><a href="#isLessOrEqual" class="headerlink" title="isLessOrEqual"></a>isLessOrEqual</h2><blockquote>
+<p>if x &lt;= y  then return 1, else return 0<br>Example: isLessOrEqual(4,5) = 1.<br> Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 24<br> Rating: 3</p>
+</blockquote>
+<ol>
+<li>在x与y同号的情况下转换为p=y-x&gt;=0，然后p符号位(p&gt;&gt;31）&amp;1为0则返回1，符号位1则返回0；</li>
+<li>异号时，只要x&gt;=0，就要返回0，否则返回1，由(x&gt;&gt;31)&amp;1判断；</li>
+<li>c=a+b可作为x,y同号还是异号的判断。</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">isLessOrEqual</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> a=x&gt;&gt;<span class="number">31</span>;</span><br><span class="line">  <span class="keyword">int</span> b=y&gt;&gt;<span class="number">31</span>;</span><br><span class="line">  <span class="keyword">int</span> c=a^b;</span><br><span class="line">  <span class="keyword">int</span> p=y+(~x+<span class="number">1</span>);</span><br><span class="line">  <span class="keyword">int</span> q=!((p&gt;&gt;<span class="number">31</span>)&amp;<span class="number">1</span>);</span><br><span class="line">  <span class="keyword">int</span> ans=(c&amp;q)|(!c&amp;a);</span><br><span class="line">  <span class="keyword">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="logicalNeg"><a href="#logicalNeg" class="headerlink" title="logicalNeg"></a>logicalNeg</h2><blockquote>
+<p>implement the ! operator, using all of the legal operators except !<br>Examples: logicalNeg(3) = 0, logicalNeg(0) = 1<br> Legal ops: ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 12<br> Rating: 4 </p>
+</blockquote>
+<p>令y=~x+1，考虑x与y的符号位：</p>
+<ol>
+<li>当x=0x0时，x，y两者符号位都为0；</li>
+<li>当x=0x8000 0000时，x，y两者符号位都为1；</li>
+<li>否则，两者符号位为01或10；</li>
+<li>根据离散数学的真值表得出(<del>x)&amp;(</del>y)，则当且仅当<code>x=0x0</code>时，其符号位为1</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">logicalNeg</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> ((~(~x+<span class="number">1</span>)&amp;~x)&gt;&gt;<span class="number">31</span>)&amp;<span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="howManyBits"><a href="#howManyBits" class="headerlink" title="howManyBits"></a>howManyBits</h2><blockquote>
+<p>return the minimum number of bits required to represent x in   two’s complement<br>Examples: howManyBits(12) = 5<br>         howManyBits(298) = 10<br>         howManyBits(-5) = 4<br>         howManyBits(0)  = 1<br>         howManyBits(-1) = 1<br>         howManyBits(0x80000000) = 32<br> Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br> Max ops: 90<br> Rating: 4</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">howManyBits</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> temp=x^(x&gt;&gt;<span class="number">31</span>);<span class="comment">//x小于0时取反码</span></span><br><span class="line">    <span class="keyword">int</span> isZero=!temp;</span><br><span class="line">    <span class="comment">//notZeroMask is 0xffffffff</span></span><br><span class="line">    <span class="keyword">int</span> notZeroMask=(!(!temp)&lt;&lt;<span class="number">31</span>)&gt;&gt;<span class="number">31</span>;</span><br><span class="line">    <span class="keyword">int</span> bit_16,bit_8,bit_4,bit_2,bit_1;</span><br><span class="line">    bit_16=!(!(temp&gt;&gt;<span class="number">16</span>))&lt;&lt;<span class="number">4</span>;</span><br><span class="line">    <span class="comment">//see if the high 16bits have value,if have,then we need at least 16 bits</span></span><br><span class="line">    <span class="comment">//if the highest 16 bits have value,then rightshift 16 to see the exact place of  </span></span><br><span class="line">    <span class="comment">//if not means they are all zero,right shift nothing and we should only consider the low 16 bits</span></span><br><span class="line">    temp=temp&gt;&gt;bit_16;</span><br><span class="line">    bit_8=!(!(temp&gt;&gt;<span class="number">8</span>))&lt;&lt;<span class="number">3</span>;</span><br><span class="line">    temp=temp&gt;&gt;bit_8;</span><br><span class="line">    bit_4=!(!(temp&gt;&gt;<span class="number">4</span>))&lt;&lt;<span class="number">2</span>;</span><br><span class="line">    temp=temp&gt;&gt;bit_4;</span><br><span class="line">    bit_2=!(!(temp&gt;&gt;<span class="number">2</span>))&lt;&lt;<span class="number">1</span>;</span><br><span class="line">    temp=temp&gt;&gt;bit_2;</span><br><span class="line">    bit_1=!(!(temp&gt;&gt;<span class="number">1</span>));</span><br><span class="line">    temp=bit_16+bit_8+bit_4+bit_2+bit_1+<span class="number">2</span>;<span class="comment">//at least we need one bit for 1 to tmax,</span></span><br><span class="line">    <span class="comment">//and we need another bit for sign</span></span><br><span class="line">    <span class="keyword">return</span> isZero|(temp&amp;notZeroMask);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="浮点数运算"><a href="#浮点数运算" class="headerlink" title="浮点数运算"></a>浮点数运算</h1><h2 id="floatScale2"><a href="#floatScale2" class="headerlink" title="floatScale2"></a>floatScale2</h2><blockquote>
+<p>Return bit-level equivalent of expression 2*f for<br>floating point argument f.<br>Both the argument and result are passed as unsigned int’s, but they are to be interpreted as the bit-level representation of<br> single-precision floating point values.<br> When argument is NaN, return argument<br> Legal ops: Any integer/unsigned operations incl. ||, &amp;&amp;. also if, while<br> Max ops: 30<br> Rating: 4</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="title">floatScale2</span><span class="params">(<span class="keyword">unsigned</span> uf)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">unsigned</span> s = uf&amp;<span class="number">0x80000000</span>;</span><br><span class="line">	<span class="keyword">unsigned</span> <span class="built_in">exp</span> = uf&amp;<span class="number">0x7f800000</span>;</span><br><span class="line">	<span class="keyword">unsigned</span> frac = uf&amp;<span class="number">0x007fffff</span>;</span><br><span class="line">	<span class="keyword">if</span>(!<span class="built_in">exp</span>) &#123;</span><br><span class="line">		frac&lt;&lt;=<span class="number">1</span>;</span><br><span class="line">	&#125;<span class="keyword">else</span> <span class="keyword">if</span>(<span class="built_in">exp</span>^<span class="number">0x7f800000</span>) &#123;</span><br><span class="line">		<span class="built_in">exp</span> += <span class="number">0x00800000</span>;</span><br><span class="line">		<span class="keyword">if</span>(!(<span class="built_in">exp</span>^<span class="number">0x7f800000</span>)) &#123;</span><br><span class="line">			frac = <span class="number">0</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> s|<span class="built_in">exp</span>|frac;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="floatFloat2Int"><a href="#floatFloat2Int" class="headerlink" title="floatFloat2Int"></a>floatFloat2Int</h2><blockquote>
+<p>Return bit-level equivalent of expression (int) f<br>for floating point argument f.<br> Argument is passed as unsigned int, but it is to be interpreted as the bit-level representation of a<br>single-precision floating point value.<br> Anything out of range (including NaN and infinity) should return 0x80000000u.<br>Legal ops: Any integer/unsigned operations incl. ||, &amp;&amp;. also if, while<br> Max ops: 30<br> Rating: 4</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">floatFloat2Int</span><span class="params">(<span class="keyword">unsigned</span> uf)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> sign=(uf&gt;&gt;<span class="number">31</span>)&amp;<span class="number">1</span>;<span class="comment">//取得符号位</span></span><br><span class="line">  <span class="keyword">int</span> <span class="built_in">exp</span>=uf&gt;&gt;<span class="number">23</span>&amp;<span class="number">0xff</span>;<span class="comment">//取得阶码</span></span><br><span class="line">  <span class="keyword">int</span> frac=uf&amp;<span class="number">0x7fffffff</span>;<span class="comment">//取得小数位</span></span><br><span class="line">  <span class="keyword">int</span> E=<span class="built_in">exp</span><span class="number">-127</span>;<span class="comment">//计算E</span></span><br><span class="line">  <span class="keyword">if</span>(<span class="built_in">exp</span>==<span class="number">255</span>||E&gt;<span class="number">30</span>)&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0x80000000</span>u;<span class="comment">//如果超出表示范围，返回0x80000000u</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span>(!<span class="built_in">exp</span>||E&lt;<span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;<span class="comment">//如果exp为0或偏移量小于0，均为不大于1的小数，E均等于1，则舍入到0</span></span><br><span class="line">  &#125;</span><br><span class="line">  frac=frac|(<span class="number">1</span>&lt;&lt;<span class="number">23</span>);<span class="comment">//frac=frac+1.0</span></span><br><span class="line">  <span class="comment">//小数点在23位处，根据E与23的相对位置调整小数点</span></span><br><span class="line">  <span class="keyword">if</span> (E&gt;<span class="number">23</span>)&#123;</span><br><span class="line">    frac=frac&lt;&lt;(E<span class="number">-23</span>);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    frac=frac&gt;&gt;(<span class="number">23</span>-E);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (sign) &#123;</span><br><span class="line">    frac = ~(frac) + <span class="number">1</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> frac;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="float-i2f"><a href="#float-i2f" class="headerlink" title="float_i2f"></a>float_i2f</h2><blockquote>
+<p> Return bit-level equivalent of expression (float) x<br> Result is returned as unsigned int, but it is to be interpreted as the bit-levelrepresentation of a single-precision floating point values.<br> Legal ops: Any integer/unsigned operationsincl. ||, &amp;&amp;. also if, while<br> Max ops: 30<br> Rating: 4</p>
+</blockquote>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="title">float_i2f_2</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;  </span><br><span class="line">    <span class="keyword">int</span> sign = x&gt;&gt;<span class="number">31</span>&amp;<span class="number">1</span>; </span><br><span class="line">    <span class="keyword">int</span> i;  </span><br><span class="line">    <span class="keyword">int</span> exponent;   </span><br><span class="line">    <span class="keyword">int</span> fraction; </span><br><span class="line">    <span class="keyword">int</span> delta;  </span><br><span class="line">    <span class="keyword">int</span> fraction_mask;  </span><br><span class="line">    <span class="keyword">if</span>(x == <span class="number">0</span>)  </span><br><span class="line">        <span class="keyword">return</span> x;  </span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span>(x==<span class="number">0x80000000</span>)  </span><br><span class="line">        exponent=<span class="number">158</span>; <span class="comment">//x为Tmin(-2^31)时,exponent=31+127=158 </span></span><br><span class="line">    <span class="keyword">else</span>&#123;  </span><br><span class="line">        <span class="keyword">if</span> (sign)  </span><br><span class="line">            x = -x;  </span><br><span class="line">        i = <span class="number">30</span>;  </span><br><span class="line">        <span class="keyword">while</span> ( !(x &gt;&gt; i) )  </span><br><span class="line">            i--;<span class="comment">//小数点偏移位数  </span></span><br><span class="line">        exponent = i + <span class="number">127</span>;</span><br><span class="line">        x = x &lt;&lt; (<span class="number">31</span> - i);  </span><br><span class="line">        fraction_mask = <span class="number">0x7fffff</span>;  </span><br><span class="line">        fraction = fraction_mask &amp; (x &gt;&gt; <span class="number">8</span>);<span class="comment">//32位数字舍弃低八位和首位的1得到23位的小数域</span></span><br><span class="line">		</span><br><span class="line">        x = x &amp; <span class="number">0xff</span>; <span class="comment">//舍入部分 </span></span><br><span class="line">        delta = x &gt; <span class="number">128</span> || ((x == <span class="number">128</span>) &amp;&amp; (fraction &amp; <span class="number">1</span>));<span class="comment">//向偶数舍入</span></span><br><span class="line">		</span><br><span class="line">        fraction += delta;  </span><br><span class="line">        <span class="keyword">if</span>(fraction &gt;&gt; <span class="number">23</span>) &#123;  </span><br><span class="line">            fraction &amp;= fraction_mask;<span class="comment">//处理溢出情况  </span></span><br><span class="line">            exponent += <span class="number">1</span>;  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">    <span class="keyword">return</span> (sign&lt;&lt;<span class="number">31</span>)|(exponent&lt;&lt;<span class="number">23</span>)|fraction;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+<h2 id="bitCount"><a href="#bitCount" class="headerlink" title="bitCount"></a>bitCount</h2><blockquote>
+<p>returns count of number of 1’s in word<br>Examples: bitCount(5) = 2, bitCount(7) = 3<br>Legal ops: ! ~ &amp; ^ | + &lt;&lt; &gt;&gt;<br>Max ops: 40<br>Rating: 4</p>
+</blockquote>
+<p>分而治之，首先我们考虑两位的情况<br>例如二进制10,10&amp;01表明最低位是否为1，(x&gt;&gt;1)&amp;1,表明最低位的零位是否为1，<br>(x&amp;0x1)+(x&gt;&gt;1)&amp;0x1<br>计算每一位中1的个数并且相加</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">bitcount2</span><span class="params">(<span class="keyword">int</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> bit1=<span class="number">0x1</span>;</span><br><span class="line">    <span class="keyword">return</span> x&amp;bit1+(x&gt;&gt;<span class="number">1</span>)&amp;bit1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来我们考虑四位的情况<br>例如1001，1001&amp;0101=0001,(1001&gt;&gt;1)&amp;0101=0001;<br>0001+0100=0101表示每两位均各有1个1，<br>将四位看作两段两位的二进制数，每段的1的个数由一个二位二进制数表示<br>0101&amp;0011=0001；(0101&gt;&gt;2)=0001,0001&amp;0011=0001;<br>计算每两位中1的个数并且相加<br>0001+0001=0010,即为最后的答案</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">bitcount4</span><span class="params">(<span class="keyword">int</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> mask1=<span class="number">0x1</span>;</span><br><span class="line">    <span class="keyword">int</span> mask2=<span class="number">0x3</span>;</span><br><span class="line">    <span class="keyword">int</span> ans=(x&amp;mask1)+(x&gt;&gt;<span class="number">1</span>)&amp;mask1;</span><br><span class="line">    ans=(ans&amp;mask2)+(ans&gt;&gt;<span class="number">2</span>)&amp;mask2;</span><br><span class="line">    <span class="keyword">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来我们考虑八位的情况<br>例如01111001，01111001&amp;01010101=01010001,01111001&gt;&gt;1=00111100;<br>00101100&amp;01010101=00010100,00010100+01010001=01100101;<br>每二位分别有1，2，1，1个1<br>接下来计算每四位中1的个数<br>01100101&amp;00110011=00100001，01100101&gt;&gt;2=00011001;<br>00100001+00010001=00110010<br>每四位分别有3，2个1<br>接下来计算每8位中1的个数</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">bitcount8</span><span class="params">(<span class="keyword">int</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> mask1=<span class="number">0x55</span>;</span><br><span class="line">    <span class="keyword">int</span> mask2=<span class="number">0x33</span>;</span><br><span class="line">    <span class="keyword">int</span> mask3=<span class="number">0x0f</span>;</span><br><span class="line">    <span class="keyword">int</span> ans=(x&amp;mask1)+((x&gt;&gt;<span class="number">1</span>)&amp;mask1);</span><br><span class="line">    ans=(ans&amp;mask2)+((ans&gt;&gt;<span class="number">2</span>)&amp;mask2);</span><br><span class="line">    ans=(ans&amp;mask3)+((ans&gt;&gt;<span class="number">4</span>)&amp;mask3);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>推广得到32位的计算如下</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">bitCount</span><span class="params">(<span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> _mask1 = (<span class="number">0x55</span>)|(<span class="number">0x55</span>&lt;&lt;<span class="number">8</span>);</span><br><span class="line">  <span class="keyword">int</span> _mask2 = (<span class="number">0x33</span>)|(<span class="number">0x33</span>&lt;&lt;<span class="number">8</span>);</span><br><span class="line">  <span class="keyword">int</span> _mask3 = (<span class="number">0x0f</span>)|(<span class="number">0x0f</span>&lt;&lt;<span class="number">8</span>);</span><br><span class="line">  <span class="keyword">int</span> mask1 = _mask1|(_mask1&lt;&lt;<span class="number">16</span>);</span><br><span class="line">  <span class="keyword">int</span> mask2 = _mask2|(_mask2&lt;&lt;<span class="number">16</span>);</span><br><span class="line">  <span class="keyword">int</span> mask3 = _mask3|(_mask3&lt;&lt;<span class="number">16</span>);</span><br><span class="line">  <span class="keyword">int</span> mask4 = (<span class="number">0xff</span>)|(<span class="number">0xff</span>&lt;&lt;<span class="number">16</span>);</span><br><span class="line">  <span class="keyword">int</span> mask5 = (<span class="number">0xff</span>)|(<span class="number">0xff</span>&lt;&lt;<span class="number">8</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">int</span> ans = (x &amp; mask1) + ((x&gt;&gt;<span class="number">1</span>) &amp; mask1);</span><br><span class="line">  ans = (ans &amp; mask2) + ((ans&gt;&gt;<span class="number">2</span>) &amp; mask2);</span><br><span class="line">  ans = (ans &amp; mask3) + ((ans&gt;&gt;<span class="number">4</span>) &amp; mask3);</span><br><span class="line">  ans = (ans &amp; mask4) + ((ans&gt;&gt;<span class="number">8</span>) &amp; mask4);</span><br><span class="line">  ans = (ans &amp; mask5) + ((ans&gt;&gt;<span class="number">16</span>) &amp; mask5);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> ans;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>Systems</category>
+      </categories>
+      <tags>
+        <tag>csapp</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>非连续内存分配算法</title>
+    <url>/systems/dvmm/</url>
+    <content><![CDATA[<p>连续内存分配内存利用效率比较低，无法适应动态修改。非连续内存分配通过允许分配非连续物理内存空间来解决问题，其中根据分块标准的不同，分为以段为单位的段式存储管理和以页为单位的页式存储管理。段式内存便于内存保护，而页式内存便于内存转移，将二者折衷又引入了段页式存储管理。</p>
+<a id="more"></a>
+
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>连续内存的缺点：</p>
+<ul>
+<li>物理内存必须连续</li>
+<li>存在外碎片和内碎片</li>
+<li>内存分配的动态修改困难</li>
+<li>内存利用率较低</li>
+</ul>
+<p>非连续分配的设计目标：提高内存利用效率和管理灵活</p>
+<ul>
+<li>允许一个程序使用非连续的物理地址空间</li>
+<li>允许共享代码与数据</li>
+<li>支持动态加载和动态链接</li>
+</ul>
+<p><strong>非连续内存分配的实现</strong></p>
+<blockquote>
+<p>如何实现虚拟地址和物理地址的转换：不同的逻辑地址可能位于不连续的物理区域中</p>
+</blockquote>
+<ul>
+<li>软件实现（灵活，开销大）</li>
+<li>硬件实现（够用，开销小）</li>
+</ul>
+<blockquote>
+<p>如何选择非连续分配中的内存分块大小？内碎片、外碎片问题？</p>
+</blockquote>
+<p>段式存储管理（segmentation）：分块大，以段为单位<br>页式存储管理（paging）：分块小，以页为单位</p>
+<h1 id="段式存储管理"><a href="#段式存储管理" class="headerlink" title="段式存储管理"></a>段式存储管理</h1><h2 id="段地址空间"><a href="#段地址空间" class="headerlink" title="段地址空间"></a>段地址空间</h2><p>进程的段地址空间由多个段组成：<br>• 主代码段<br>• 子模块代码段<br>• 公用库代码段<br>• 堆栈段（stack）<br>• 堆数据（heap）<br>• 初始化数据段<br>• 符号表等</p>
+<p>段式存储管理的目的：更细粒度和灵活的分离与共享。</p>
+<p>段式地址空间的不连续二维结构</p>
+<p><img src="https://i.loli.net/2019/07/27/5d3b8b8ee04ff11870.png"></p>
+<p>段地址空间的逻辑视图</p>
+<p><img src="https://i.loli.net/2019/07/27/5d3b8bbc75c4068840.png"></p>
+<h2 id="段访问机制"><a href="#段访问机制" class="headerlink" title="段访问机制"></a>段访问机制</h2><blockquote>
+<p>段的概念</p>
+</blockquote>
+<ul>
+<li>段表示访问方式和存储数据等属性相同的一段地址空间</li>
+<li>对应一个连续的内存“块”</li>
+<li> 若干个段组成进程逻辑地址空间</li>
+</ul>
+<p>段访问：逻辑地址由二元组        段号addr  段内偏移</p>
+<ul>
+<li>(s，addr)表示s</li>
+<li>段号addr  段内偏移</li>
+</ul>
+<p>由单地址方案转换为”段基址+段内偏移”</p>
+<p><strong>段访问的硬件实现</strong></p>
+<p><img src="https://i.loli.net/2019/07/27/5d3b8ca5a692a17089.png"></p>
+<ol>
+<li>首先从逻辑地址中取出段号和偏移量</li>
+<li>在段表中以段号为索引，查找对应的段描述符，得到段基址和段长度</li>
+<li>由MMU判断偏移量是否大于段长度，若大于，则内存异常</li>
+<li>偏移量与段基址相加得到物理地址，根据物理地址访问对应的内容</li>
+</ol>
+<h1 id="页式存储管理"><a href="#页式存储管理" class="headerlink" title="页式存储管理"></a>页式存储管理</h1><h2 id="基本单位"><a href="#基本单位" class="headerlink" title="基本单位"></a>基本单位</h2><blockquote>
+<p>物理页面</p>
+</blockquote>
+<p>页帧（Page Frame）<br>• 把物理地址空间划分为大小相同的基本分配单位<br>• $2$，如512,4096,8192，4k是常用大小</p>
+<blockquote>
+<p>逻辑页面</p>
+</blockquote>
+<p>页面（Page）<br>• 把逻辑地址空间也划分为相同大小的基本分配单位<br>• 帧和页的大小必须是相同的</p>
+<blockquote>
+<p>页面到页帧之间的转换</p>
+</blockquote>
+<p>• 逻辑地址到物理地址的转换<br>• 页表<br>• MMU/TLB 使转换高效进行</p>
+<h2 id="页到页帧"><a href="#页到页帧" class="headerlink" title="页到页帧"></a>页到页帧</h2><p><strong>页帧物理地址计算</strong></p>
+<p><img src="https://i.loli.net/2019/07/27/5d3b8fe4e58d066683.png"></p>
+<p><strong>页逻辑地址计算</strong></p>
+<p><img src="https://i.loli.net/2019/07/27/5d3b908d4f3c116363.png"></p>
+<p><strong>页式存储中的地址映射</strong></p>
+<blockquote>
+<p>如何将页映射到帧</p>
+</blockquote>
+<ul>
+<li>逻辑地址中的页号是连续的，物理地址中的页号是不连续的</li>
+<li>不是所有页都有对应的帧</li>
+<li>页表保存了逻辑地址与物理地址之间的映射关系</li>
+</ul>
+<h2 id="页表"><a href="#页表" class="headerlink" title="页表"></a>页表</h2><p><strong>页表结构</strong></p>
+<p>每个进程都有一个页表</p>
+<ul>
+<li>每个页面对应一个页表项</li>
+<li> 随进程运行状态而动态变化（可以动态调整内存空间大小）</li>
+<li> 页表基址寄存器：PTBR，Page Table Base Register 存储页表基地址</li>
+</ul>
+<p><img src="https://i.loli.net/2019/07/27/5d3b91b76c36360461.png"></p>
+<blockquote>
+<p>页表项组成</p>
+</blockquote>
+<p>帧号：f</p>
+<p>页表项标志：</p>
+<ul>
+<li><strong>存在位(reside bit)</strong> 逻辑页面是否存在对应的物理帧</li>
+<li><strong>修改位(dirty bit，又称为脏位)</strong>  对应页面中内容是否被修改了</li>
+<li><strong>引用位(clock/reference bit)</strong> 在过去一段事件内是否访问过页中内容</li>
+</ul>
+<p><strong>性能问题</strong></p>
+<ul>
+<li>访问一个内存单元需要2次内存访问 (内存访问性能问题)<ul>
+<li>第一次访问获取页表项</li>
+<li>第二次访问获取数据</li>
+</ul>
+</li>
+<li>页表大小可能会很大</li>
+</ul>
+<blockquote>
+<p>如何解决页式存储的性能问题</p>
+</blockquote>
+<ul>
+<li><strong>缓存 (Caching)</strong> 缓存页表项 ，根据局部性原理，之后极大可能再次访问，从而减少访问次数。例如TLB</li>
+<li><strong>间接访问 (Indirection)</strong> 将页表项分为多级，逐级访问，比如多级页表</li>
+</ul>
+<h2 id="快表"><a href="#快表" class="headerlink" title="快表"></a>快表</h2><p><img src="https://i.loli.net/2019/07/27/5d3b96de83b1371477.png"></p>
+<p>关联存储器：有一组key，可以并行地查找所有表项，得到匹配项</p>
+<p>快表(Translation look-aside buffer)位于CPU中，所以速度块，成本高，功耗大。</p>
+<blockquote>
+<p>快表（TLB）与高速缓存（cache）有什么不同？</p>
+</blockquote>
+<p>TLB：缓存页表项</p>
+<p>Cache：缓存内存地址对应的数据</p>
+<h2 id="多级页表"><a href="#多级页表" class="headerlink" title="多级页表"></a>多级页表</h2><p><img src="https://i.loli.net/2019/07/27/5d3b97ba9b16d15315.png"></p>
+<p>针对大地址空间，多级页表变得繁琐。</p>
+<p>页寄存器和反置页面的思路：</p>
+<ul>
+<li>不让页表与逻辑地址空间的大小相对应</li>
+<li>让页表与物理地址空间的大小相对应</li>
+</ul>
+<h2 id="页寄存器"><a href="#页寄存器" class="headerlink" title="页寄存器"></a>页寄存器</h2><p>每个帧与一个页寄存器（Page Register）关联，寄存器内容包括：</p>
+<ul>
+<li>使用位（Residence bit）：此帧是否被进程占用</li>
+<li>占用页号（Occupier）：对应的页号p</li>
+<li> 保护位（Protection bits）：设置该页的访问方式，比如可读，可写。</li>
+</ul>
+<p><strong>页寄存器示例</strong></p>
+<ul>
+<li>物理内存大小：40964096=4K*4KB=16MB</li>
+<li>页面大小：4096bytes=4KB</li>
+<li>页帧数：4096=4K</li>
+<li>页寄存器使用的空间：8*4096=32KB（假定每个页寄存器占8字节）</li>
+<li>页寄存器带来的额外开销：32K/16M=0.2%（大约）</li>
+<li>虚拟内存的大小：任意</li>
+</ul>
+<p><strong>页寄存器特征</strong></p>
+<p>优点：</p>
+<ul>
+<li>页表大小相对于物理内存而言很小</li>
+<li>页表大小与逻辑地址空间大小无关</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>页表信息对调后，需要根据帧号可找页号</li>
+<li> 在页寄存器中搜索逻辑地址中的页号</li>
+</ul>
+<p><strong>页寄存器中的地址转换</strong></p>
+<p>以快表缓存页表项的页寄存器为例，</p>
+<ol>
+<li>对逻辑地址进行Hash变换 </li>
+<li>在快表中查找对应页表项</li>
+<li>有冲突时遍历冲突项列表</li>
+<li>查找失败时，产生异常</li>
+</ol>
+<p><strong>快表的限制</strong></p>
+<ul>
+<li>快表的容量限制</li>
+<li>快表的功耗限制（StrongARM上快表功耗占27%）</li>
+</ul>
+<h2 id="反置页表"><a href="#反置页表" class="headerlink" title="反置页表"></a>反置页表</h2><p><img src="https://i.loli.net/2019/07/27/5d3b98f267b5a68131.png"></p>
+<p>查找过程：</p>
+<ol>
+<li>从逻辑地址中得到页号</li>
+<li>根据页号的运行进程pid计算hash值</li>
+<li>在反置页表中查找对应页表项，从中找到相应的物理帧号</li>
+</ol>
+<blockquote>
+<p>可有效应对大地址空间可采用的页表手段是() </p>
+</blockquote>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> 多级页表</li>
+<li><input checked="" disabled="" type="checkbox"> 反置页表</li>
+<li><input disabled="" type="checkbox"> 页寄存器</li>
+<li><input disabled="" type="checkbox"> 单级页表</li>
+</ul>
+<p>页寄存器和反置页表很像，但它们的一个区别是进程ID在地址转换中的使用。没有进程ID（页寄存器方案）时，页表占用的空间仍然是与进程数相关的。反置页表的大小只与物理内存大小，与并发进程数无关。</p>
+<p>采用页寄存器的硬件开销会很大。所以现在的通用CPU（包括64位的CPU）没有采用这种方式，大部分还是多级页表。由于有TLB作为缓存，效率还不错。</p>
+<h1 id="段页式存储管理"><a href="#段页式存储管理" class="headerlink" title="段页式存储管理"></a>段页式存储管理</h1><p>段式内存便于内存保护，页式存储便于内存利用和优化转移，因此引入段页式存储管理。</p>
+<p><img src="https://i.loli.net/2019/07/27/5d3b992475fc583205.png"></p>
+<p>逻辑地址：段号+页号+页内偏移</p>
+<p>物理地址：帧号+页内偏移</p>
+<p><strong>地址转换过程</strong></p>
+<ol>
+<li>从逻辑地址中的得到段号s和页号P,偏移o</li>
+<li>根据段基址和段号S查找对应段表项</li>
+<li>访问段S的页表，取出对应的帧号</li>
+</ol>
+<p><strong>段页式存储管理中的内存共享</strong></p>
+<p>通过指向相同的页表基址，实现进程间的段共享。</p>
+<p>在启动页机制后，不可能进行的操作包括（）</p>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> 取消段机制，只保留页机制</li>
+<li><input disabled="" type="checkbox"> 取消页机制，只保留段机制</li>
+<li><input disabled="" type="checkbox"> 取消页机制，也取消段机制</li>
+<li><input disabled="" type="checkbox"> 保留页机制，也保留段机制</li>
 </ul>
 ]]></content>
       <categories>
@@ -3904,234 +4135,38 @@
       </tags>
   </entry>
   <entry>
-    <title>并发控制</title>
-    <url>/database_system/concurrency-control/</url>
-    <content><![CDATA[<p>事务的基本特性是隔离性，然而当数据库中由多个事务并发执行时，事务的隔离性不一定能保持。为保持事务的隔离性，系统必须对并发事务之间的相互作用加以控制，这种控制通过并发控制机制来实现。</p>
+    <title>word2vec</title>
+    <url>/word2vec/word2vec/</url>
+    <content><![CDATA[<p>与传统的one-hot表示不同，word2vec为分布式表示，分布式是指把信息分布式地存储在向量的各个维度中。one-hot表示仅仅只有一个维度表示了词的语意。</p>
 <a id="more"></a>
 
-<p>之前我们了解到视图串行化并不存在有效验证方法，那么还需要有一种方式来确保在不提前知道所有调度的情况下所有执行调度仍然是正确的，因此引入锁机制。</p>
-<p>之前的调度序列在引入锁机制后</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"> T1                      T2</span><br><span class="line">BEGIN</span><br><span class="line">LOCK(A)</span><br><span class="line">R(A)</span><br><span class="line">                       BEGIN</span><br><span class="line">                       LOCK(A)</span><br><span class="line">W(A)</span><br><span class="line">R(A)</span><br><span class="line">UNLOCK(A)</span><br><span class="line">                       R(A)</span><br><span class="line">                       W(A)                       </span><br><span class="line">COMMIT</span><br><span class="line">                       UNLOCK(A)</span><br><span class="line">                       COMMIT</span><br></pre></td></tr></table></figure>
-<p>在T2申请对A锁的时候，T1已经取得了对A的锁，在T1释放对A锁之后，T2才可得到对A的锁。</p>
-<p>锁的基本类型有两种</p>
-<ul>
-<li>S-LOCK: 共享读锁</li>
-<li>X-LOCK: 排他写锁</li>
-</ul>
-<p>对于给定的一个锁类型集合,令A与B代表任意的锁类型，假设事务Ti请求对数据项加A类型锁，而事务Tj当前在数据库Q上拥有B类型锁，而事务Ti可立即获得数据项Q上的锁，那么A类型锁和B类型锁是相容的。</p>
-<p>S-LOCK和X-LOCK的相容性矩阵如下</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>S</th>
-<th>X</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>S</td>
-<td>true</td>
-<td>false</td>
-</tr>
-<tr>
-<td>X</td>
-<td>false</td>
-<td>false</td>
-</tr>
-</tbody></table>
-<p>关于锁的流程为</p>
-<ol>
-<li><p>事务申请锁(或者更新)</p>
-</li>
-<li><p>锁管理器授予锁或者拒绝请求</p>
-</li>
-<li><p>事务释放锁</p>
-</li>
-<li><p>锁管理器释放内部的锁表</p>
-<p>锁表中存储持有锁的事务信息和等待锁的事务信息</p>
-</li>
-</ol>
-<p>在系统中每一个事物遵从称为封锁协议的一组规则，这些规则规定事务何时对数据项进行加锁、解锁，封锁协议限制了可能的调度数目。</p>
-<h1 id="两阶段封锁协议"><a href="#两阶段封锁协议" class="headerlink" title="两阶段封锁协议"></a>两阶段封锁协议</h1><p>确保串行性的一个协议是两阶段封锁协议，该协议要求每个事务分两个阶段提出加锁和释放锁申请。</p>
-<ol>
-<li><p>增长阶段：事务可以获得锁，但是不能释放锁</p>
-<p>锁管理器允许/拒绝请求</p>
-</li>
-<li><p>缩减阶段：事务可以释放锁，但是不能释放锁</p>
-<p>在增长阶段后不允许申请/升级锁。</p>
-</li>
-</ol>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"> T1                      T2</span><br><span class="line">BEGIN</span><br><span class="line">X-LOCK(A)</span><br><span class="line">R(A)</span><br><span class="line">W(A)</span><br><span class="line">                       BEGIN</span><br><span class="line">                       X-LOCK(A)</span><br><span class="line">R(A)</span><br><span class="line">UNLOCK(A)</span><br><span class="line">                       W(A)                       </span><br><span class="line">COMMIT</span><br><span class="line">                       UNLOCK(A)</span><br><span class="line">                       COMMIT</span><br></pre></td></tr></table></figure>
-<p>两阶段封锁协议可保证冲突可串行化，产生无环的依赖图。</p>
-<p>在两阶段封锁协议中，可能存在级联回滚现象。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"> T1                      T2</span><br><span class="line">BEGIN</span><br><span class="line">X-LOCK(A)</span><br><span class="line">X-LOCK(B)</span><br><span class="line">R(A)</span><br><span class="line">W(A)</span><br><span class="line">UNLOCK(A)</span><br><span class="line">                       BEGIN</span><br><span class="line">                       X-LOCK(A)</span><br><span class="line">                       R(A)</span><br><span class="line">                       W(A)</span><br><span class="line">R(B)                    .</span><br><span class="line">W(B)                    .</span><br><span class="line">ABORT                   .</span><br></pre></td></tr></table></figure>
-<p>在事务T1的W(B)后发生故障，从而导致T2级联回滚，从而导致无效的操作。同时存在可能的可串行化调度，但是不被两阶段封锁协议允许。</p>
-<p>可通过严格两阶段封锁协议或者强两阶段封锁协议解决。</p>
-<h2 id="强两阶段封锁协议"><a href="#强两阶段封锁协议" class="headerlink" title="强两阶段封锁协议"></a>强两阶段封锁协议</h2><p>除了要求封锁是两阶段以外，还要求事务持有的所有锁必须在事务提交后方可释放。</p>
-<ul>
-<li>仅仅允许可冲突可串行化调度</li>
-<li>不存在级联回滚现象</li>
-<li>一个事务写入的值在该事务结束前不可被其余事务读入或者写入</li>
-<li>可能存在死锁现象</li>
-</ul>
-<p><img src="https://i.loli.net/2020/02/06/JLQBVAg3ubpvkMz.png"></p>
-<h2 id="死锁处理"><a href="#死锁处理" class="headerlink" title="死锁处理"></a>死锁处理</h2><p><strong>死锁检测</strong></p>
-<p>系统创建等待图，节点为事务，若事务Ti等待事务Tj释放锁，那么添加从Ti到Tj的边。系统定期检查等待图中是否出现环路，再决定如何破坏循环。</p>
-<ul>
-<li><p>当系统检测到死锁，系统将会选择一个回滚的事务来破坏环路</p>
-</li>
-<li><p>取决于应用处理方式，选择的事务将重启或者终止</p>
-</li>
-<li><p>有多种事务属性可作为选择替代的根据，不存在哪个优于其余选择</p>
-<p>按照时间(最早或者最晚)</p>
-<p>按照进程(最少/最多执行的查询)</p>
-<p>按照已经锁住的条目个数</p>
-<p>按照回滚事务的个数</p>
-<p>按照事务过去重启的次数</p>
-</li>
-<li><p>在选择事务后，系统还需决定回滚的长度，要么整个事务的操作均撤销，要么撤销操作数目达到死锁解除的要求即可。</p>
-</li>
-</ul>
-<p><strong>死锁预防</strong></p>
-<p>当一个事务请求已经被其他事务持有的锁，此时执行死锁预防算法。</p>
-<p>基于时间给定优先级，例如，时间越久意味着优先级越高。如此可确保不存在死锁，因为只有一个方向的等待。当一个事务重启，它将继承之前的优先级。</p>
-<ul>
-<li>wait-die:若T1优先级高于T2,T1等待T2，否则T1终止</li>
-<li>wound-wait:若T1优先级高于T2，T2终止，否则T1等待</li>
-</ul>
-<p><img src="https://i.loli.net/2020/02/06/zgCqmRNaUSLfI3Y.png"></p>
-<h2 id="多粒度"><a href="#多粒度" class="headerlink" title="多粒度"></a>多粒度</h2><p>之前提到的例子均将一个个数据项作为同步执行的单元，如果一个事务想更新一百万个元组，那么该事务将请求一百万个条目。为了避免多余的开销，系统将通过层次化锁来允许一个事务粗粒度加锁。例如，该事务将为一百个元组申请一个锁，而不是为每个元组申请一个锁。当一个事务请求层次化结构中的某个节点，该事务隐式地为其后代加锁。</p>
-<p>若事务Ti希望封锁整个数据库，而Tj持有其中某个节点的锁，那么系统如何判定根节点是否可以加锁呢？</p>
-<p>一种可能的方法是遍历整棵树，显然违背了多粒度锁机制的初衷。通过引入意向锁来允许高层次节点在无需检查后代节点即可加共享锁或者排他锁。如果一个节点加上了意向锁，那么意味着在树的更低层进行显式加锁，即以更小的粒度加锁。在一个节点显示加锁之前，其所有祖先节点均加上了意向锁。因此，事务不必遍历整棵树即可判定能否成功地给一个节点加锁。</p>
-<ul>
-<li><strong>共享型意向锁(IS)</strong> 将在树的较低层进行显式封锁，但是只能加共享锁</li>
-<li><strong>排他型意向锁(IX)</strong> 在树的较低层进行显式封锁，可以是共享锁或排他锁</li>
-<li><strong>共享排他型意向锁(SIX)</strong> 以该节点为根的子树显式地加上共享锁，在树的更低层显示地加上排他锁</li>
-</ul>
-<p>这些锁的相容矩阵为</p>
-<p><img src="https://i.loli.net/2020/02/06/5G4bs23khoDpdOw.png"></p>
-<p>多粒度封锁协议根据以下规则对数据项Q加锁：</p>
-<ul>
-<li>事务Ti必须首先封锁树的根节点，并可以加任意类型的锁</li>
-<li>仅当Ti当前对Q的父节点具有IX或IS锁时，Ti可以对节点Q可加S锁或者IS锁、</li>
-<li>仅当Ti当前对Q的父节点具有IX或SIX锁时，Ti可以对节点Q加X、SIX或IX锁</li>
-</ul>
-<p>加锁按照从上到下的顺序，而锁的释放则按照从下到上的顺序。</p>
-<p>在低层次的锁申请过多时，为了更高粒度的并行，可以升级锁。</p>
-<h1 id="时间戳排序协议"><a href="#时间戳排序协议" class="headerlink" title="时间戳排序协议"></a>时间戳排序协议</h1>]]></content>
-      <categories>
-        <category>Systems</category>
-      </categories>
-      <tags>
-        <tag>database systems</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>数据库导论</title>
-    <url>/database_system/database/</url>
-    <content><![CDATA[<p>数据库管理系统在日常生活中的应用非常广泛，用于管理计算机数据。随着当今时代数据爆炸性增长，数据库系统也日益成为计算机应用的核心部分。</p>
-<a id="more"></a>
-
-<p>数据库是由一组模拟生活中某些方面的数据组织成的集合，例如，模拟学生或者歌曲库。数据库管理系统就是用于管理数据库的软件。</p>
-<p>为什么引入数据库管理系统呢？</p>
-<h1 id="简易设计"><a href="#简易设计" class="headerlink" title="简易设计"></a>简易设计</h1><p>假设我们用文件来管理数据库中的数据，以歌手和他们发布的专辑信息为例，我们将分别为歌手和专辑建立CSV文件。</p>
-<p><code>歌手.csv</code>文件信息为</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&quot;Wu Tang Clan&quot;,1992,&quot;USA&quot;</span><br><span class="line">&quot;Notorious BIG&quot;,1992,&quot;USA&quot;</span><br><span class="line">&quot;Ice Cube&quot;,1989,&quot;USA&quot;</span><br></pre></td></tr></table></figure>
-<p>每行的信息分别为歌手名、出道年份、国家。</p>
-<p><code>专辑.csv</code>文件信息为</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&quot;Enter the Wu Tang&quot;,&quot;Wu Tang Clan&quot;,1993</span><br><span class="line">&quot;St.Ides Mix Tape&quot;,&quot;Wu Tang Clan&quot;,1994</span><br><span class="line">&quot;AmeriKKKa&#39;s Most Wanted&quot;,&quot;Ice Cube&quot;,1990</span><br></pre></td></tr></table></figure>
-<p>每行的信息分别为专辑名、歌手名、发布年份。</p>
-<p>查询<code>Ice Cube</code>出道年份可用如下代码实现：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">for line in file: </span><br><span class="line"> record &#x3D; parse(line) </span><br><span class="line"> if “Ice Cube” &#x3D;&#x3D; record[0]: </span><br><span class="line">   print int(record[1])</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>但是这种通过文件来存储数据的方式存在不少问题</p>
-<ul>
-<li><p>数据完整性</p>
-<p>如何存储多个歌手的专辑信息？</p>
-<p>如何防止无效信息的写入？</p>
-</li>
-<li><p>查询/更新实现</p>
-<p>如何查询特定的记录？</p>
-<p>如何实现基于同一数据库的应用？</p>
-<p>如何控制线程并发写入数据库？</p>
-</li>
-<li><p>持久性</p>
-<p>如何在机器更新时确保信息正确？</p>
-<p>如何在多个设备之间同步？</p>
-</li>
-</ul>
-<p>基于以上考虑，我们引入了数据库管理系统，通过数据库管理系统来定义、创建、查询、更新数据库。</p>
-<h1 id="数据模型"><a href="#数据模型" class="headerlink" title="数据模型"></a>数据模型</h1><p>接下来我们将通过数据模型来描述数据库中的数据。数据模型是数据库结构的基础。给定数据模型后，对特定数据集合的描述称为模式。</p>
-<p>数据模型分为以下几类</p>
-<ul>
-<li><p><strong>关系模型</strong>  用表的集合来表示数据和数据建的联系</p>
-</li>
-<li><p><strong>实体-联系模型</strong>  现实世界由一组称为实体的基本对象和这些对象之间的联系构成，实体-联系模型即用于描述这些数据。</p>
-</li>
-<li><p><strong>半结构数据模型</strong></p>
-</li>
-<li><p><strong>网状数据模型</strong></p>
-</li>
-<li><p><strong>层次数据模型</strong></p>
-<p>其中网状数据模型和层次数据模型和底层实现很紧密，实现复杂，所以现在很少使用。数据库设计基本围绕关系模型展开。</p>
-</li>
-</ul>
-<h1 id="关系模型"><a href="#关系模型" class="headerlink" title="关系模型"></a>关系模型</h1><p>关系模型的核心在于</p>
-<ol>
-<li>以简单的数据结构来存储数据(关系)</li>
-<li>通过高级语言来操作数据</li>
-<li>物理层存储取决于具体实现</li>
-</ol>
-<p>关系模型主要由以下部分组成</p>
-<ul>
-<li>结构：关系的定义和结构内容，即关系对应的属性和这些属性中的值</li>
-<li>完整性：确保数据库内容满足约束，例如，所有的年份属性都应该是数字</li>
-<li>操作：如何访问和修改数据库的内容</li>
-</ul>
-<p>一个关系即是一组代表实体的属性的无序序列。正因为关系无序，所以数据库管理系统可以任何方式存储关系。一个有$n$个属性的关系被称为$n$列关系。</p>
-<p>一个元组是关系中一组属性的值，也就是关系中某一行。元组中的值通常是原子的，即不可再拆分。特殊的空值NULL是每个域的成员。</p>
-<p>一个关系的主键区别了不同的元组。某些数据库管理系统在用户未定义主键时自行创建主键。</p>
-<h1 id="数据库操纵语言"><a href="#数据库操纵语言" class="headerlink" title="数据库操纵语言"></a>数据库操纵语言</h1><p>数据库系统提供数据定义语言来定义数据库模式，以及数据库操纵语言来表达数据库的管理和更新。实际上，数据定义和数据操作语言并不是分离的，而是简单地构成了单一的数据库语言的不同部分。</p>
-<p>数据库操作语言分为两类</p>
-<ul>
-<li><strong>过程化数据库操纵语言</strong> 指明用户需要什么数据，以及怎么获取这些数据</li>
-<li><strong>声明化数据库操纵语言</strong> 只要求用户指定需要什么数据，而不指明如何获取这些数据</li>
-</ul>
-<h2 id="关系代数"><a href="#关系代数" class="headerlink" title="关系代数"></a>关系代数</h2><p>关系代数是一个运算的集合，以一个或两个关系为输入，以一个新的关系为结果。可通过嵌套来实现更复杂的操作。</p>
-<p>关系基本运算有：选择、投影、并、集合交、集合并、集合差、笛卡尔积和重命名。</p>
-<p><strong>选择运算</strong></p>
-<p>选择运算选出满足给定谓词的元组。</p>
-<ul>
-<li>谓词过滤不符合条件的元组，仅留下满足谓词条件的元组</li>
-<li>可通过连词将多个谓词连接</li>
-</ul>
-<p><strong>投影运算</strong></p>
-<p>投影运算以某个关系为输入，输出仅含特定属性的元组的关系。</p>
-<ul>
-<li>可重新排列属性顺序</li>
-<li>可对属性的值操作</li>
-</ul>
-<p><strong>集合交</strong></p>
-<p>集合交以两个关系为输入，输出仅含在两个关系中均出现的元组的关系。</p>
-<p><strong>集合并</strong></p>
-<p>集合并以两个关系为输入，输出在两个关系中至少出现一次的元组的关系。</p>
-<p><strong>集合差</strong></p>
-<p>集合并以两个关系为输入，输出在第一个关系中出现而第二个关系中不出现的元组的关系。</p>
-<p><strong>连接运算</strong></p>
-<p>以两个关系为输入，生成一个关系，该关系中的元组是两个元组（每个输入关系中各选一个）的组合，并且具有一个或多个属性的公共值。</p>
-<p><strong>笛卡尔积</strong></p>
-<p>以两个关系为输入，输出所有可能的组合。</p>
-<p>关系代数为过程化语言，因为关系代数定义了计算查询的步骤。</p>
-<p>例如，若想查询R和S连接后满足b_id等于102的元组，</p>
-<p>关系代数可以是先连接R，S，再选择其中b_id等于102的元组，或者先选择S中b_id等于102的元组，再与R连接。</p>
-<p>更好的方式是声明想让数据库管理系统返回的元组，类似查询R和S连接后满足b_id等于102的元组。</p>
-<p>关系代数定义了数据库查询的原语。</p>
-<p>关系模型仅描述了高层次的操作，与具体实现语言无关。</p>
+<p>harris分布式假设认为相似上下文的词语应该有相似的语意，由此衍生了一系列的方法。</p>
+<p>语言模型为计算给定句子或者单词概率的统计模型。一般来说，我们计算根据当前词下一个单词的概率。若句子$W$为$n$个单词$(w_1,w_2,\cdots,w_n)$组成的序列，那么句子$W$的概率为<br>$$<br>P(W)= P(w_1,w_2,\cdots, w_n)<br>$$<br>在计算句子$W$概率的时候，往往由马尔可夫链式法则表示为其中每个单词条件概率的乘积。<br>$$<br>\begin{align}<br>P(W)= &amp; P(w_1,w_2,\cdots, w_n)<br>= &amp; P(w_1)P(w_2|w_1) \cdots p(w_n|w_1,w_1,\cdots,w_{n-1})<br>\end{align}<br>$$<br>实际操作来说，对于整个句子计算马尔可夫链，路径过长，所以简化为$n-1$阶的马尔可夫链n-gram，<br>$$<br>\begin{align}<br>P(W)= &amp; P(w_1,w_2,\cdots, w_n)<br> = &amp; P(w_n| w_1,\cdots, w_{n-1})<br>\end{align}<br>$$<br>在衡量语言模型的表达能力时，<a href="https://towardsdatascience.com/perplexity-in-language-models-87a196019a94">ppl</a>经常作为衡量指标。</p>
+<p>假定给定当前词语$w$和上下文$h$,经过softmax之前的结果为$s_{\theta}(w,c)$<br>$$<br>\begin{aligned}<br>\log P_{\theta}^{h}(w) &amp;= \log \frac{u_{\theta}(w,h)}{Z_\theta^h} \<br>&amp;= \log u_{\theta}(w,h) - \log Z_\theta^h \<br>&amp;= s_{\theta}(w,h) - \log Z_\theta^h<br>\end{aligned}<br>$$<br>由于分母计算过于复杂，每次计算的时候都得遍历一次词表。所以引入噪声对比估计(noise contrastive estimate),将多分类转化为二分类问题。</p>
+<p>语言模型的最大似然概率可以写成<br>$$<br>\begin{aligned}<br>\frac{\partial}{\partial \theta} \mathbb{E}<em>{w \sim P_d^h(w)}\big[\log P_{\theta}^{h}(w)\big] &amp;= \frac{\partial}{\partial \theta} \mathbb{E}</em>{w \sim P_d^h(w)}\big[s_{\theta}(w,h) - \log Z_\theta^h\big] \<br>&amp;= \frac{\partial}{\partial \theta} \mathbb{E}<em>{w \sim P_d^h(w)}\big[s_{\theta}(w,h)\big] - \frac{\partial}{\partial \theta} \mathbb{E}</em>{w \sim P_d^h(w)}\big[\log Z_\theta^h\big] \<br>&amp;= \mathbb{E}_{w \sim P_d^h(w)}\big[ \frac{\partial}{\partial \theta} s_{\theta}(w,h) \big] - \frac{\partial}{\partial \theta} \log Z_\theta^h \<br>\end{aligned}<br>$$<br>其中$Z_\theta^h$ 仅仅与$h$有关，与$w$无关。</p>
+<p>实际的数据分布和在$\theta$限定下的概率分布，二者相等的时候，梯度为0。<br>$$<br>\begin{aligned}<br>\frac{\partial}{\partial \theta} \log Z_\theta^h &amp;= \frac{1}{Z_\theta^h} \frac{\partial}{\partial \theta} Z_\theta^h \<br>&amp;= \frac{1}{Z_\theta^h} \frac{\partial}{\partial \theta} \int\limits_{w} \exp(s_{\theta}(w,h)) dw \<br>&amp;= \frac{1}{Z_\theta^h} \int\limits_{w} \frac{\partial}{\partial \theta} \exp(s_{\theta}(w,h)) dw \<br>&amp;= \frac{1}{Z_\theta^h} \int\limits_{w}  \exp(s_{\theta}(w,h)) \frac{\partial}{\partial \theta} s_{\theta}(w,h)  dw \<br>&amp;= \int\limits_{w} \frac{\exp(s_{\theta}(w,h))}{Z_\theta^h} \frac{\partial}{\partial \theta} s_{\theta}(w,h)  dw \<br>&amp;= \int\limits_{w} P_{\theta}^h (w) \frac{\partial}{\partial \theta} s_{\theta}(w,h)  dw \<br>&amp;= \mathbb{E}<em>{w \sim P</em>{\theta}^h(w)}\big[ \frac{\partial}{\partial \theta} s_{\theta}(w,h) \big]<br>\end{aligned}<br>$$</p>
+<p>$$<br>\begin{aligned}<br>\frac{\partial}{\partial \theta} \mathbb{E}<em>{w \sim P_d^h(w)}\big[\log P_{\theta}^{h}(w)\big] &amp;= \mathbb{E}</em>{w \sim P_d^h(w)}\big[ \frac{\partial}{\partial \theta} s_{\theta}(w,h) \big] - \mathbb{E}<em>{w \sim P</em>{\theta}^h(w)}\big[ \frac{\partial}{\partial \theta} s_{\theta}(w,h) \big] \<br>\end{aligned}<br>$$</p>
+<p>$$<br>\begin{aligned}<br>\frac{\partial}{\partial \theta} \mathbb{E}<em>{w \sim P_d^h(w)}\big[\log P_{\theta}^{h}(w)\big] &amp;= \mathbb{E}</em>{w \sim P_d^h(w)}\big[ \frac{\partial}{\partial \theta} s_{\theta}(w,h) \big] - \mathbb{E}<em>{w \sim P</em>{\theta}^h(w)}\big[ \frac{\partial}{\partial \theta} s_{\theta}(w,h) \big] \<br>&amp;= \sum\limits_{w} P_{d}^{h}(w) \frac{\partial}{\partial \theta} s_{\theta}(w,h) - \sum\limits_{w} P_{\theta}^{h}(w) \frac{\partial}{\partial \theta} s_{\theta}(w,h) \<br>&amp;= \sum\limits_{w} \big( P_{d}^{h}(w) - P_{\theta}^{h}(w) \big) \frac{\partial}{\partial \theta} s_{\theta}(w,h) \<br>&amp;= \sum\limits_{w} \big( P_{d}^{h}(w) - P_{\theta}^{h}(w) \big) \frac{\partial}{\partial \theta} \log u_{\theta}(w,h)<br>\end{aligned}<br>$$</p>
+<p>$$<br>P^h(D=1,w) = \frac{1}{k+1} P_d^h(w)\<br>P^h(D=0,w) = \frac{k}{k+1} P_n^h(w)<br>$$</p>
+<p>$$<br>\begin{aligned}<br>p^h(D=1|w) &amp;= \frac{P^h(D=1,w)}{p^h(w)} \<br>&amp;= \frac{P_d^h(w)}{P_d^h(w) + kP_n(w)} \<br>\end{aligned}<br>$$</p>
+<p>$$<br>\begin{aligned}<br>p^h(D=0|w) &amp;= \frac{P^h(D=0,w)}{p^h(w)} \<br>&amp;= \frac{kP_n(w)}{P_d^h(w) + kP_n(w)} \<br>\end{aligned}<br>$$</p>
+<p>$$<br>p^h(D=1|w, \theta) = \frac{P_{\theta}^h(w)}{P_{\theta}^h(w) + kP_n(w)} \<br>p^h(D=0|w, \theta) = \frac{kP_n(w)}{P_{\theta}^h(w) + kP_n(w)} \<br>$$</p>
+<h1 id="Skip-gram"><a href="#Skip-gram" class="headerlink" title="Skip-gram"></a>Skip-gram</h1><p>Skip-gram模型中，给定当前词$w$和上下文$c$<br>$$<br>\begin{align}<br>&amp; argmax_{\theta} \prod_{(w,c)\in D} p(D=1|C,W;\theta) \prod_{(w,c) \in D’} P(D=0| c,w;\theta) \</p>
+<p> = &amp; argmax_{\theta} \prod_{(w,c)\in D} p(D=1|C,W;\theta) \prod_{(w,c) \in D’} (1-P(D=1| c,w;\theta)) \</p>
+<p>= &amp; argmax_{\theta} \sum_{(w,c) \in D} log(\frac{1}{1+e^{-v_c \cdot v_w}}) + \sum_{(w,c)\in D’} log(1-\frac{1}{1+e^{-v_c\cdot v_w}}) \</p>
+<p>= &amp; argmax_{\theta} \sum_{(w,c) \in D} log(\frac{1}{1+e^{-v_c \cdot v_w}}) + \sum_{(w,c)\in D’} log(1-\frac{1}{1+e^{-v_c\cdot v_w}}) \</p>
+<p>= &amp; argmax_{\theta} \sum_{(w,c)\in D} log \sigma(v_c \cdot v_w) + \sum_{(w,c)\in D’} log(\sigma(-v_c \cdot v_w))</p>
+<p>\end{align}<br>$$</p>
+<h5 id="displaystyle-argmax-theta-prod-w-in-text-left-prod-c-in-C-w-p-c-w-theta-right"><a href="#displaystyle-argmax-theta-prod-w-in-text-left-prod-c-in-C-w-p-c-w-theta-right" class="headerlink" title="$\displaystyle argmax_{\theta}  \prod_{w \in text} \left [ \prod_{c\in C(w)} p(c|w;\theta) \right] $"></a>$\displaystyle argmax_{\theta}  \prod_{w \in text} \left [ \prod_{c\in C(w)} p(c|w;\theta) \right] $</h5><p>$C(w)$为$w$的上下文</p>
+<p>$\displaystyle argmax_\theta \prod _{(w,c)\in D} p(c|w;\theta)$</p>
+<p>这里$D$为所有上下文对。</p>
+<p>NCE works because the max of the objection function converges to the real distribution to fit.</p>
 ]]></content>
       <categories>
-        <category>Systems</category>
+        <category>nlp</category>
       </categories>
       <tags>
-        <tag>database systems</tag>
+        <tag>word2vec</tag>
       </tags>
   </entry>
   <entry>
@@ -5852,6 +5887,137 @@
       </tags>
   </entry>
   <entry>
+    <title>结构化查询语言SQL</title>
+    <url>/database_system/sql/</url>
+    <content><![CDATA[<p>之前的关系代数属于过程化语言，同时指定了具体计算过程。关系型语言仅仅指明用户需要什么数据，而不指定具体计算过程，由数据库管理系统负责底层的具体实现。</p>
+<p>关系型语言一般由以下几个部分组成：</p>
+<ul>
+<li>数据定义语言(data definition language)</li>
+<li>数据操纵语言(data manipulation language)</li>
+<li>数据控制语言(data control language)</li>
+</ul>
+<p>其中<a href="https://zh.wikipedia.org/wiki/SQL">结构化查询语言SQL</a>广泛使用。</p>
+<a id="more"></a>
+
+<p>另外，关系代数基于集合，即无序，无重复，而关系型查询语言基于多集，即无序，允许重复。</p>
+<p>以下为<a href="https://15445.courses.cs.cmu.edu/fall2019/homework1/">homework1</a>的解析</p>
+<p>homework1中的数据集<a href="https://www.imdb.com/interfaces/">IMDB</a>是一个关于电影、电视节目、电子游戏和电影制作小组的在线数据库。本次howework中的sql由<a href="https://www.sqlite.org/">sqlite</a>实现。</p>
+<p>首先创建sql文件，每个sql文件对应于hw中的一个问题。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ mkdir placeholder</span><br><span class="line">$ cd placeholder</span><br><span class="line">$ touch q1_sample.sql \</span><br><span class="line">        q2_uncommon_type.sql \</span><br><span class="line">        q3_tv_vs_movie.sql \</span><br><span class="line">        q4_old_is_not_gold.sql \</span><br><span class="line">        q5_percentage.sql \</span><br><span class="line">        q6_dubbed_smash.sql \</span><br><span class="line">        q7_imdb_250.sql \</span><br><span class="line">        q8_number_of_actors.sql \</span><br><span class="line">        q9_movie_names.sql \</span><br><span class="line">        q10_genre_counts.sql</span><br></pre></td></tr></table></figure>
+<p>安装sqlite和libsqlite3-dev</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get install sqlite3 libsqlite3-dev</span><br></pre></td></tr></table></figure>
+<p>下载imdb数据库压缩包</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ wget https:&#x2F;&#x2F;15445.courses.cs.cmu.edu&#x2F;fall2019&#x2F;files&#x2F;imdb-cmudb2019.db.gz</span><br></pre></td></tr></table></figure>
+<p>校验md5校验和</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ md5 imdb-cmudb2019.db.gz </span><br><span class="line">MD5 (imdb-cmudb2019.db.gz) &#x3D; 6443351d4b55eb3c881622bd60a8dc5b</span><br></pre></td></tr></table></figure>
+<p>解压数据库压缩包并用sqlite打开</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ gunzip imdb-cmudb2019.db.gz</span><br><span class="line">$ sqlite3 imdb-cmudb2019.db</span><br></pre></td></tr></table></figure>
+<p>查看数据库中的表</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sqlite&gt; .tables</span><br><span class="line">akas      crew      episodes  people    ratings   titles</span><br></pre></td></tr></table></figure>
+<p>为每个表创建索引</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CREATE INDEX ix_people_name ON people (name);</span><br><span class="line">CREATE INDEX ix_titles_type ON titles (type);</span><br><span class="line">CREATE INDEX ix_titles_primary_title ON titles (primary_title);</span><br><span class="line">CREATE INDEX ix_titles_original_title ON titles (original_title);</span><br><span class="line">CREATE INDEX ix_akas_title_id ON akas (title_id);</span><br><span class="line">CREATE INDEX ix_akas_title ON akas (title);</span><br><span class="line">CREATE INDEX ix_crew_title_id ON crew (title_id);</span><br><span class="line">CREATE INDEX ix_crew_person_id ON crew (person_id);</span><br></pre></td></tr></table></figure>
+<p>检查数据库模式</p>
+<p>people表的属性有身份证号，名字，出生日期，死亡日期，索引为姓名。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sqlite&gt; .schema people</span><br><span class="line">CREATE TABLE people (</span><br><span class="line">  person_id VARCHAR PRIMARY KEY,</span><br><span class="line">  name VARCHAR,</span><br><span class="line">  born INTEGER,</span><br><span class="line">  died INTEGER</span><br><span class="line">);</span><br><span class="line">CREATE INDEX ix_people_name ON people (name);</span><br></pre></td></tr></table></figure>
+<p>其中的一项为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">nm0000003|Brigitte Bardot|1934|</span><br></pre></td></tr></table></figure>
+<p>title表为电影/电视剧/短视频/视频的具体信息</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sqlite&gt; .schema titles</span><br><span class="line">CREATE TABLE titles (</span><br><span class="line">  title_id VARCHAR PRIMARY KEY,</span><br><span class="line">  type VARCHAR,</span><br><span class="line">  primary_title VARCHAR,</span><br><span class="line">  original_title VARCHAR,</span><br><span class="line">  is_adult INTEGER,</span><br><span class="line">  premiered INTEGER,</span><br><span class="line">  ended INTEGER,</span><br><span class="line">  runtime_minutes INTEGER,</span><br><span class="line">  genres VARCHAR</span><br><span class="line">);</span><br><span class="line">CREATE INDEX ix_titles_type ON titles (type);</span><br><span class="line">CREATE INDEX ix_titles_primary_title ON titles (primary_title);</span><br><span class="line">CREATE INDEX ix_titles_original_title ON titles (original_title);</span><br></pre></td></tr></table></figure>
+<p>akas表为标题的语言，地区等信息，上映电影在其余国家的信息，标题可能会翻译成上映国家的版本。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CREATE TABLE akas (</span><br><span class="line">  title_id VARCHAR, -- REFERENCES titles (title_id),</span><br><span class="line">  title VARCHAR,</span><br><span class="line">  region VARCHAR,</span><br><span class="line">  language VARCHAR,</span><br><span class="line">  types VARCHAR,</span><br><span class="line">  attributes VARCHAR,</span><br><span class="line">  is_original_title INTEGER</span><br><span class="line">);</span><br><span class="line">CREATE INDEX ix_akas_title_id ON akas (title_id);</span><br><span class="line">CREATE INDEX ix_akas_title ON akas (title);</span><br></pre></td></tr></table></figure>
+<p>crew表为某剧对应的人物信息。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CREATE TABLE crew (</span><br><span class="line">  title_id VARCHAR, -- REFERENCES titles (title_id),</span><br><span class="line">  person_id VARCHAR, -- REFERENCES people (person_id),</span><br><span class="line">  category VARCHAR,</span><br><span class="line">  job VARCHAR</span><br><span class="line">);</span><br><span class="line">CREATE INDEX ix_crew_title_id ON crew (title_id);</span><br><span class="line">CREATE INDEX ix_crew_person_id ON crew (person_id);</span><br></pre></td></tr></table></figure>
+<p>其中一行的信息为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tt0000003|nm5442194|producer|producer</span><br></pre></td></tr></table></figure>
+<p>rating表为对应的id和评分，参与人数</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CREATE TABLE ratings (</span><br><span class="line">  title_id VARCHAR PRIMARY KEY, -- REFERENCES titles (title_id),</span><br><span class="line">  rating FLOAT,</span><br><span class="line">  votes INTEGER</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<p>其中一行的信息为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tt0000001|5.6|1529</span><br></pre></td></tr></table></figure>
+<h1 id="q1"><a href="#q1" class="headerlink" title="q1"></a>q1</h1><p>查询titles表中不同类型有哪些</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sqlite&gt; select distinct(type) from titles order by type;</span><br><span class="line">    movie</span><br><span class="line">    short</span><br><span class="line">    tvEpisode</span><br><span class="line">    tvMiniSeries</span><br><span class="line">    tvMovie</span><br><span class="line">    tvSeries</span><br><span class="line">    tvShort</span><br><span class="line">    tvSpecial</span><br><span class="line">    video</span><br><span class="line">    videoGame</span><br></pre></td></tr></table></figure>
+<h1 id="q2"><a href="#q2" class="headerlink" title="q2"></a>q2</h1><p>查询每种类型中最长播放时间的title</p>
+<ul>
+<li>对于存在并列的情况，所有并列的条目均输出</li>
+<li>输出types,primary titles,runtime minutes,按照type升序，若type相同则按照primary titles升序</li>
+</ul>
+<p>简单地，查询每种类型中最长播放时间</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SELECT type,max(runtime_minutes) FROM titles GROUP BY type;</span><br></pre></td></tr></table></figure>
+<p>得到</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">movie|51420</span><br><span class="line">short|461</span><br><span class="line">tvEpisode|1800</span><br><span class="line">tvMiniSeries|1755</span><br><span class="line">tvMovie|2112</span><br><span class="line">tvSeries|8400</span><br><span class="line">tvShort|60</span><br><span class="line">tvSpecial|5760</span><br><span class="line">video|5135</span><br><span class="line">videoGame|1500</span><br></pre></td></tr></table></figure>
+<p>查询目标为runtime_minutes等于最大值的title</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">WITH types(type, runtime_minutes) AS ( </span><br><span class="line">  SELECT type, MAX(runtime_minutes)</span><br><span class="line">    FROM titles</span><br><span class="line">    GROUP BY type</span><br><span class="line">)</span><br><span class="line">SELECT titles.type, titles.primary_title, titles.runtime_minutes</span><br><span class="line">  FROM titles</span><br><span class="line">  JOIN types</span><br><span class="line">  ON titles.runtime_minutes &#x3D;&#x3D; types.runtime_minutes AND titles.type &#x3D;&#x3D; types.type</span><br><span class="line">  ORDER BY titles.type, titles.primary_title</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
+<p>可通过with子句定义临时关系，再通过join运算限定title条目。</p>
+<p>查询结果如下</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">movie|Logistics|51420</span><br><span class="line">short|Kuriocity|461</span><br><span class="line">tvEpisode|Téléthon 2012|1800</span><br><span class="line">tvMiniSeries|Kôya no yôjinbô|1755</span><br><span class="line">tvMovie|ArtQuench Presents Spirit Art|2112</span><br><span class="line">tvSeries|The Sharing Circle|8400</span><br><span class="line">tvShort|Paul McCartney Backstage at Super Bowl XXXIX|60</span><br><span class="line">tvShort|The People Next Door|60</span><br><span class="line">tvSpecial|Katy Perry Live: Witness World Wide|5760</span><br><span class="line">video|Midnight Movie Madness: 50 Movie Mega Pack|5135</span><br><span class="line">videoGame|Flushy Fish VR: Just Squidding Around|1500</span><br></pre></td></tr></table></figure>
+<h1 id="q3"><a href="#q3" class="headerlink" title="q3"></a>q3</h1><p>列出所有类型的title，并给出相关条目的数量</p>
+<ul>
+<li>按照类型升序</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SELECT type, count(*) AS title_count FROM titles GROUP BY type ORDER BY title_count ASC;</span><br></pre></td></tr></table></figure>
+<p>查询结果如下</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tvShort|4075</span><br><span class="line">videoGame|9044</span><br><span class="line">tvSpecial|9107</span><br><span class="line">tvMiniSeries|10291</span><br><span class="line">tvMovie|45431</span><br><span class="line">tvSeries|63631</span><br><span class="line">video|90069</span><br><span class="line">movie|197957</span><br><span class="line">short|262038</span><br><span class="line">tvEpisode|1603076</span><br></pre></td></tr></table></figure>
+<h1 id="q4"><a href="#q4" class="headerlink" title="q4"></a>q4</h1><p>按照每十年为间隔，统计首映的titles数目，例如<code>2010s|2789741</code></p>
+<ul>
+<li>年份按照类似2010s的格式输出，按照数目降序，<code>premiered</code>为<code>NULL</code>的条目不计入结果</li>
+</ul>
+<p>通过<code>group by</code>子句按照每十年分组,通过字符串运算在年份后添加s</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SELECT </span><br><span class="line">  CAST(premiered&#x2F;10*10 AS TEXT) || &#39;s&#39; AS decade,</span><br><span class="line">  COUNT(*) AS num_movies</span><br><span class="line">  FROM titles</span><br><span class="line">  WHERE premiered is not null</span><br><span class="line">  GROUP BY decade</span><br><span class="line">  ORDER BY num_movies DESC</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
+<p>查询结果如下</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">2010s|1050732</span><br><span class="line">2000s|494639</span><br><span class="line">1990s|211453</span><br><span class="line">1980s|119258</span><br><span class="line">1970s|99707</span><br><span class="line">1960s|75237</span><br><span class="line">1950s|39554</span><br><span class="line">1910s|26596</span><br><span class="line">1920s|13153</span><br><span class="line">1930s|11492</span><br><span class="line">1940s|10011</span><br><span class="line">1900s|9586</span><br><span class="line">2020s|2492</span><br><span class="line">1890s|2286</span><br><span class="line">1880s|22</span><br><span class="line">1870s|1</span><br></pre></td></tr></table></figure>
+<h1 id="q5"><a href="#q5" class="headerlink" title="q5"></a>q5</h1><p>按照每十年为间隔，统计对应首映的titles数目百分比，例如 <code>2010s|45.7042</code></p>
+<ul>
+<li>百分比为对应的首映数目除以总titles数目，titles算入<code>premiered</code>为<code>NULL</code>的条目，结果舍入到小数点后四位</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SELECT</span><br><span class="line">  CAST(premiered&#x2F;10*10 AS TEXT) || &#39;s&#39; AS decade,</span><br><span class="line">  ROUND(CAST(COUNT(*) AS REAL) &#x2F; (SELECT COUNT(*) FROM titles) * 100.0, 4) as percentage</span><br><span class="line">  FROM titles</span><br><span class="line">  WHERE premiered is not null</span><br><span class="line">  GROUP BY decade</span><br><span class="line">  ORDER BY percentage DESC, decade ASC</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
+<p>查询结果如下</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">2010s|45.7891</span><br><span class="line">2000s|21.5555</span><br><span class="line">1990s|9.2148</span><br><span class="line">1980s|5.1971</span><br><span class="line">1970s|4.3451</span><br><span class="line">1960s|3.2787</span><br><span class="line">1950s|1.7237</span><br><span class="line">1910s|1.159</span><br><span class="line">1920s|0.5732</span><br><span class="line">1930s|0.5008</span><br><span class="line">1940s|0.4363</span><br><span class="line">1900s|0.4177</span><br><span class="line">2020s|0.1086</span><br><span class="line">1890s|0.0996</span><br><span class="line">1880s|0.001</span><br><span class="line">1870s|0.0</span><br></pre></td></tr></table></figure>
+<h1 id="q6"><a href="#q6" class="headerlink" title="q6"></a>q6</h1><p>列出转播次数的titles前十</p>
+<ul>
+<li>输出primary title和对应的数目</li>
+</ul>
+<p>和q2类似，可通过with子句定义临时关系，<code>LIMIT 10</code>限定输出条目的数目再通过join运算限定title条目。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">WITH translations AS (</span><br><span class="line">  SELECT title_id, count(*) as num_translations </span><br><span class="line">    FROM akas </span><br><span class="line">    GROUP BY title_id </span><br><span class="line">    ORDER BY num_translations DESC, title_id </span><br><span class="line">    LIMIT 10</span><br><span class="line">)</span><br><span class="line">SELECT titles.primary_title, translations.num_translations</span><br><span class="line">  FROM translations</span><br><span class="line">  JOIN titles</span><br><span class="line">  ON titles.title_id &#x3D;&#x3D; translations.title_id</span><br><span class="line">  ORDER BY translations.num_translations DESC</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
+<p>查询结果如下</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Mutant Virus: Vol. 1|126</span><br><span class="line">The Good, the Bad and the Ugly|73</span><br><span class="line">Star Wars: Episode V - The Empire Strikes Back|71</span><br><span class="line">Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb|68</span><br><span class="line">Raiders of the Lost Ark|62</span><br><span class="line">Star Wars: Episode VII - The Force Awakens|62</span><br><span class="line">The Shawshank Redemption|61</span><br><span class="line">Once Upon a Time in the West|60</span><br><span class="line">Indiana Jones and the Kingdom of the Crystal Skull|60</span><br><span class="line">Airplane!|59</span><br></pre></td></tr></table></figure>
+<h1 id="q7"><a href="#q7" class="headerlink" title="q7"></a>q7</h1><p>列出IMDB中电影权重最高的250个</p>
+<p>权重的计算方式为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Weighted rating (WR) &#x3D; (v&#x2F;(v+m)) * R + (m&#x2F;(v+m)) * C</span><br></pre></td></tr></table></figure>
+<ul>
+<li>R为电影平均评分</li>
+<li>v为评分人数</li>
+<li>m为25000</li>
+<li>C为所有电影的平均权重</li>
+</ul>
+<p><code>weight</code>的计算放入<code>select</code>语句中。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">WITH</span><br><span class="line">  av(average_rating) AS (</span><br><span class="line">    SELECT SUM(rating * votes) &#x2F; SUM(votes)</span><br><span class="line">      FROM ratings</span><br><span class="line">      JOIN titles</span><br><span class="line">      ON titles.title_id &#x3D;&#x3D; ratings.title_id AND titles.type &#x3D;&#x3D; &quot;movie&quot; </span><br><span class="line">  ),</span><br><span class="line">  mn(min_rating) AS (SELECT 25000.0)</span><br><span class="line">SELECT</span><br><span class="line">  primary_title,</span><br><span class="line">  (votes &#x2F; (votes + min_rating)) * rating + (min_rating &#x2F; (votes + min_rating)) * average_rating as weighed_rating</span><br><span class="line">  FROM ratings, av, mn</span><br><span class="line">  JOIN titles</span><br><span class="line">  ON titles.title_id &#x3D;&#x3D; ratings.title_id and titles.type &#x3D;&#x3D; &quot;movie&quot;</span><br><span class="line">  ORDER BY weighed_rating DESC</span><br><span class="line">  LIMIT 250</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
+<p>榜单如下</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">The Shawshank Redemption|9.27408375213064</span><br><span class="line">Pulp Fiction|8.87296068706845</span><br><span class="line">The Lord of the Rings: The Return of the King|8.87023538818413</span><br><span class="line">Schindler&#39;s List|8.85944837786486</span><br><span class="line">12 Angry Men|8.8274654312365</span><br><span class="line">Forrest Gump|8.77394665505175</span><br><span class="line">The Good, the Bad and the Ugly|8.73410047935658</span><br><span class="line">The Matrix|8.67379043068514</span><br><span class="line">The Lord of the Rings: The Two Towers|8.67073273467584</span><br><span class="line">Star Wars: Episode V - The Empire Strikes Back|8.66258036565461</span><br><span class="line">Goodfellas|8.65679704067696</span><br><span class="line">One Flew Over the Cuckoo&#39;s Nest|8.65294416076491</span><br><span class="line">The Mountain II|8.61725087838868</span><br><span class="line">City of God|8.54342805417796</span><br><span class="line">Gladiator|8.47143742708625</span><br><span class="line">Back to the Future|8.46332853886572</span><br><span class="line">Léon: The Professional|8.46292056565729</span><br><span class="line">Avengers: Infinity War|8.4506845289751</span><br><span class="line">Psycho|8.4373696976068</span><br><span class="line">Rear Window|8.41674755149826</span><br><span class="line">Once Upon a Time in the West|8.38089735258473</span><br><span class="line">WALL·E|8.36472733136252</span><br><span class="line">Raiders of the Lost Ark|8.36071764723241</span><br><span class="line">The Shining|8.35937143360229</span><br><span class="line">Alien|8.35552530090484</span><br><span class="line">Cinema Paradiso|8.3444698366033</span><br><span class="line">Apocalypse Now|8.34271721766924</span><br><span class="line">Grave of the Fireflies|8.34191265540178</span><br><span class="line">Oldboy|8.33209348956415</span><br><span class="line">Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb|8.3250687044724</span><br><span class="line">Once Upon a Time in America|8.29149205920628</span><br><span class="line">Spider-Man: Into the Spider-Verse|8.27944770565499</span><br><span class="line">Inglourious Basterds|8.27361869242351</span><br><span class="line">American Beauty|8.26993451202779</span><br><span class="line">Reservoir Dogs|8.26439627161116</span><br><span class="line">Requiem for a Dream|8.25798876833464</span><br><span class="line">A Clockwork Orange|8.25742341547537</span><br><span class="line">Toy Story 3|8.25734107724815</span><br><span class="line">Scarface|8.25590438979589</span><br><span class="line">Full Metal Jacket|8.25210853826772</span><br><span class="line">Sunset Blvd.|8.23933898857354</span><br><span class="line">Amadeus|8.21589004599775</span><br><span class="line">Vertigo|8.21216347202948</span><br><span class="line">Like Stars on Earth|8.20481373841464</span><br><span class="line">Your Name.|8.19983566375586</span><br><span class="line">North by Northwest|8.1975172347387</span><br><span class="line">Batman Begins|8.17704665931913</span><br><span class="line">V for Vendetta|8.17129916924205</span><br><span class="line">Die Hard|8.16240649720068</span><br><span class="line">Lock, Stock and Two Smoking Barrels|8.14585507926427</span><br><span class="line">Casino|8.13629764272654</span><br><span class="line">Unforgiven|8.12365074764615</span><br><span class="line">The Apartment|8.12061011853697</span><br><span class="line">Chinatown|8.10376481333931</span><br><span class="line">My Neighbor Totoro|8.09442185609386</span><br><span class="line">Green Book|8.09074160238658</span><br><span class="line">Finding Nemo|8.07145216202776</span><br><span class="line">Catch Me If You Can|8.06592479759894</span><br><span class="line">The Grand Budapest Hotel|8.06129693202741</span><br><span class="line">Blade Runner|8.06098971608469</span><br><span class="line">Fargo|8.05647629910042</span><br><span class="line">Prisoners|8.05390469414222</span><br><span class="line">The Kid|8.05287532584739</span><br><span class="line">Rush|8.03898582269203</span><br><span class="line">Hacksaw Ridge|8.03551702468201</span><br><span class="line">The Seventh Seal|8.03407390030423</span><br><span class="line">The Princess Bride|8.03359206319394</span><br><span class="line">Platoon|8.03211473247254</span><br><span class="line">PK|8.02907703728921</span><br><span class="line">Monty Python&#39;s Life of Brian|8.02901738104703</span><br><span class="line">Gone with the Wind|8.01162552164356</span><br><span class="line">Before Sunrise|8.00325016258364</span><br><span class="line">Ben-Hur|7.98708858673506</span><br><span class="line">The Elephant Man|7.98656566725627</span><br><span class="line">The Treasure of the Sierra Madre|7.98183759819495</span><br><span class="line">Aynabaji|7.97740941967294</span><br><span class="line">Yojimbo|7.97326922828868</span><br><span class="line">Star Wars: Episode VII - The Force Awakens|7.97147281541043</span><br><span class="line">Slumdog Millionaire|7.97003387503103</span><br><span class="line">Monsters, Inc.|7.96993549888079</span><br><span class="line">Sin City|7.96864677307258</span><br><span class="line">X-Men: Days of Future Past|7.96426564397762</span><br><span class="line">Ratatouille|7.96198738026476</span><br><span class="line">Jaws|7.95693515580935</span><br><span class="line">Her|7.95337602084149</span><br><span class="line">Cool Hand Luke|7.95284437581594</span><br><span class="line">Akira|7.9466594640111</span><br><span class="line">In the Name of the Father|7.94653731881204</span><br><span class="line">Big Fish|7.94417520197508</span><br><span class="line">Zootopia|7.94391037425039</span><br><span class="line">Barry Lyndon|7.93804803727936</span><br><span class="line">La Haine|7.93713874007203</span><br><span class="line">Network|7.93673499353362</span><br><span class="line">Ikiru|7.93587006088359</span><br><span class="line">Harakiri|7.93442534185635</span><br><span class="line">On the Waterfront|7.93384958766431</span><br><span class="line">Drishyam|7.9316664137302</span><br><span class="line">The Chaos Class Failed the Class|7.92209636316521</span><br><span class="line">Magnolia|7.92151783450757</span><br><span class="line">Swades|7.91791802696218</span><br><span class="line">Children of Heaven|7.91488724265187</span><br><span class="line">Tosun Pasa|7.91175384887872</span><br><span class="line">Dog Day Afternoon|7.90497209143548</span><br><span class="line">Before Sunset|7.90135907545106</span><br><span class="line">Memories of Murder|7.89983909706083</span><br><span class="line">Ip Man|7.89530989242938</span><br><span class="line">Chak de! India|7.89380214739519</span><br><span class="line">Munna Bhai M.B.B.S.|7.88766873353758</span><br><span class="line">The 400 Blows|7.88236058087742</span><br><span class="line">Elite Squad|7.88128931930257</span><br><span class="line">Cinderella Man|7.87893854172733</span><br><span class="line">Judgment at Nuremberg|7.87703872647609</span><br><span class="line">Ayla: The Daughter of War|7.87111640888977</span><br><span class="line">Toy Story 4|7.86727079414856</span><br><span class="line">District 9|7.86716566170036</span><br><span class="line">Edge of Tomorrow|7.86401183134919</span><br><span class="line">Searching for Sugar Man|7.86361014282595</span><br><span class="line">Thor: Ragnarok|7.86067171002219</span><br><span class="line">Harry Potter and the Prisoner of Azkaban|7.86009831177006</span><br><span class="line">The Handmaiden|7.86005695016839</span><br><span class="line">Toy Story 2|7.85903363434152</span><br><span class="line">The Bourne Identity|7.85871357953152</span><br><span class="line">Three Colors: Red|7.8571771641382</span><br><span class="line">Edward Scissorhands|7.85308436175456</span><br><span class="line">Nightcrawler|7.85238182329928</span><br><span class="line">Castle in the Sky|7.8494569785608</span><br><span class="line">Paris, Texas|7.84540229570821</span><br><span class="line">The Breakfast Club|7.84009539226878</span><br><span class="line">Ghost in the Shell|7.8358170251987</span><br><span class="line">Mulholland Dr.|7.83476463500115</span><br><span class="line">Strangers on a Train|7.8340265331899</span><br><span class="line">Papillon|7.83230035374453</span><br><span class="line">The Raid 2|7.82177754544252</span><br><span class="line">The Artist|7.81451845636192</span><br><span class="line">The Man Who Shot Liberty Valance|7.8078751132418</span><br><span class="line">True Romance|7.80358074659557</span><br><span class="line">All the President&#39;s Men|7.80348137201329</span><br><span class="line">A Streetcar Named Desire|7.80156298305092</span><br><span class="line">My Name Is Khan|7.80054788180083</span><br><span class="line">Patton|7.79504441225479</span><br><span class="line">Tokyo Story|7.79422849952735</span><br><span class="line">The Blues Brothers|7.79298260954459</span><br><span class="line">The Man from Earth|7.78857212574483</span><br><span class="line">Capernaum|7.78563829871188</span><br><span class="line">Spider-Man: Far from Home|7.78561846386015</span><br><span class="line">Vikram Vedha|7.78373473224346</span><br><span class="line">Titanic|7.78157715805354</span><br><span class="line">The Hobbit: An Unexpected Journey|7.77554863836764</span><br><span class="line">The Passion of Joan of Arc|7.77408091487195</span><br><span class="line">High and Low|7.77213704112255</span><br><span class="line">Sing Street|7.76915812623775</span><br><span class="line">The Legend of 1900|7.76815835496063</span><br><span class="line">Elite Squad: The Enemy Within|7.76812044894699</span><br><span class="line">Fanny and Alexander|7.76800472456941</span><br><span class="line">Taken|7.76769012246336</span><br><span class="line">The Straight Story|7.76752395340217</span><br><span class="line">Kahaani|7.76720011579587</span><br><span class="line">Ocean&#39;s Eleven|7.76364685071376</span><br><span class="line">The Sea Inside|7.76289022497323</span><br><span class="line">O.J.: Made in America|7.76250676256312</span><br><span class="line">Before Midnight|7.76132220796731</span><br><span class="line">Home|7.76025351500213</span><br><span class="line">Back to the Future Part II|7.76009005121133</span><br><span class="line">Spring, Summer, Fall, Winter... and Spring|7.7592446422894</span><br><span class="line">Manhattan|7.7591232226754</span><br><span class="line">Crash|7.757187612945</span><br><span class="line">The Girl with the Dragon Tattoo|7.75600754037541</span><br><span class="line">Big Hero 6|7.7544767707715</span><br><span class="line">Predator|7.75096576853116</span><br><span class="line">Spartacus|7.75079774492003</span><br><span class="line">Isle of Dogs|7.7494869658895</span><br><span class="line">The Fighter|7.74677127042658</span><br><span class="line">The Game|7.7466716184388</span><br><span class="line">The Big Short|7.7461656518056</span><br><span class="line">Moonrise Kingdom|7.74269388072724</span><br><span class="line">Pather Panchali|7.74145616936336</span><br><span class="line">Doctor Zhivago|7.74112370242397</span><br><span class="line">Apocalypto|7.73848649857271</span><br><span class="line">About Time|7.7377698449424</span><br><span class="line">Gattaca|7.73647859452984</span><br><span class="line">What Ever Happened to Baby Jane?|7.73539364991903</span><br><span class="line">The Marathon Family|7.73428987458458</span><br><span class="line">Crouching Tiger, Hidden Dragon|7.73132118708057</span><br><span class="line">Sunrise|7.72522570382843</span><br><span class="line">Manchester by the Sea|7.72481321224648</span><br><span class="line">La Dolce Vita|7.72473610906825</span><br><span class="line">Halloween|7.72149520973176</span><br><span class="line">Sherlock Jr.|7.72122901074544</span><br><span class="line">What&#39;s Eating Gilbert Grape|7.71837046863796</span><br><span class="line">Diabolique|7.71738924368521</span><br><span class="line">Remember the Titans|7.7131373150204</span><br><span class="line">Amour|7.71206424086562</span><br><span class="line">Earthlings|7.71112168098164</span><br><span class="line">Hidden Figures|7.70836846509536</span><br><span class="line">The Boy in the Striped Pajamas|7.70750686722645</span><br><span class="line">Throne of Blood|7.70486190012118</span><br><span class="line">Nosferatu|7.70479615314119</span><br><span class="line">The Best Years of Our Lives|7.70404091573498</span><br><span class="line">La Strada|7.7035894202021</span><br><span class="line">Blue Velvet|7.70348849922288</span><br><span class="line">Ed Wood|7.70011913851453</span><br><span class="line">Carry On, Munna Bhai|7.6960703370653</span><br><span class="line">The Insider|7.69589363902872</span><br><span class="line">Rio Bravo|7.69547902962826</span><br><span class="line">Do the Right Thing|7.69470637286005</span><br><span class="line">G.O.R.A.|7.69143691201405</span><br><span class="line">John Wick: Chapter 3 - Parabellum|7.69042140474976</span><br><span class="line">The Big Sleep|7.69022732193082</span><br><span class="line">The Best of Youth|7.68939089676166</span><br><span class="line">The Wild Bunch|7.68732321899666</span><br><span class="line">Evil Dead II|7.68698809399903</span><br><span class="line">Airlift|7.68482585880285</span><br><span class="line">Who&#39;s Singin&#39; Over There?|7.68275319170322</span><br><span class="line">The King of the Street Cleaners|7.68007124396815</span><br><span class="line">Blue Is the Warmest Color|7.67888277323536</span><br><span class="line">300|7.67811080177943</span><br><span class="line">The Hangover|7.67745136243525</span><br><span class="line">The Chaos Class Is on Vacation|7.67701815540533</span><br><span class="line">Kramer vs. Kramer|7.6734998783239</span><br><span class="line">Special 26|7.67149062884843</span><br><span class="line">Harold and Maude|7.67125075421178</span><br><span class="line">Breathless|7.66994880180493</span><br><span class="line">3-Iron|7.66894856428393</span><br><span class="line">Glory|7.66830445780438</span><br><span class="line">Awakenings|7.66753775055519</span><br><span class="line">Star Trek Into Darkness|7.66655348768595</span><br><span class="line">To Be or Not to Be|7.66618772896992</span><br><span class="line">A Silent Voice|7.66616985054611</span><br><span class="line">Get Out|7.66418042868228</span><br><span class="line">The Fifth Element|7.66340814153364</span><br><span class="line">Zodiac|7.66276470401316</span><br><span class="line">Empire of the Sun|7.66123857830932</span><br><span class="line">Lost in Translation|7.66075124608843</span><br><span class="line">Man with a Movie Camera|7.66048361595785</span><br><span class="line">Tangled|7.66012044434097</span><br><span class="line">Once|7.65980150013791</span><br><span class="line">Midnight in Paris|7.65893069763627</span><br><span class="line">The King of Kong: A Fistful of Quarters|7.65818054427474</span><br><span class="line">Wreck-It Ralph|7.6578968805438</span><br><span class="line">The Salt of the Earth|7.6573311856226</span><br><span class="line">The Fault in Our Stars|7.65410038215701</span><br><span class="line">Time of the Gypsies|7.65354312829129</span><br><span class="line">Lucky Number Slevin|7.64972806598217</span><br><span class="line">Whisper of the Heart|7.64876091986559</span><br><span class="line">O Brother, Where Art Thou?|7.64584931637816</span><br><span class="line">Talvar|7.64560053612369</span><br><span class="line">Donnie Brasco|7.6439766475949</span><br><span class="line">As Good as It Gets|7.64393017265743</span><br><span class="line">The Motorcycle Diaries|7.64367118785382</span><br><span class="line">The Girl with the Red Scarf|7.64023075719264</span><br></pre></td></tr></table></figure>
+<p>榜单第一是肖申克的救赎,惊了！</p>
+<h1 id="q8"><a href="#q8" class="headerlink" title="q8"></a>q8</h1><p>列出和Mark Hamill合作过的男演员/女演员的数量</p>
+<ul>
+<li>仅输出数量</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">WITH hamill_titles AS (</span><br><span class="line">  SELECT DISTINCT(crew.title_id)</span><br><span class="line">    FROM people</span><br><span class="line">    JOIN crew</span><br><span class="line">    ON crew.person_id &#x3D;&#x3D; people.person_id AND people.name &#x3D;&#x3D; &quot;Mark Hamill&quot; AND people.born &#x3D;&#x3D; 1951</span><br><span class="line">)</span><br><span class="line">SELECT COUNT(DISTINCT(crew.person_id))</span><br><span class="line">  FROM crew</span><br><span class="line">  WHERE (crew.category &#x3D;&#x3D; &quot;actor&quot; OR crew.category &#x3D;&#x3D; &quot;actress&quot;) AND crew.title_id in hamill_titles</span><br><span class="line">;</span><br></pre></td></tr></table></figure>
+<p>查询结果为<code>206</code></p>
+<h1 id="q9"><a href="#q9" class="headerlink" title="q9"></a>q9</h1><p>按照字典序列出Mark Hamill(生于1951年)和George Lucas(生于1944年)共同参演的作品</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">WITH hamill_movies(title_id) AS (</span><br><span class="line">  SELECT crew.title_id</span><br><span class="line">    FROM crew</span><br><span class="line">    JOIN people</span><br><span class="line">    ON crew.person_id &#x3D;&#x3D; people.person_id AND people.name &#x3D;&#x3D; &quot;Mark Hamill&quot; AND people.born &#x3D;&#x3D; 1951</span><br><span class="line">)</span><br><span class="line">SELECT titles.primary_title</span><br><span class="line">  FROM crew</span><br><span class="line">  JOIN people</span><br><span class="line">  ON crew.person_id &#x3D;&#x3D; people.person_id AND people.name &#x3D;&#x3D; &quot;George Lucas&quot; AND people.born &#x3D;&#x3D; 1944 AND crew.title_id IN hamill_movies</span><br><span class="line">  JOIN titles</span><br><span class="line">  ON crew.title_id &#x3D;&#x3D; titles.title_id AND titles.type &#x3D;&#x3D; &quot;movie&quot;</span><br><span class="line">  ORDER BY titles.primary_title</span><br><span class="line">;</span><br></pre></td></tr></table></figure>
+<p>查询结果为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Star Wars: Episode V - The Empire Strikes Back</span><br></pre></td></tr></table></figure>
+<p>仅有一部电影</p>
+<h1 id="q10"><a href="#q10" class="headerlink" title="q10"></a>q10</h1><p>列出所有不同的标签和相关的<code>titles</code>数目</p>
+<p>不同标签之间以逗号间隔，所以需要从<code>genre</code>中提取出对应的标签信息。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">WITH RECURSIVE split(genre, rest) AS (</span><br><span class="line">  SELECT &#39;&#39;, genres || &#39;,&#39; FROM titles WHERE genres !&#x3D; &quot;\N&quot;</span><br><span class="line">   UNION ALL</span><br><span class="line">  SELECT substr(rest, 0, instr(rest, &#39;,&#39;)),</span><br><span class="line">         substr(rest, instr(rest, &#39;,&#39;)+1)</span><br><span class="line">    FROM split</span><br><span class="line">   WHERE rest !&#x3D; &#39;&#39;</span><br><span class="line">)</span><br><span class="line">SELECT genre, count(*) as genre_count</span><br><span class="line">  FROM split </span><br><span class="line"> WHERE genre !&#x3D; &#39;&#39;</span><br><span class="line"> GROUP BY genre</span><br><span class="line"> ORDER BY genre_count DESC;</span><br></pre></td></tr></table></figure>
+<p>查询结果为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Drama|620063</span><br><span class="line">Comedy|486163</span><br><span class="line">Short|310619</span><br><span class="line">Documentary|222187</span><br><span class="line">Talk-Show|215144</span><br><span class="line">Romance|211462</span><br><span class="line">Family|159035</span><br><span class="line">News|148941</span><br><span class="line">Animation|115998</span><br><span class="line">Reality-TV|113180</span><br><span class="line">Music|105724</span><br><span class="line">Crime|99019</span><br><span class="line">Action|97544</span><br><span class="line">Adventure|81686</span><br><span class="line">Game-Show|75169</span><br><span class="line">Adult|65704</span><br><span class="line">Sport|48855</span><br><span class="line">Fantasy|48341</span><br><span class="line">Mystery|47155</span><br><span class="line">Horror|41552</span><br><span class="line">Thriller|40664</span><br><span class="line">History|31675</span><br><span class="line">Sci-Fi|31441</span><br><span class="line">Biography|27001</span><br><span class="line">Musical|17939</span><br><span class="line">Western|9811</span><br><span class="line">War|9309</span><br><span class="line">Film-Noir|322</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Systems</category>
+      </categories>
+      <tags>
+        <tag>database systems</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>页面置换算法</title>
     <url>/systems/paging/</url>
     <content><![CDATA[<p> 虚拟内存只把部分程序放到内存中，虚拟内存单元不一定由实际物理内存单元对应，因此访问的部分可能不在内存中。在内存中无空闲页时，访问的页面必须替换已经存在的某一页面才能放入到内存中。如何选择替换页由页面置换算法实现，其中根据是否区分不同进程的页面，分为局部置换算法和全局置换算法。</p>
@@ -7557,137 +7723,6 @@
       </categories>
       <tags>
         <tag>ucore</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>结构化查询语言SQL</title>
-    <url>/database_system/sql/</url>
-    <content><![CDATA[<p>之前的关系代数属于过程化语言，同时指定了具体计算过程。关系型语言仅仅指明用户需要什么数据，而不指定具体计算过程，由数据库管理系统负责底层的具体实现。</p>
-<p>关系型语言一般由以下几个部分组成：</p>
-<ul>
-<li>数据定义语言(data definition language)</li>
-<li>数据操纵语言(data manipulation language)</li>
-<li>数据控制语言(data control language)</li>
-</ul>
-<p>其中<a href="https://zh.wikipedia.org/wiki/SQL">结构化查询语言SQL</a>广泛使用。</p>
-<a id="more"></a>
-
-<p>另外，关系代数基于集合，即无序，无重复，而关系型查询语言基于多集，即无序，允许重复。</p>
-<p>以下为<a href="https://15445.courses.cs.cmu.edu/fall2019/homework1/">homework1</a>的解析</p>
-<p>homework1中的数据集<a href="https://www.imdb.com/interfaces/">IMDB</a>是一个关于电影、电视节目、电子游戏和电影制作小组的在线数据库。本次howework中的sql由<a href="https://www.sqlite.org/">sqlite</a>实现。</p>
-<p>首先创建sql文件，每个sql文件对应于hw中的一个问题。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ mkdir placeholder</span><br><span class="line">$ cd placeholder</span><br><span class="line">$ touch q1_sample.sql \</span><br><span class="line">        q2_uncommon_type.sql \</span><br><span class="line">        q3_tv_vs_movie.sql \</span><br><span class="line">        q4_old_is_not_gold.sql \</span><br><span class="line">        q5_percentage.sql \</span><br><span class="line">        q6_dubbed_smash.sql \</span><br><span class="line">        q7_imdb_250.sql \</span><br><span class="line">        q8_number_of_actors.sql \</span><br><span class="line">        q9_movie_names.sql \</span><br><span class="line">        q10_genre_counts.sql</span><br></pre></td></tr></table></figure>
-<p>安装sqlite和libsqlite3-dev</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get install sqlite3 libsqlite3-dev</span><br></pre></td></tr></table></figure>
-<p>下载imdb数据库压缩包</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ wget https:&#x2F;&#x2F;15445.courses.cs.cmu.edu&#x2F;fall2019&#x2F;files&#x2F;imdb-cmudb2019.db.gz</span><br></pre></td></tr></table></figure>
-<p>校验md5校验和</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ md5 imdb-cmudb2019.db.gz </span><br><span class="line">MD5 (imdb-cmudb2019.db.gz) &#x3D; 6443351d4b55eb3c881622bd60a8dc5b</span><br></pre></td></tr></table></figure>
-<p>解压数据库压缩包并用sqlite打开</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ gunzip imdb-cmudb2019.db.gz</span><br><span class="line">$ sqlite3 imdb-cmudb2019.db</span><br></pre></td></tr></table></figure>
-<p>查看数据库中的表</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sqlite&gt; .tables</span><br><span class="line">akas      crew      episodes  people    ratings   titles</span><br></pre></td></tr></table></figure>
-<p>为每个表创建索引</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CREATE INDEX ix_people_name ON people (name);</span><br><span class="line">CREATE INDEX ix_titles_type ON titles (type);</span><br><span class="line">CREATE INDEX ix_titles_primary_title ON titles (primary_title);</span><br><span class="line">CREATE INDEX ix_titles_original_title ON titles (original_title);</span><br><span class="line">CREATE INDEX ix_akas_title_id ON akas (title_id);</span><br><span class="line">CREATE INDEX ix_akas_title ON akas (title);</span><br><span class="line">CREATE INDEX ix_crew_title_id ON crew (title_id);</span><br><span class="line">CREATE INDEX ix_crew_person_id ON crew (person_id);</span><br></pre></td></tr></table></figure>
-<p>检查数据库模式</p>
-<p>people表的属性有身份证号，名字，出生日期，死亡日期，索引为姓名。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sqlite&gt; .schema people</span><br><span class="line">CREATE TABLE people (</span><br><span class="line">  person_id VARCHAR PRIMARY KEY,</span><br><span class="line">  name VARCHAR,</span><br><span class="line">  born INTEGER,</span><br><span class="line">  died INTEGER</span><br><span class="line">);</span><br><span class="line">CREATE INDEX ix_people_name ON people (name);</span><br></pre></td></tr></table></figure>
-<p>其中的一项为</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">nm0000003|Brigitte Bardot|1934|</span><br></pre></td></tr></table></figure>
-<p>title表为电影/电视剧/短视频/视频的具体信息</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sqlite&gt; .schema titles</span><br><span class="line">CREATE TABLE titles (</span><br><span class="line">  title_id VARCHAR PRIMARY KEY,</span><br><span class="line">  type VARCHAR,</span><br><span class="line">  primary_title VARCHAR,</span><br><span class="line">  original_title VARCHAR,</span><br><span class="line">  is_adult INTEGER,</span><br><span class="line">  premiered INTEGER,</span><br><span class="line">  ended INTEGER,</span><br><span class="line">  runtime_minutes INTEGER,</span><br><span class="line">  genres VARCHAR</span><br><span class="line">);</span><br><span class="line">CREATE INDEX ix_titles_type ON titles (type);</span><br><span class="line">CREATE INDEX ix_titles_primary_title ON titles (primary_title);</span><br><span class="line">CREATE INDEX ix_titles_original_title ON titles (original_title);</span><br></pre></td></tr></table></figure>
-<p>akas表为标题的语言，地区等信息，上映电影在其余国家的信息，标题可能会翻译成上映国家的版本。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CREATE TABLE akas (</span><br><span class="line">  title_id VARCHAR, -- REFERENCES titles (title_id),</span><br><span class="line">  title VARCHAR,</span><br><span class="line">  region VARCHAR,</span><br><span class="line">  language VARCHAR,</span><br><span class="line">  types VARCHAR,</span><br><span class="line">  attributes VARCHAR,</span><br><span class="line">  is_original_title INTEGER</span><br><span class="line">);</span><br><span class="line">CREATE INDEX ix_akas_title_id ON akas (title_id);</span><br><span class="line">CREATE INDEX ix_akas_title ON akas (title);</span><br></pre></td></tr></table></figure>
-<p>crew表为某剧对应的人物信息。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CREATE TABLE crew (</span><br><span class="line">  title_id VARCHAR, -- REFERENCES titles (title_id),</span><br><span class="line">  person_id VARCHAR, -- REFERENCES people (person_id),</span><br><span class="line">  category VARCHAR,</span><br><span class="line">  job VARCHAR</span><br><span class="line">);</span><br><span class="line">CREATE INDEX ix_crew_title_id ON crew (title_id);</span><br><span class="line">CREATE INDEX ix_crew_person_id ON crew (person_id);</span><br></pre></td></tr></table></figure>
-<p>其中一行的信息为</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tt0000003|nm5442194|producer|producer</span><br></pre></td></tr></table></figure>
-<p>rating表为对应的id和评分，参与人数</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CREATE TABLE ratings (</span><br><span class="line">  title_id VARCHAR PRIMARY KEY, -- REFERENCES titles (title_id),</span><br><span class="line">  rating FLOAT,</span><br><span class="line">  votes INTEGER</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-<p>其中一行的信息为</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tt0000001|5.6|1529</span><br></pre></td></tr></table></figure>
-<h1 id="q1"><a href="#q1" class="headerlink" title="q1"></a>q1</h1><p>查询titles表中不同类型有哪些</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sqlite&gt; select distinct(type) from titles order by type;</span><br><span class="line">    movie</span><br><span class="line">    short</span><br><span class="line">    tvEpisode</span><br><span class="line">    tvMiniSeries</span><br><span class="line">    tvMovie</span><br><span class="line">    tvSeries</span><br><span class="line">    tvShort</span><br><span class="line">    tvSpecial</span><br><span class="line">    video</span><br><span class="line">    videoGame</span><br></pre></td></tr></table></figure>
-<h1 id="q2"><a href="#q2" class="headerlink" title="q2"></a>q2</h1><p>查询每种类型中最长播放时间的title</p>
-<ul>
-<li>对于存在并列的情况，所有并列的条目均输出</li>
-<li>输出types,primary titles,runtime minutes,按照type升序，若type相同则按照primary titles升序</li>
-</ul>
-<p>简单地，查询每种类型中最长播放时间</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SELECT type,max(runtime_minutes) FROM titles GROUP BY type;</span><br></pre></td></tr></table></figure>
-<p>得到</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">movie|51420</span><br><span class="line">short|461</span><br><span class="line">tvEpisode|1800</span><br><span class="line">tvMiniSeries|1755</span><br><span class="line">tvMovie|2112</span><br><span class="line">tvSeries|8400</span><br><span class="line">tvShort|60</span><br><span class="line">tvSpecial|5760</span><br><span class="line">video|5135</span><br><span class="line">videoGame|1500</span><br></pre></td></tr></table></figure>
-<p>查询目标为runtime_minutes等于最大值的title</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">WITH types(type, runtime_minutes) AS ( </span><br><span class="line">  SELECT type, MAX(runtime_minutes)</span><br><span class="line">    FROM titles</span><br><span class="line">    GROUP BY type</span><br><span class="line">)</span><br><span class="line">SELECT titles.type, titles.primary_title, titles.runtime_minutes</span><br><span class="line">  FROM titles</span><br><span class="line">  JOIN types</span><br><span class="line">  ON titles.runtime_minutes &#x3D;&#x3D; types.runtime_minutes AND titles.type &#x3D;&#x3D; types.type</span><br><span class="line">  ORDER BY titles.type, titles.primary_title</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
-<p>可通过with子句定义临时关系，再通过join运算限定title条目。</p>
-<p>查询结果如下</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">movie|Logistics|51420</span><br><span class="line">short|Kuriocity|461</span><br><span class="line">tvEpisode|Téléthon 2012|1800</span><br><span class="line">tvMiniSeries|Kôya no yôjinbô|1755</span><br><span class="line">tvMovie|ArtQuench Presents Spirit Art|2112</span><br><span class="line">tvSeries|The Sharing Circle|8400</span><br><span class="line">tvShort|Paul McCartney Backstage at Super Bowl XXXIX|60</span><br><span class="line">tvShort|The People Next Door|60</span><br><span class="line">tvSpecial|Katy Perry Live: Witness World Wide|5760</span><br><span class="line">video|Midnight Movie Madness: 50 Movie Mega Pack|5135</span><br><span class="line">videoGame|Flushy Fish VR: Just Squidding Around|1500</span><br></pre></td></tr></table></figure>
-<h1 id="q3"><a href="#q3" class="headerlink" title="q3"></a>q3</h1><p>列出所有类型的title，并给出相关条目的数量</p>
-<ul>
-<li>按照类型升序</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SELECT type, count(*) AS title_count FROM titles GROUP BY type ORDER BY title_count ASC;</span><br></pre></td></tr></table></figure>
-<p>查询结果如下</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tvShort|4075</span><br><span class="line">videoGame|9044</span><br><span class="line">tvSpecial|9107</span><br><span class="line">tvMiniSeries|10291</span><br><span class="line">tvMovie|45431</span><br><span class="line">tvSeries|63631</span><br><span class="line">video|90069</span><br><span class="line">movie|197957</span><br><span class="line">short|262038</span><br><span class="line">tvEpisode|1603076</span><br></pre></td></tr></table></figure>
-<h1 id="q4"><a href="#q4" class="headerlink" title="q4"></a>q4</h1><p>按照每十年为间隔，统计首映的titles数目，例如<code>2010s|2789741</code></p>
-<ul>
-<li>年份按照类似2010s的格式输出，按照数目降序，<code>premiered</code>为<code>NULL</code>的条目不计入结果</li>
-</ul>
-<p>通过<code>group by</code>子句按照每十年分组,通过字符串运算在年份后添加s</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SELECT </span><br><span class="line">  CAST(premiered&#x2F;10*10 AS TEXT) || &#39;s&#39; AS decade,</span><br><span class="line">  COUNT(*) AS num_movies</span><br><span class="line">  FROM titles</span><br><span class="line">  WHERE premiered is not null</span><br><span class="line">  GROUP BY decade</span><br><span class="line">  ORDER BY num_movies DESC</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
-<p>查询结果如下</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">2010s|1050732</span><br><span class="line">2000s|494639</span><br><span class="line">1990s|211453</span><br><span class="line">1980s|119258</span><br><span class="line">1970s|99707</span><br><span class="line">1960s|75237</span><br><span class="line">1950s|39554</span><br><span class="line">1910s|26596</span><br><span class="line">1920s|13153</span><br><span class="line">1930s|11492</span><br><span class="line">1940s|10011</span><br><span class="line">1900s|9586</span><br><span class="line">2020s|2492</span><br><span class="line">1890s|2286</span><br><span class="line">1880s|22</span><br><span class="line">1870s|1</span><br></pre></td></tr></table></figure>
-<h1 id="q5"><a href="#q5" class="headerlink" title="q5"></a>q5</h1><p>按照每十年为间隔，统计对应首映的titles数目百分比，例如 <code>2010s|45.7042</code></p>
-<ul>
-<li>百分比为对应的首映数目除以总titles数目，titles算入<code>premiered</code>为<code>NULL</code>的条目，结果舍入到小数点后四位</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SELECT</span><br><span class="line">  CAST(premiered&#x2F;10*10 AS TEXT) || &#39;s&#39; AS decade,</span><br><span class="line">  ROUND(CAST(COUNT(*) AS REAL) &#x2F; (SELECT COUNT(*) FROM titles) * 100.0, 4) as percentage</span><br><span class="line">  FROM titles</span><br><span class="line">  WHERE premiered is not null</span><br><span class="line">  GROUP BY decade</span><br><span class="line">  ORDER BY percentage DESC, decade ASC</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
-<p>查询结果如下</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">2010s|45.7891</span><br><span class="line">2000s|21.5555</span><br><span class="line">1990s|9.2148</span><br><span class="line">1980s|5.1971</span><br><span class="line">1970s|4.3451</span><br><span class="line">1960s|3.2787</span><br><span class="line">1950s|1.7237</span><br><span class="line">1910s|1.159</span><br><span class="line">1920s|0.5732</span><br><span class="line">1930s|0.5008</span><br><span class="line">1940s|0.4363</span><br><span class="line">1900s|0.4177</span><br><span class="line">2020s|0.1086</span><br><span class="line">1890s|0.0996</span><br><span class="line">1880s|0.001</span><br><span class="line">1870s|0.0</span><br></pre></td></tr></table></figure>
-<h1 id="q6"><a href="#q6" class="headerlink" title="q6"></a>q6</h1><p>列出转播次数的titles前十</p>
-<ul>
-<li>输出primary title和对应的数目</li>
-</ul>
-<p>和q2类似，可通过with子句定义临时关系，<code>LIMIT 10</code>限定输出条目的数目再通过join运算限定title条目。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">WITH translations AS (</span><br><span class="line">  SELECT title_id, count(*) as num_translations </span><br><span class="line">    FROM akas </span><br><span class="line">    GROUP BY title_id </span><br><span class="line">    ORDER BY num_translations DESC, title_id </span><br><span class="line">    LIMIT 10</span><br><span class="line">)</span><br><span class="line">SELECT titles.primary_title, translations.num_translations</span><br><span class="line">  FROM translations</span><br><span class="line">  JOIN titles</span><br><span class="line">  ON titles.title_id &#x3D;&#x3D; translations.title_id</span><br><span class="line">  ORDER BY translations.num_translations DESC</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
-<p>查询结果如下</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Mutant Virus: Vol. 1|126</span><br><span class="line">The Good, the Bad and the Ugly|73</span><br><span class="line">Star Wars: Episode V - The Empire Strikes Back|71</span><br><span class="line">Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb|68</span><br><span class="line">Raiders of the Lost Ark|62</span><br><span class="line">Star Wars: Episode VII - The Force Awakens|62</span><br><span class="line">The Shawshank Redemption|61</span><br><span class="line">Once Upon a Time in the West|60</span><br><span class="line">Indiana Jones and the Kingdom of the Crystal Skull|60</span><br><span class="line">Airplane!|59</span><br></pre></td></tr></table></figure>
-<h1 id="q7"><a href="#q7" class="headerlink" title="q7"></a>q7</h1><p>列出IMDB中电影权重最高的250个</p>
-<p>权重的计算方式为</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Weighted rating (WR) &#x3D; (v&#x2F;(v+m)) * R + (m&#x2F;(v+m)) * C</span><br></pre></td></tr></table></figure>
-<ul>
-<li>R为电影平均评分</li>
-<li>v为评分人数</li>
-<li>m为25000</li>
-<li>C为所有电影的平均权重</li>
-</ul>
-<p><code>weight</code>的计算放入<code>select</code>语句中。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">WITH</span><br><span class="line">  av(average_rating) AS (</span><br><span class="line">    SELECT SUM(rating * votes) &#x2F; SUM(votes)</span><br><span class="line">      FROM ratings</span><br><span class="line">      JOIN titles</span><br><span class="line">      ON titles.title_id &#x3D;&#x3D; ratings.title_id AND titles.type &#x3D;&#x3D; &quot;movie&quot; </span><br><span class="line">  ),</span><br><span class="line">  mn(min_rating) AS (SELECT 25000.0)</span><br><span class="line">SELECT</span><br><span class="line">  primary_title,</span><br><span class="line">  (votes &#x2F; (votes + min_rating)) * rating + (min_rating &#x2F; (votes + min_rating)) * average_rating as weighed_rating</span><br><span class="line">  FROM ratings, av, mn</span><br><span class="line">  JOIN titles</span><br><span class="line">  ON titles.title_id &#x3D;&#x3D; ratings.title_id and titles.type &#x3D;&#x3D; &quot;movie&quot;</span><br><span class="line">  ORDER BY weighed_rating DESC</span><br><span class="line">  LIMIT 250</span><br><span class="line">  ;</span><br></pre></td></tr></table></figure>
-<p>榜单如下</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">The Shawshank Redemption|9.27408375213064</span><br><span class="line">Pulp Fiction|8.87296068706845</span><br><span class="line">The Lord of the Rings: The Return of the King|8.87023538818413</span><br><span class="line">Schindler&#39;s List|8.85944837786486</span><br><span class="line">12 Angry Men|8.8274654312365</span><br><span class="line">Forrest Gump|8.77394665505175</span><br><span class="line">The Good, the Bad and the Ugly|8.73410047935658</span><br><span class="line">The Matrix|8.67379043068514</span><br><span class="line">The Lord of the Rings: The Two Towers|8.67073273467584</span><br><span class="line">Star Wars: Episode V - The Empire Strikes Back|8.66258036565461</span><br><span class="line">Goodfellas|8.65679704067696</span><br><span class="line">One Flew Over the Cuckoo&#39;s Nest|8.65294416076491</span><br><span class="line">The Mountain II|8.61725087838868</span><br><span class="line">City of God|8.54342805417796</span><br><span class="line">Gladiator|8.47143742708625</span><br><span class="line">Back to the Future|8.46332853886572</span><br><span class="line">Léon: The Professional|8.46292056565729</span><br><span class="line">Avengers: Infinity War|8.4506845289751</span><br><span class="line">Psycho|8.4373696976068</span><br><span class="line">Rear Window|8.41674755149826</span><br><span class="line">Once Upon a Time in the West|8.38089735258473</span><br><span class="line">WALL·E|8.36472733136252</span><br><span class="line">Raiders of the Lost Ark|8.36071764723241</span><br><span class="line">The Shining|8.35937143360229</span><br><span class="line">Alien|8.35552530090484</span><br><span class="line">Cinema Paradiso|8.3444698366033</span><br><span class="line">Apocalypse Now|8.34271721766924</span><br><span class="line">Grave of the Fireflies|8.34191265540178</span><br><span class="line">Oldboy|8.33209348956415</span><br><span class="line">Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb|8.3250687044724</span><br><span class="line">Once Upon a Time in America|8.29149205920628</span><br><span class="line">Spider-Man: Into the Spider-Verse|8.27944770565499</span><br><span class="line">Inglourious Basterds|8.27361869242351</span><br><span class="line">American Beauty|8.26993451202779</span><br><span class="line">Reservoir Dogs|8.26439627161116</span><br><span class="line">Requiem for a Dream|8.25798876833464</span><br><span class="line">A Clockwork Orange|8.25742341547537</span><br><span class="line">Toy Story 3|8.25734107724815</span><br><span class="line">Scarface|8.25590438979589</span><br><span class="line">Full Metal Jacket|8.25210853826772</span><br><span class="line">Sunset Blvd.|8.23933898857354</span><br><span class="line">Amadeus|8.21589004599775</span><br><span class="line">Vertigo|8.21216347202948</span><br><span class="line">Like Stars on Earth|8.20481373841464</span><br><span class="line">Your Name.|8.19983566375586</span><br><span class="line">North by Northwest|8.1975172347387</span><br><span class="line">Batman Begins|8.17704665931913</span><br><span class="line">V for Vendetta|8.17129916924205</span><br><span class="line">Die Hard|8.16240649720068</span><br><span class="line">Lock, Stock and Two Smoking Barrels|8.14585507926427</span><br><span class="line">Casino|8.13629764272654</span><br><span class="line">Unforgiven|8.12365074764615</span><br><span class="line">The Apartment|8.12061011853697</span><br><span class="line">Chinatown|8.10376481333931</span><br><span class="line">My Neighbor Totoro|8.09442185609386</span><br><span class="line">Green Book|8.09074160238658</span><br><span class="line">Finding Nemo|8.07145216202776</span><br><span class="line">Catch Me If You Can|8.06592479759894</span><br><span class="line">The Grand Budapest Hotel|8.06129693202741</span><br><span class="line">Blade Runner|8.06098971608469</span><br><span class="line">Fargo|8.05647629910042</span><br><span class="line">Prisoners|8.05390469414222</span><br><span class="line">The Kid|8.05287532584739</span><br><span class="line">Rush|8.03898582269203</span><br><span class="line">Hacksaw Ridge|8.03551702468201</span><br><span class="line">The Seventh Seal|8.03407390030423</span><br><span class="line">The Princess Bride|8.03359206319394</span><br><span class="line">Platoon|8.03211473247254</span><br><span class="line">PK|8.02907703728921</span><br><span class="line">Monty Python&#39;s Life of Brian|8.02901738104703</span><br><span class="line">Gone with the Wind|8.01162552164356</span><br><span class="line">Before Sunrise|8.00325016258364</span><br><span class="line">Ben-Hur|7.98708858673506</span><br><span class="line">The Elephant Man|7.98656566725627</span><br><span class="line">The Treasure of the Sierra Madre|7.98183759819495</span><br><span class="line">Aynabaji|7.97740941967294</span><br><span class="line">Yojimbo|7.97326922828868</span><br><span class="line">Star Wars: Episode VII - The Force Awakens|7.97147281541043</span><br><span class="line">Slumdog Millionaire|7.97003387503103</span><br><span class="line">Monsters, Inc.|7.96993549888079</span><br><span class="line">Sin City|7.96864677307258</span><br><span class="line">X-Men: Days of Future Past|7.96426564397762</span><br><span class="line">Ratatouille|7.96198738026476</span><br><span class="line">Jaws|7.95693515580935</span><br><span class="line">Her|7.95337602084149</span><br><span class="line">Cool Hand Luke|7.95284437581594</span><br><span class="line">Akira|7.9466594640111</span><br><span class="line">In the Name of the Father|7.94653731881204</span><br><span class="line">Big Fish|7.94417520197508</span><br><span class="line">Zootopia|7.94391037425039</span><br><span class="line">Barry Lyndon|7.93804803727936</span><br><span class="line">La Haine|7.93713874007203</span><br><span class="line">Network|7.93673499353362</span><br><span class="line">Ikiru|7.93587006088359</span><br><span class="line">Harakiri|7.93442534185635</span><br><span class="line">On the Waterfront|7.93384958766431</span><br><span class="line">Drishyam|7.9316664137302</span><br><span class="line">The Chaos Class Failed the Class|7.92209636316521</span><br><span class="line">Magnolia|7.92151783450757</span><br><span class="line">Swades|7.91791802696218</span><br><span class="line">Children of Heaven|7.91488724265187</span><br><span class="line">Tosun Pasa|7.91175384887872</span><br><span class="line">Dog Day Afternoon|7.90497209143548</span><br><span class="line">Before Sunset|7.90135907545106</span><br><span class="line">Memories of Murder|7.89983909706083</span><br><span class="line">Ip Man|7.89530989242938</span><br><span class="line">Chak de! India|7.89380214739519</span><br><span class="line">Munna Bhai M.B.B.S.|7.88766873353758</span><br><span class="line">The 400 Blows|7.88236058087742</span><br><span class="line">Elite Squad|7.88128931930257</span><br><span class="line">Cinderella Man|7.87893854172733</span><br><span class="line">Judgment at Nuremberg|7.87703872647609</span><br><span class="line">Ayla: The Daughter of War|7.87111640888977</span><br><span class="line">Toy Story 4|7.86727079414856</span><br><span class="line">District 9|7.86716566170036</span><br><span class="line">Edge of Tomorrow|7.86401183134919</span><br><span class="line">Searching for Sugar Man|7.86361014282595</span><br><span class="line">Thor: Ragnarok|7.86067171002219</span><br><span class="line">Harry Potter and the Prisoner of Azkaban|7.86009831177006</span><br><span class="line">The Handmaiden|7.86005695016839</span><br><span class="line">Toy Story 2|7.85903363434152</span><br><span class="line">The Bourne Identity|7.85871357953152</span><br><span class="line">Three Colors: Red|7.8571771641382</span><br><span class="line">Edward Scissorhands|7.85308436175456</span><br><span class="line">Nightcrawler|7.85238182329928</span><br><span class="line">Castle in the Sky|7.8494569785608</span><br><span class="line">Paris, Texas|7.84540229570821</span><br><span class="line">The Breakfast Club|7.84009539226878</span><br><span class="line">Ghost in the Shell|7.8358170251987</span><br><span class="line">Mulholland Dr.|7.83476463500115</span><br><span class="line">Strangers on a Train|7.8340265331899</span><br><span class="line">Papillon|7.83230035374453</span><br><span class="line">The Raid 2|7.82177754544252</span><br><span class="line">The Artist|7.81451845636192</span><br><span class="line">The Man Who Shot Liberty Valance|7.8078751132418</span><br><span class="line">True Romance|7.80358074659557</span><br><span class="line">All the President&#39;s Men|7.80348137201329</span><br><span class="line">A Streetcar Named Desire|7.80156298305092</span><br><span class="line">My Name Is Khan|7.80054788180083</span><br><span class="line">Patton|7.79504441225479</span><br><span class="line">Tokyo Story|7.79422849952735</span><br><span class="line">The Blues Brothers|7.79298260954459</span><br><span class="line">The Man from Earth|7.78857212574483</span><br><span class="line">Capernaum|7.78563829871188</span><br><span class="line">Spider-Man: Far from Home|7.78561846386015</span><br><span class="line">Vikram Vedha|7.78373473224346</span><br><span class="line">Titanic|7.78157715805354</span><br><span class="line">The Hobbit: An Unexpected Journey|7.77554863836764</span><br><span class="line">The Passion of Joan of Arc|7.77408091487195</span><br><span class="line">High and Low|7.77213704112255</span><br><span class="line">Sing Street|7.76915812623775</span><br><span class="line">The Legend of 1900|7.76815835496063</span><br><span class="line">Elite Squad: The Enemy Within|7.76812044894699</span><br><span class="line">Fanny and Alexander|7.76800472456941</span><br><span class="line">Taken|7.76769012246336</span><br><span class="line">The Straight Story|7.76752395340217</span><br><span class="line">Kahaani|7.76720011579587</span><br><span class="line">Ocean&#39;s Eleven|7.76364685071376</span><br><span class="line">The Sea Inside|7.76289022497323</span><br><span class="line">O.J.: Made in America|7.76250676256312</span><br><span class="line">Before Midnight|7.76132220796731</span><br><span class="line">Home|7.76025351500213</span><br><span class="line">Back to the Future Part II|7.76009005121133</span><br><span class="line">Spring, Summer, Fall, Winter... and Spring|7.7592446422894</span><br><span class="line">Manhattan|7.7591232226754</span><br><span class="line">Crash|7.757187612945</span><br><span class="line">The Girl with the Dragon Tattoo|7.75600754037541</span><br><span class="line">Big Hero 6|7.7544767707715</span><br><span class="line">Predator|7.75096576853116</span><br><span class="line">Spartacus|7.75079774492003</span><br><span class="line">Isle of Dogs|7.7494869658895</span><br><span class="line">The Fighter|7.74677127042658</span><br><span class="line">The Game|7.7466716184388</span><br><span class="line">The Big Short|7.7461656518056</span><br><span class="line">Moonrise Kingdom|7.74269388072724</span><br><span class="line">Pather Panchali|7.74145616936336</span><br><span class="line">Doctor Zhivago|7.74112370242397</span><br><span class="line">Apocalypto|7.73848649857271</span><br><span class="line">About Time|7.7377698449424</span><br><span class="line">Gattaca|7.73647859452984</span><br><span class="line">What Ever Happened to Baby Jane?|7.73539364991903</span><br><span class="line">The Marathon Family|7.73428987458458</span><br><span class="line">Crouching Tiger, Hidden Dragon|7.73132118708057</span><br><span class="line">Sunrise|7.72522570382843</span><br><span class="line">Manchester by the Sea|7.72481321224648</span><br><span class="line">La Dolce Vita|7.72473610906825</span><br><span class="line">Halloween|7.72149520973176</span><br><span class="line">Sherlock Jr.|7.72122901074544</span><br><span class="line">What&#39;s Eating Gilbert Grape|7.71837046863796</span><br><span class="line">Diabolique|7.71738924368521</span><br><span class="line">Remember the Titans|7.7131373150204</span><br><span class="line">Amour|7.71206424086562</span><br><span class="line">Earthlings|7.71112168098164</span><br><span class="line">Hidden Figures|7.70836846509536</span><br><span class="line">The Boy in the Striped Pajamas|7.70750686722645</span><br><span class="line">Throne of Blood|7.70486190012118</span><br><span class="line">Nosferatu|7.70479615314119</span><br><span class="line">The Best Years of Our Lives|7.70404091573498</span><br><span class="line">La Strada|7.7035894202021</span><br><span class="line">Blue Velvet|7.70348849922288</span><br><span class="line">Ed Wood|7.70011913851453</span><br><span class="line">Carry On, Munna Bhai|7.6960703370653</span><br><span class="line">The Insider|7.69589363902872</span><br><span class="line">Rio Bravo|7.69547902962826</span><br><span class="line">Do the Right Thing|7.69470637286005</span><br><span class="line">G.O.R.A.|7.69143691201405</span><br><span class="line">John Wick: Chapter 3 - Parabellum|7.69042140474976</span><br><span class="line">The Big Sleep|7.69022732193082</span><br><span class="line">The Best of Youth|7.68939089676166</span><br><span class="line">The Wild Bunch|7.68732321899666</span><br><span class="line">Evil Dead II|7.68698809399903</span><br><span class="line">Airlift|7.68482585880285</span><br><span class="line">Who&#39;s Singin&#39; Over There?|7.68275319170322</span><br><span class="line">The King of the Street Cleaners|7.68007124396815</span><br><span class="line">Blue Is the Warmest Color|7.67888277323536</span><br><span class="line">300|7.67811080177943</span><br><span class="line">The Hangover|7.67745136243525</span><br><span class="line">The Chaos Class Is on Vacation|7.67701815540533</span><br><span class="line">Kramer vs. Kramer|7.6734998783239</span><br><span class="line">Special 26|7.67149062884843</span><br><span class="line">Harold and Maude|7.67125075421178</span><br><span class="line">Breathless|7.66994880180493</span><br><span class="line">3-Iron|7.66894856428393</span><br><span class="line">Glory|7.66830445780438</span><br><span class="line">Awakenings|7.66753775055519</span><br><span class="line">Star Trek Into Darkness|7.66655348768595</span><br><span class="line">To Be or Not to Be|7.66618772896992</span><br><span class="line">A Silent Voice|7.66616985054611</span><br><span class="line">Get Out|7.66418042868228</span><br><span class="line">The Fifth Element|7.66340814153364</span><br><span class="line">Zodiac|7.66276470401316</span><br><span class="line">Empire of the Sun|7.66123857830932</span><br><span class="line">Lost in Translation|7.66075124608843</span><br><span class="line">Man with a Movie Camera|7.66048361595785</span><br><span class="line">Tangled|7.66012044434097</span><br><span class="line">Once|7.65980150013791</span><br><span class="line">Midnight in Paris|7.65893069763627</span><br><span class="line">The King of Kong: A Fistful of Quarters|7.65818054427474</span><br><span class="line">Wreck-It Ralph|7.6578968805438</span><br><span class="line">The Salt of the Earth|7.6573311856226</span><br><span class="line">The Fault in Our Stars|7.65410038215701</span><br><span class="line">Time of the Gypsies|7.65354312829129</span><br><span class="line">Lucky Number Slevin|7.64972806598217</span><br><span class="line">Whisper of the Heart|7.64876091986559</span><br><span class="line">O Brother, Where Art Thou?|7.64584931637816</span><br><span class="line">Talvar|7.64560053612369</span><br><span class="line">Donnie Brasco|7.6439766475949</span><br><span class="line">As Good as It Gets|7.64393017265743</span><br><span class="line">The Motorcycle Diaries|7.64367118785382</span><br><span class="line">The Girl with the Red Scarf|7.64023075719264</span><br></pre></td></tr></table></figure>
-<p>榜单第一是肖申克的救赎,惊了！</p>
-<h1 id="q8"><a href="#q8" class="headerlink" title="q8"></a>q8</h1><p>列出和Mark Hamill合作过的男演员/女演员的数量</p>
-<ul>
-<li>仅输出数量</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">WITH hamill_titles AS (</span><br><span class="line">  SELECT DISTINCT(crew.title_id)</span><br><span class="line">    FROM people</span><br><span class="line">    JOIN crew</span><br><span class="line">    ON crew.person_id &#x3D;&#x3D; people.person_id AND people.name &#x3D;&#x3D; &quot;Mark Hamill&quot; AND people.born &#x3D;&#x3D; 1951</span><br><span class="line">)</span><br><span class="line">SELECT COUNT(DISTINCT(crew.person_id))</span><br><span class="line">  FROM crew</span><br><span class="line">  WHERE (crew.category &#x3D;&#x3D; &quot;actor&quot; OR crew.category &#x3D;&#x3D; &quot;actress&quot;) AND crew.title_id in hamill_titles</span><br><span class="line">;</span><br></pre></td></tr></table></figure>
-<p>查询结果为<code>206</code></p>
-<h1 id="q9"><a href="#q9" class="headerlink" title="q9"></a>q9</h1><p>按照字典序列出Mark Hamill(生于1951年)和George Lucas(生于1944年)共同参演的作品</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">WITH hamill_movies(title_id) AS (</span><br><span class="line">  SELECT crew.title_id</span><br><span class="line">    FROM crew</span><br><span class="line">    JOIN people</span><br><span class="line">    ON crew.person_id &#x3D;&#x3D; people.person_id AND people.name &#x3D;&#x3D; &quot;Mark Hamill&quot; AND people.born &#x3D;&#x3D; 1951</span><br><span class="line">)</span><br><span class="line">SELECT titles.primary_title</span><br><span class="line">  FROM crew</span><br><span class="line">  JOIN people</span><br><span class="line">  ON crew.person_id &#x3D;&#x3D; people.person_id AND people.name &#x3D;&#x3D; &quot;George Lucas&quot; AND people.born &#x3D;&#x3D; 1944 AND crew.title_id IN hamill_movies</span><br><span class="line">  JOIN titles</span><br><span class="line">  ON crew.title_id &#x3D;&#x3D; titles.title_id AND titles.type &#x3D;&#x3D; &quot;movie&quot;</span><br><span class="line">  ORDER BY titles.primary_title</span><br><span class="line">;</span><br></pre></td></tr></table></figure>
-<p>查询结果为</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Star Wars: Episode V - The Empire Strikes Back</span><br></pre></td></tr></table></figure>
-<p>仅有一部电影</p>
-<h1 id="q10"><a href="#q10" class="headerlink" title="q10"></a>q10</h1><p>列出所有不同的标签和相关的<code>titles</code>数目</p>
-<p>不同标签之间以逗号间隔，所以需要从<code>genre</code>中提取出对应的标签信息。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">WITH RECURSIVE split(genre, rest) AS (</span><br><span class="line">  SELECT &#39;&#39;, genres || &#39;,&#39; FROM titles WHERE genres !&#x3D; &quot;\N&quot;</span><br><span class="line">   UNION ALL</span><br><span class="line">  SELECT substr(rest, 0, instr(rest, &#39;,&#39;)),</span><br><span class="line">         substr(rest, instr(rest, &#39;,&#39;)+1)</span><br><span class="line">    FROM split</span><br><span class="line">   WHERE rest !&#x3D; &#39;&#39;</span><br><span class="line">)</span><br><span class="line">SELECT genre, count(*) as genre_count</span><br><span class="line">  FROM split </span><br><span class="line"> WHERE genre !&#x3D; &#39;&#39;</span><br><span class="line"> GROUP BY genre</span><br><span class="line"> ORDER BY genre_count DESC;</span><br></pre></td></tr></table></figure>
-<p>查询结果为</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Drama|620063</span><br><span class="line">Comedy|486163</span><br><span class="line">Short|310619</span><br><span class="line">Documentary|222187</span><br><span class="line">Talk-Show|215144</span><br><span class="line">Romance|211462</span><br><span class="line">Family|159035</span><br><span class="line">News|148941</span><br><span class="line">Animation|115998</span><br><span class="line">Reality-TV|113180</span><br><span class="line">Music|105724</span><br><span class="line">Crime|99019</span><br><span class="line">Action|97544</span><br><span class="line">Adventure|81686</span><br><span class="line">Game-Show|75169</span><br><span class="line">Adult|65704</span><br><span class="line">Sport|48855</span><br><span class="line">Fantasy|48341</span><br><span class="line">Mystery|47155</span><br><span class="line">Horror|41552</span><br><span class="line">Thriller|40664</span><br><span class="line">History|31675</span><br><span class="line">Sci-Fi|31441</span><br><span class="line">Biography|27001</span><br><span class="line">Musical|17939</span><br><span class="line">Western|9811</span><br><span class="line">War|9309</span><br><span class="line">Film-Noir|322</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Systems</category>
-      </categories>
-      <tags>
-        <tag>database systems</tag>
       </tags>
   </entry>
   <entry>
@@ -10410,41 +10445,6 @@
       </categories>
       <tags>
         <tag>Data structure</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>word2vec</title>
-    <url>/word2vec/word2vec/</url>
-    <content><![CDATA[<p>与传统的one-hot表示不同，word2vec为分布式表示，分布式是指把信息分布式地存储在向量的各个维度中。one-hot表示仅仅只有一个维度表示了词的语意。</p>
-<a id="more"></a>
-
-<p>harris分布式假设认为相似上下文的词语应该有相似的语意，由此衍生了一系列的方法。</p>
-<p>语言模型为计算给定句子或者单词概率的统计模型。一般来说，我们计算根据当前词下一个单词的概率。若句子$W$为$n$个单词$(w_1,w_2,\cdots,w_n)$组成的序列，那么句子$W$的概率为<br>$$<br>P(W)= P(w_1,w_2,\cdots, w_n)<br>$$<br>在计算句子$W$概率的时候，往往由马尔可夫链式法则表示为其中每个单词条件概率的乘积。<br>$$<br>\begin{align}<br>P(W)= &amp; P(w_1,w_2,\cdots, w_n)<br>= &amp; P(w_1)P(w_2|w_1) \cdots p(w_n|w_1,w_1,\cdots,w_{n-1})<br>\end{align}<br>$$<br>实际操作来说，对于整个句子计算马尔可夫链，路径过长，所以简化为$n-1$阶的马尔可夫链n-gram，<br>$$<br>\begin{align}<br>P(W)= &amp; P(w_1,w_2,\cdots, w_n)<br> = &amp; P(w_n| w_1,\cdots, w_{n-1})<br>\end{align}<br>$$<br>在衡量语言模型的表达能力时，<a href="https://towardsdatascience.com/perplexity-in-language-models-87a196019a94">ppl</a>经常作为衡量指标。</p>
-<p>假定给定当前词语$w$和上下文$h$,经过softmax之前的结果为$s_{\theta}(w,c)$<br>$$<br>\begin{aligned}<br>\log P_{\theta}^{h}(w) &amp;= \log \frac{u_{\theta}(w,h)}{Z_\theta^h} \<br>&amp;= \log u_{\theta}(w,h) - \log Z_\theta^h \<br>&amp;= s_{\theta}(w,h) - \log Z_\theta^h<br>\end{aligned}<br>$$<br>由于分母计算过于复杂，每次计算的时候都得遍历一次词表。所以引入噪声对比估计(noise contrastive estimate),将多分类转化为二分类问题。</p>
-<p>语言模型的最大似然概率可以写成<br>$$<br>\begin{aligned}<br>\frac{\partial}{\partial \theta} \mathbb{E}<em>{w \sim P_d^h(w)}\big[\log P_{\theta}^{h}(w)\big] &amp;= \frac{\partial}{\partial \theta} \mathbb{E}</em>{w \sim P_d^h(w)}\big[s_{\theta}(w,h) - \log Z_\theta^h\big] \<br>&amp;= \frac{\partial}{\partial \theta} \mathbb{E}<em>{w \sim P_d^h(w)}\big[s_{\theta}(w,h)\big] - \frac{\partial}{\partial \theta} \mathbb{E}</em>{w \sim P_d^h(w)}\big[\log Z_\theta^h\big] \<br>&amp;= \mathbb{E}_{w \sim P_d^h(w)}\big[ \frac{\partial}{\partial \theta} s_{\theta}(w,h) \big] - \frac{\partial}{\partial \theta} \log Z_\theta^h \<br>\end{aligned}<br>$$<br>其中$Z_\theta^h$ 仅仅与$h$有关，与$w$无关。</p>
-<p>实际的数据分布和在$\theta$限定下的概率分布，二者相等的时候，梯度为0。<br>$$<br>\begin{aligned}<br>\frac{\partial}{\partial \theta} \log Z_\theta^h &amp;= \frac{1}{Z_\theta^h} \frac{\partial}{\partial \theta} Z_\theta^h \<br>&amp;= \frac{1}{Z_\theta^h} \frac{\partial}{\partial \theta} \int\limits_{w} \exp(s_{\theta}(w,h)) dw \<br>&amp;= \frac{1}{Z_\theta^h} \int\limits_{w} \frac{\partial}{\partial \theta} \exp(s_{\theta}(w,h)) dw \<br>&amp;= \frac{1}{Z_\theta^h} \int\limits_{w}  \exp(s_{\theta}(w,h)) \frac{\partial}{\partial \theta} s_{\theta}(w,h)  dw \<br>&amp;= \int\limits_{w} \frac{\exp(s_{\theta}(w,h))}{Z_\theta^h} \frac{\partial}{\partial \theta} s_{\theta}(w,h)  dw \<br>&amp;= \int\limits_{w} P_{\theta}^h (w) \frac{\partial}{\partial \theta} s_{\theta}(w,h)  dw \<br>&amp;= \mathbb{E}<em>{w \sim P</em>{\theta}^h(w)}\big[ \frac{\partial}{\partial \theta} s_{\theta}(w,h) \big]<br>\end{aligned}<br>$$</p>
-<p>$$<br>\begin{aligned}<br>\frac{\partial}{\partial \theta} \mathbb{E}<em>{w \sim P_d^h(w)}\big[\log P_{\theta}^{h}(w)\big] &amp;= \mathbb{E}</em>{w \sim P_d^h(w)}\big[ \frac{\partial}{\partial \theta} s_{\theta}(w,h) \big] - \mathbb{E}<em>{w \sim P</em>{\theta}^h(w)}\big[ \frac{\partial}{\partial \theta} s_{\theta}(w,h) \big] \<br>\end{aligned}<br>$$</p>
-<p>$$<br>\begin{aligned}<br>\frac{\partial}{\partial \theta} \mathbb{E}<em>{w \sim P_d^h(w)}\big[\log P_{\theta}^{h}(w)\big] &amp;= \mathbb{E}</em>{w \sim P_d^h(w)}\big[ \frac{\partial}{\partial \theta} s_{\theta}(w,h) \big] - \mathbb{E}<em>{w \sim P</em>{\theta}^h(w)}\big[ \frac{\partial}{\partial \theta} s_{\theta}(w,h) \big] \<br>&amp;= \sum\limits_{w} P_{d}^{h}(w) \frac{\partial}{\partial \theta} s_{\theta}(w,h) - \sum\limits_{w} P_{\theta}^{h}(w) \frac{\partial}{\partial \theta} s_{\theta}(w,h) \<br>&amp;= \sum\limits_{w} \big( P_{d}^{h}(w) - P_{\theta}^{h}(w) \big) \frac{\partial}{\partial \theta} s_{\theta}(w,h) \<br>&amp;= \sum\limits_{w} \big( P_{d}^{h}(w) - P_{\theta}^{h}(w) \big) \frac{\partial}{\partial \theta} \log u_{\theta}(w,h)<br>\end{aligned}<br>$$</p>
-<p>$$<br>P^h(D=1,w) = \frac{1}{k+1} P_d^h(w)\<br>P^h(D=0,w) = \frac{k}{k+1} P_n^h(w)<br>$$</p>
-<p>$$<br>\begin{aligned}<br>p^h(D=1|w) &amp;= \frac{P^h(D=1,w)}{p^h(w)} \<br>&amp;= \frac{P_d^h(w)}{P_d^h(w) + kP_n(w)} \<br>\end{aligned}<br>$$</p>
-<p>$$<br>\begin{aligned}<br>p^h(D=0|w) &amp;= \frac{P^h(D=0,w)}{p^h(w)} \<br>&amp;= \frac{kP_n(w)}{P_d^h(w) + kP_n(w)} \<br>\end{aligned}<br>$$</p>
-<p>$$<br>p^h(D=1|w, \theta) = \frac{P_{\theta}^h(w)}{P_{\theta}^h(w) + kP_n(w)} \<br>p^h(D=0|w, \theta) = \frac{kP_n(w)}{P_{\theta}^h(w) + kP_n(w)} \<br>$$</p>
-<h1 id="Skip-gram"><a href="#Skip-gram" class="headerlink" title="Skip-gram"></a>Skip-gram</h1><p>Skip-gram模型中，给定当前词$w$和上下文$c$<br>$$<br>\begin{align}<br>&amp; argmax_{\theta} \prod_{(w,c)\in D} p(D=1|C,W;\theta) \prod_{(w,c) \in D’} P(D=0| c,w;\theta) \</p>
-<p> = &amp; argmax_{\theta} \prod_{(w,c)\in D} p(D=1|C,W;\theta) \prod_{(w,c) \in D’} (1-P(D=1| c,w;\theta)) \</p>
-<p>= &amp; argmax_{\theta} \sum_{(w,c) \in D} log(\frac{1}{1+e^{-v_c \cdot v_w}}) + \sum_{(w,c)\in D’} log(1-\frac{1}{1+e^{-v_c\cdot v_w}}) \</p>
-<p>= &amp; argmax_{\theta} \sum_{(w,c) \in D} log(\frac{1}{1+e^{-v_c \cdot v_w}}) + \sum_{(w,c)\in D’} log(1-\frac{1}{1+e^{-v_c\cdot v_w}}) \</p>
-<p>= &amp; argmax_{\theta} \sum_{(w,c)\in D} log \sigma(v_c \cdot v_w) + \sum_{(w,c)\in D’} log(\sigma(-v_c \cdot v_w))</p>
-<p>\end{align}<br>$$</p>
-<h5 id="displaystyle-argmax-theta-prod-w-in-text-left-prod-c-in-C-w-p-c-w-theta-right"><a href="#displaystyle-argmax-theta-prod-w-in-text-left-prod-c-in-C-w-p-c-w-theta-right" class="headerlink" title="$\displaystyle argmax_{\theta}  \prod_{w \in text} \left [ \prod_{c\in C(w)} p(c|w;\theta) \right] $"></a>$\displaystyle argmax_{\theta}  \prod_{w \in text} \left [ \prod_{c\in C(w)} p(c|w;\theta) \right] $</h5><p>$C(w)$为$w$的上下文</p>
-<p>$\displaystyle argmax_\theta \prod _{(w,c)\in D} p(c|w;\theta)$</p>
-<p>这里$D$为所有上下文对。</p>
-<p>NCE works because the max of the objection function converges to the real distribution to fit.</p>
-]]></content>
-      <categories>
-        <category>nlp</category>
-      </categories>
-      <tags>
-        <tag>word2vec</tag>
       </tags>
   </entry>
 </search>

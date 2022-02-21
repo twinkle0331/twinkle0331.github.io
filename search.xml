@@ -4135,7 +4135,7 @@
       </tags>
   </entry>
   <entry>
-    <title>word2vec</title>
+    <title>Word2vec推导</title>
     <url>/word2vec/word2vec/</url>
     <content><![CDATA[<p>与传统的one-hot表示不同，word2vec为分布式表示，分布式是指把信息分布式地存储在向量的各个维度中。one-hot表示仅仅只有一个维度表示了词的语意。</p>
 <a id="more"></a>
